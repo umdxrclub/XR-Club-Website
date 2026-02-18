@@ -1,0 +1,399 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<section class="lab" data-lab>
+  <img class="lab__bg" src={`${base}Images/lab.webp`} alt="" />
+  <div class="lab__dim"></div>
+
+  <div class="lab__layout">
+    <div class="lab__header">
+      <div class="lab__title-wrap">
+        <span class="lab__title-outline">XR</span>
+        <h2 class="lab__title">Lab & History</h2>
+        <span class="lab__accent">Since 2015!</span>
+      </div>
+    </div>
+
+    <div class="lab__counter">
+      <span class="lab__counter-num" data-count-target="700">0</span><span class="lab__counter-plus">+</span>
+      <p class="lab__counter-label">Members & Alumni</p>
+    </div>
+
+    <div class="lab__columns">
+      <div class="lab__col">
+        <div class="lab__section lab__section--lore">
+          <h3 class="lab__section-title">Club Lore (Fun Fact)</h3>
+          <img class="lab__lore-img" src={`${base}Images/brenden iribe.jpg`} alt="Brendan Iribe" />
+          <p class="lab__section-text">Brendan Iribe, a UMD alum, co-founded Oculus, one of the most influential VR companies. He later donated generously to the university's CS program, helping build our beautiful Iribe Center.</p>
+          <p class="lab__section-text lab__section-text--fun">Fun fact: when our lab space was at risk, a club member reached out to Brendan Iribe who advocated for the club to the CS department!</p>
+        </div>
+      </div>
+
+      <div class="lab__col">
+        <div class="lab__section">
+          <h3 class="lab__section-title">What is the XR Lab?</h3>
+          <p class="lab__section-text">Need a place to unwind with some VR games like Beat Saber after a long day of classes? Want access to powerful machines to build your latest AR/VR project, or help troubleshooting something you're stuck on? Maybe you just want to brainstorm ideas and talk about where XR is headed with other members.</p>
+          <p class="lab__section-text">If any of that sounds like you, stop by the <strong>XR Lab (AVW 4176)</strong> during Open Lab Hours, it's your space to explore, build, relax, and connect.</p>
+          <p class="lab__section-text">The lab is equipped with a range of headsets, development machines, and peripherals so you can jump into projects or just experience what XR has to offer. Whether you're a beginner or experienced, everyone is welcome.</p>
+        </div>
+      </div>
+
+      <div class="lab__col">
+        <div class="lab__founder">
+          <img class="lab__founder-photo" src={`${base}Images/people/Galen.jpg`} alt="Galen Stetsyuk" />
+          <h3 class="lab__founder-name">Galen Stetsyuk '18</h3>
+          <p class="lab__founder-role">Founder of XR Club</p>
+          <p class="lab__founder-desc">The XR Club was founded in 2015 by Galen Stetsyuk, a computer science major who at the time also founded MPLEX VR, an entertainment virtual reality company. Since then, the club has grown to over 700 members and earned its own dedicated lab space in AVW. We're continuing to expand, grow our community, and push toward an even bigger future for the lab.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const counterEl = document.querySelector('[data-count-target]') as HTMLElement | null;
+  if (counterEl) {
+    const target = parseInt(counterEl.dataset.countTarget || '0', 10);
+    let started = false;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !started) {
+          started = true;
+          animateCount(counterEl, target);
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+
+    observer.observe(counterEl);
+  }
+
+  function animateCount(el: HTMLElement, target: number) {
+    const duration = 2000;
+    const start = performance.now();
+
+    function update(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+      el.textContent = current.toString();
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+</script>
+
+<style>
+  .lab {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .lab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(rgba(0, 0, 0, 0.95), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .lab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .lab__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .lab__dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+  }
+
+  .lab__layout {
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3.5rem var(--page-padding) 5rem;
+    gap: 1.2rem;
+    box-sizing: border-box;
+  }
+
+  .lab__header {
+    text-align: center;
+  }
+
+  .lab__title-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .lab__title-outline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(6rem, 11vw, 12rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .lab__title {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 0.9;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+
+  .lab__accent {
+    position: absolute;
+    bottom: -3.5rem;
+    right: -1.5rem;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.1rem, 1.5vw, 1.5rem);
+    font-weight: 700;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.45);
+    transform: rotate(-4deg);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  .lab__counter {
+    text-align: center;
+    padding: 0.3rem 0;
+  }
+
+  .lab__counter-num {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(3.5rem, 7vw, 5.5rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    text-shadow: 0 6px 40px rgba(0, 0, 0, 0.7), 0 2px 15px rgba(0, 0, 0, 0.9);
+  }
+
+  .lab__counter-plus {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .lab__counter-label {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1rem, 1.2vw, 1.2rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 0.5rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .lab__columns {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .lab__col {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .lab__founder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.8rem;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.8rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .lab__founder-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .lab__founder-name {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.2rem, 1.4vw, 1.5rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  .lab__founder-role {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 1vw, 1rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .lab__founder-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.82rem, 0.95vw, 0.95rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.65;
+    margin-top: 0.3rem;
+    text-align: left;
+  }
+
+  .lab__section {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: clamp(1.3rem, 2vw, 2rem);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .lab__section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.1rem, 1.4vw, 1.4rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+
+  .lab__section-text {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 1vw, 1rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.7;
+    margin-bottom: 0.6rem;
+  }
+
+  .lab__section-text:last-child {
+    margin-bottom: 0;
+  }
+
+  .lab__section-text strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .lab__section-text--fun {
+    color: rgba(255, 255, 255, 0.75);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .lab__lore-img {
+    width: 100%;
+    height: 150px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 900px) {
+    .lab__columns {
+      grid-template-columns: 1fr 1fr;
+    }
+    .lab__col:nth-child(3) {
+      grid-column: span 2;
+    }
+    .lab__founder {
+      flex-direction: row;
+      text-align: left;
+    }
+    .lab__title-outline { font-size: 5rem; }
+    .lab__title { font-size: 2.5rem; }
+  }
+
+  @media (max-width: 600px) {
+    .lab__columns {
+      grid-template-columns: 1fr;
+    }
+    .lab__col:nth-child(3) {
+      grid-column: auto;
+    }
+    .lab__layout { padding: 3rem 1rem 2.5rem; }
+    .lab__founder {
+      flex-direction: column;
+      text-align: center;
+    }
+    .lab__founder-photo {
+      width: 70px;
+      height: 70px;
+    }
+    .lab__lore-img {
+      height: 100px;
+    }
+    .lab__title-outline { font-size: 4rem; }
+    .lab__title { font-size: 2rem; }
+    .lab__accent {
+      right: -0.5rem;
+      bottom: -1rem;
+      font-size: 0.9rem;
+    }
+  }
+</style>

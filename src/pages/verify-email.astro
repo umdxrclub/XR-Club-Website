@@ -1,0 +1,81 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="Verify Email — XR Club">
+  <div class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+      <img src={`${base}Images/XR Logo.png`} alt="XR Club" class="auth-card__logo" />
+
+      <div id="loading-state">
+        <h1 class="auth-card__title">Verifying…</h1>
+        <p class="auth-card__subtitle">
+          <span class="auth-spinner"></span> Confirming your email address
+        </p>
+      </div>
+
+      <div id="success-state" style="display:none;">
+        <h1 class="auth-card__title">Email Verified!</h1>
+        <p class="auth-card__subtitle">Your account is ready. Redirecting to your application…</p>
+        <a href={`${base}apply`} class="auth-form__btn" style="display:inline-block; text-decoration:none; margin-top:1rem;">
+          Go to Application
+        </a>
+      </div>
+
+      <div id="error-state" style="display:none;">
+        <h1 class="auth-card__title">Verification Failed</h1>
+        <div id="error-msg" class="auth-card__error"></div>
+        <p class="auth-card__subtitle">
+          The link may have expired. <a href={`${base}signup`} class="auth-card__link">Sign up again</a> or
+          <a href={`${base}login`} class="auth-card__link">log in</a> if you already verified.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const base = import.meta.env.BASE_URL;
+    const loadingState = document.getElementById('loading-state')!;
+    const successState = document.getElementById('success-state')!;
+    const errorState = document.getElementById('error-state')!;
+    const errorMsg = document.getElementById('error-msg')!;
+
+    (async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        loadingState.style.display = 'none';
+        errorMsg.textContent = error.message;
+        errorState.style.display = 'block';
+        return;
+      }
+
+      if (session) {
+        loadingState.style.display = 'none';
+        successState.style.display = 'block';
+        setTimeout(() => { window.location.href = `${base}apply`; }, 2000);
+      } else {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_IN') {
+            loadingState.style.display = 'none';
+            successState.style.display = 'block';
+            subscription.unsubscribe();
+            setTimeout(() => { window.location.href = `${base}apply`; }, 2000);
+          }
+        });
+
+        setTimeout(() => {
+          if (loadingState.style.display !== 'none') {
+            loadingState.style.display = 'none';
+            errorMsg.textContent = 'Verification timed out. The link may be invalid or expired.';
+            errorState.style.display = 'block';
+            subscription.unsubscribe();
+          }
+        }, 10000);
+      }
+    })();
+  </script>
+</AppLayout>

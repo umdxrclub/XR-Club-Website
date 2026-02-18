@@ -1,0 +1,226 @@
+<section class="research" data-research>
+  <div class="research__bg" data-research-bg></div>
+  <div class="research__content" data-research-content>
+    <div class="research__header" data-research-header>
+      <span class="research__bg-text">RESEARCH</span>
+      <h2 class="research__title">Research</h2>
+      <p class="research__subtitle">Pushing the boundaries of extended reality through academic exploration and hands-on experimentation.</p>
+    </div>
+
+    <div class="research__grid" data-research-grid>
+      <div class="research__card" data-research-card>
+        <div class="research__card-image">
+          <span class="research__card-placeholder">Image</span>
+        </div>
+        <div class="research__card-body">
+          <h3 class="research__card-title">Spatial Computing</h3>
+          <p class="research__card-text">Research into spatial interfaces and interaction paradigms for mixed reality environments.</p>
+        </div>
+      </div>
+
+      <div class="research__card" data-research-card>
+        <div class="research__card-image">
+          <span class="research__card-placeholder">Image</span>
+        </div>
+        <div class="research__card-body">
+          <h3 class="research__card-title">Computer Vision</h3>
+          <p class="research__card-text">Developing real-time tracking and recognition systems for immersive applications.</p>
+        </div>
+      </div>
+
+      <div class="research__card" data-research-card>
+        <div class="research__card-image">
+          <span class="research__card-placeholder">Image</span>
+        </div>
+        <div class="research__card-body">
+          <h3 class="research__card-title">Haptic Feedback</h3>
+          <p class="research__card-text">Exploring tactile feedback mechanisms to enhance presence in virtual environments.</p>
+        </div>
+      </div>
+
+      <div class="research__card" data-research-card>
+        <div class="research__card-image">
+          <span class="research__card-placeholder">Image</span>
+        </div>
+        <div class="research__card-body">
+          <h3 class="research__card-title">Neural Interfaces</h3>
+          <p class="research__card-text">Investigating brain-computer interfaces for next-generation XR control systems.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .research {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden;
+    z-index: 0;
+  }
+
+  .research__bg {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: 0;
+  }
+
+  .research__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-3xl) var(--page-padding);
+    color: var(--color-black);
+  }
+
+  .research__header {
+    position: relative;
+    margin-bottom: var(--space-3xl);
+    text-align: center;
+  }
+
+  .research__bg-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10vw;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.08);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .research__title {
+    font-size: 4vw;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .research__subtitle {
+    font-size: 1vw;
+    font-weight: 300;
+    max-width: 35vw;
+    margin: var(--space-lg) auto 0;
+    opacity: 0.6;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .research__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .research__card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+  }
+
+  .research__card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  .research__card-image {
+    aspect-ratio: 16 / 9;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .research__card-placeholder {
+    font-size: var(--font-size-sm);
+    color: rgba(0, 0, 0, 0.25);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .research__card-body {
+    padding: var(--space-lg);
+  }
+
+  .research__card-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    letter-spacing: -0.01em;
+  }
+
+  .research__card-text {
+    font-size: var(--font-size-sm);
+    font-weight: 300;
+    line-height: 1.6;
+    opacity: 0.65;
+  }
+
+  @media (max-width: 992px) {
+    .research__title {
+      font-size: 5vw;
+    }
+
+    .research__subtitle {
+      font-size: 1.6vw;
+      max-width: 50vw;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .research__bg-text {
+      font-size: 18vw;
+    }
+
+    .research__title {
+      font-size: 32px;
+    }
+
+    .research__subtitle {
+      font-size: 14px;
+      max-width: 100%;
+    }
+
+    .research__grid {
+      grid-template-columns: 1fr;
+      max-width: 400px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .research__content {
+      padding: var(--space-xl) var(--page-padding);
+    }
+
+    .research__header {
+      margin-bottom: var(--space-xl);
+    }
+
+    .research__title {
+      font-size: 26px;
+    }
+
+    .research__card-body {
+      padding: var(--space-md);
+    }
+  }
+</style>

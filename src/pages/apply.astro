@@ -1,0 +1,425 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="Apply — XR Club">
+  <div class="auth-page" id="loading-state">
+    <div class="auth-card" style="text-align:center;">
+      <span class="auth-spinner"></span>
+      <p class="auth-card__subtitle" style="margin-top:1rem;">Loading your application…</p>
+    </div>
+  </div>
+
+  <div class="apply-page" id="form-state" style="display:none;">
+    <div class="apply-header">
+      <h1 class="apply-title">XR Club Application</h1>
+      <span id="status-badge" class="status-badge status-badge--draft">Draft</span>
+    </div>
+
+    <form id="apply-form">
+      <div class="apply-section">
+        <h2 class="apply-section__title">Personal Information</h2>
+        <div class="apply-grid">
+          <div class="apply-field">
+            <label for="first_name">First Name *</label>
+            <input class="apply-input" type="text" id="first_name" name="first_name" placeholder="John" required />
+          </div>
+          <div class="apply-field">
+            <label for="last_name">Last Name *</label>
+            <input class="apply-input" type="text" id="last_name" name="last_name" placeholder="Doe" required />
+          </div>
+          <div class="apply-field apply-field--full">
+            <label for="umd_email">UMD Email *</label>
+            <input class="apply-input" type="email" id="umd_email" name="umd_email" placeholder="jdoe@umd.edu" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="apply-section">
+        <h2 class="apply-section__title">Academic Information</h2>
+        <div class="apply-grid">
+          <div class="apply-field">
+            <label for="major">Major *</label>
+            <input class="apply-input" type="text" id="major" name="major" placeholder="Computer Science" required />
+          </div>
+          <div class="apply-field">
+            <label for="graduation_year">Graduation Year *</label>
+            <input class="apply-input" type="number" id="graduation_year" name="graduation_year" placeholder="2027" min="2024" max="2035" required />
+          </div>
+          <div class="apply-field">
+            <label for="year_in_school">Year in School *</label>
+            <select class="apply-input" id="year_in_school" name="year_in_school" required>
+              <option value="">Select…</option>
+              <option value="freshman">Freshman</option>
+              <option value="sophomore">Sophomore</option>
+              <option value="junior">Junior</option>
+              <option value="senior">Senior</option>
+              <option value="graduate">Graduate</option>
+            </select>
+          </div>
+          <div class="apply-field">
+            <label for="experience_level">XR Experience Level</label>
+            <select class="apply-input" id="experience_level" name="experience_level">
+              <option value="">Select…</option>
+              <option value="none">None — I'm brand new</option>
+              <option value="beginner">Beginner — Tried a headset</option>
+              <option value="intermediate">Intermediate — Built a project</option>
+              <option value="advanced">Advanced — Shipped XR apps</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="apply-section">
+        <h2 class="apply-section__title">Interests</h2>
+        <div class="apply-field">
+          <label>What areas interest you? (select all that apply)</label>
+          <div class="apply-checkboxes" id="interests-group">
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="VR Development" /> VR Development</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="AR Development" /> AR Development</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="3D Modeling" /> 3D Modeling</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="Game Design" /> Game Design</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="UX/UI Design" /> UX/UI Design</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="Hardware/Optics" /> Hardware / Optics</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="Research" /> Research</label>
+            <label class="apply-checkbox"><input type="checkbox" name="interests" value="Film/360 Video" /> Film / 360 Video</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="apply-section">
+        <h2 class="apply-section__title">Tell Us More</h2>
+        <div class="apply-field">
+          <label for="why_join">Why do you want to join XR Club? *</label>
+          <textarea class="apply-input" id="why_join" name="why_join" placeholder="Tell us about your motivation…" required></textarea>
+        </div>
+        <div class="apply-field" style="margin-top:1rem;">
+          <label for="project_preference">Is there a specific project or area you'd like to work on?</label>
+          <textarea class="apply-input" id="project_preference" name="project_preference" placeholder="Optional — share any ideas…"></textarea>
+        </div>
+      </div>
+
+      <div class="apply-section">
+        <h2 class="apply-section__title">Portfolio & Resume</h2>
+        <div class="apply-field">
+          <label for="portfolio_url">Portfolio / GitHub URL (optional)</label>
+          <input class="apply-input" type="url" id="portfolio_url" name="portfolio_url" placeholder="https://github.com/you" />
+        </div>
+        <div class="apply-field" style="margin-top:1rem;">
+          <label>Resume (PDF, max 5MB)</label>
+          <div class="apply-upload" id="upload-zone">
+            <input type="file" id="resume-input" accept=".pdf" style="display:none;" />
+            <p class="apply-upload__text" id="upload-text">Click or drag a PDF here to upload</p>
+            <p class="apply-upload__filename" id="upload-filename" style="display:none;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="apply-actions">
+        <button type="button" class="apply-btn apply-btn--draft" id="save-draft-btn">Save Draft</button>
+        <button type="submit" class="apply-btn apply-btn--submit" id="submit-btn">Submit Application</button>
+      </div>
+      <p class="apply-save-status" id="save-status"></p>
+    </form>
+  </div>
+
+  <div class="apply-page" id="submitted-state" style="display:none;">
+    <div class="apply-header">
+      <h1 class="apply-title">Your Application</h1>
+      <span id="submitted-badge" class="status-badge"></span>
+    </div>
+    <div class="apply-submitted" id="submitted-content"></div>
+    <p class="auth-card__footer" style="margin-top:2rem;">
+      <button id="logout-btn" class="auth-card__link" style="background:none;border:none;cursor:pointer;font-size:inherit;font-family:inherit;">Sign Out</button>
+    </p>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+    import type { Application } from '../lib/types';
+
+    const base = import.meta.env.BASE_URL;
+    const loadingState = document.getElementById('loading-state')!;
+    const formState = document.getElementById('form-state')!;
+    const submittedState = document.getElementById('submitted-state')!;
+    const form = document.getElementById('apply-form') as HTMLFormElement;
+    const saveDraftBtn = document.getElementById('save-draft-btn') as HTMLButtonElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const saveStatus = document.getElementById('save-status')!;
+    const statusBadge = document.getElementById('status-badge')!;
+    const uploadZone = document.getElementById('upload-zone')!;
+    const resumeInput = document.getElementById('resume-input') as HTMLInputElement;
+    const uploadText = document.getElementById('upload-text')!;
+    const uploadFilename = document.getElementById('upload-filename')!;
+    let currentApp: Application | null = null;
+    let userId: string = '';
+    let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = `${base}login?redirect=${base}apply`;
+        return;
+      }
+      userId = user.id;
+
+      const { data: existingApp } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (existingApp) {
+        currentApp = existingApp as Application;
+      } else {
+        const { data: newApp } = await supabase
+          .from('applications')
+          .insert({ user_id: userId })
+          .select()
+          .single();
+        currentApp = newApp as Application;
+      }
+
+      if (!currentApp) {
+        loadingState.innerHTML = '<div class="auth-card" style="text-align:center;"><p class="auth-card__error">Failed to load application. Please try again.</p></div>';
+        return;
+      }
+
+      if (currentApp.status !== 'draft') {
+        showSubmittedView(currentApp);
+      } else {
+        populateForm(currentApp);
+        loadingState.style.display = 'none';
+        formState.style.display = 'block';
+      }
+    })();
+
+    function populateForm(app: Application) {
+      const fields: (keyof Application)[] = [
+        'first_name', 'last_name', 'umd_email', 'major',
+        'graduation_year', 'year_in_school', 'experience_level',
+        'why_join', 'project_preference', 'portfolio_url'
+      ];
+
+      for (const field of fields) {
+        const el = document.getElementById(field) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+        if (el && app[field] != null) {
+          el.value = String(app[field]);
+        }
+      }
+
+      if (app.interests && Array.isArray(app.interests)) {
+        document.querySelectorAll<HTMLInputElement>('input[name="interests"]').forEach(cb => {
+          cb.checked = app.interests!.includes(cb.value);
+        });
+      }
+
+      if (app.resume_path) {
+        const filename = app.resume_path.split('/').pop() || 'resume.pdf';
+        uploadFilename.textContent = filename;
+        uploadFilename.style.display = 'block';
+        uploadText.textContent = 'Click to replace';
+      }
+    }
+
+    function collectFormData(): Partial<Application> {
+      const get = (id: string) => {
+        const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+        return el?.value?.trim() || null;
+      };
+
+      const interests: string[] = [];
+      document.querySelectorAll<HTMLInputElement>('input[name="interests"]:checked').forEach(cb => {
+        interests.push(cb.value);
+      });
+
+      const gradYear = get('graduation_year');
+
+      return {
+        first_name: get('first_name'),
+        last_name: get('last_name'),
+        umd_email: get('umd_email'),
+        major: get('major'),
+        graduation_year: gradYear ? parseInt(gradYear) : null,
+        year_in_school: get('year_in_school') as Application['year_in_school'],
+        experience_level: get('experience_level') as Application['experience_level'],
+        interests: interests.length > 0 ? interests : null,
+        why_join: get('why_join'),
+        project_preference: get('project_preference'),
+        portfolio_url: get('portfolio_url'),
+      };
+    }
+
+    async function saveDraft(showNotification = true) {
+      if (!currentApp) return;
+      const data = collectFormData();
+
+      const { error } = await supabase
+        .from('applications')
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('id', currentApp.id);
+
+      if (showNotification) {
+        if (error) {
+          saveStatus.textContent = 'Failed to save';
+          saveStatus.style.color = '#f87171';
+        } else {
+          saveStatus.textContent = 'Draft saved';
+          saveStatus.style.color = 'rgba(255,255,255,0.35)';
+        }
+        setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+      }
+    }
+
+    saveDraftBtn.addEventListener('click', () => saveDraft(true));
+
+    form.addEventListener('input', () => {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      saveStatus.textContent = 'Saving…';
+      saveStatus.style.color = 'rgba(255,255,255,0.25)';
+      autoSaveTimer = setTimeout(() => saveDraft(true), 2000);
+    });
+
+    uploadZone.addEventListener('click', () => resumeInput.click());
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('apply-upload--active');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('apply-upload--active');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('apply-upload--active');
+      const file = e.dataTransfer?.files[0];
+      if (file) handleResumeUpload(file);
+    });
+
+    resumeInput.addEventListener('change', () => {
+      const file = resumeInput.files?.[0];
+      if (file) handleResumeUpload(file);
+    });
+
+    async function handleResumeUpload(file: File) {
+      if (file.type !== 'application/pdf') {
+        alert('Please upload a PDF file.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File must be under 5MB.');
+        return;
+      }
+
+      uploadText.textContent = 'Uploading…';
+
+      const path = `${userId}/${file.name}`;
+      const { error } = await supabase.storage
+        .from('resumes')
+        .upload(path, file, { upsert: true });
+
+      if (error) {
+        uploadText.textContent = 'Upload failed. Click to try again.';
+        return;
+      }
+
+      await supabase
+        .from('applications')
+        .update({ resume_path: path })
+        .eq('id', currentApp!.id);
+
+      if (currentApp) currentApp.resume_path = path;
+
+      uploadText.textContent = 'Click to replace';
+      uploadFilename.textContent = file.name;
+      uploadFilename.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentApp) return;
+
+      const data = collectFormData();
+      const missing = [];
+      if (!data.first_name) missing.push('First Name');
+      if (!data.last_name) missing.push('Last Name');
+      if (!data.umd_email) missing.push('UMD Email');
+      if (!data.major) missing.push('Major');
+      if (!data.graduation_year) missing.push('Graduation Year');
+      if (!data.year_in_school) missing.push('Year in School');
+      if (!data.why_join) missing.push('Why do you want to join');
+
+      if (missing.length > 0) {
+        alert('Please fill in: ' + missing.join(', '));
+        return;
+      }
+
+      if (!confirm('Once submitted, you cannot edit your application. Continue?')) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="auth-spinner"></span>Submitting…';
+
+      const { error } = await supabase
+        .from('applications')
+        .update({
+          ...data,
+          status: 'submitted',
+          submitted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', currentApp.id);
+
+      if (error) {
+        alert('Failed to submit: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+        return;
+      }
+
+      currentApp = { ...currentApp, ...data, status: 'submitted' } as Application;
+      showSubmittedView(currentApp);
+    });
+
+    function showSubmittedView(app: Application) {
+      loadingState.style.display = 'none';
+      formState.style.display = 'none';
+      submittedState.style.display = 'block';
+
+      const badge = document.getElementById('submitted-badge')!;
+      badge.className = `status-badge status-badge--${app.status}`;
+      badge.textContent = app.status.replace('_', ' ');
+
+      const content = document.getElementById('submitted-content')!;
+      const field = (label: string, value: string | null | undefined) => {
+        if (!value) return '';
+        return `<div class="apply-submitted__field">
+          <div class="apply-submitted__label">${label}</div>
+          <div class="apply-submitted__value">${value}</div>
+        </div>`;
+      };
+
+      content.innerHTML = `
+        ${field('Name', [app.first_name, app.last_name].filter(Boolean).join(' '))}
+        ${field('UMD Email', app.umd_email)}
+        ${field('Major', app.major)}
+        ${field('Graduation Year', app.graduation_year?.toString())}
+        ${field('Year in School', app.year_in_school)}
+        ${field('XR Experience', app.experience_level)}
+        ${field('Interests', app.interests?.join(', '))}
+        ${field('Why Join', app.why_join)}
+        ${field('Project Preference', app.project_preference)}
+        ${field('Portfolio URL', app.portfolio_url)}
+        ${field('Resume', app.resume_path ? app.resume_path.split('/').pop() : null)}
+        ${field('Submitted', app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : null)}
+      `;
+    }
+
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = base;
+    });
+  </script>
+</AppLayout>

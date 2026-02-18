@@ -1,0 +1,150 @@
+<section class="render" data-render>
+  <canvas class="render__canvas" data-render-canvas></canvas>
+
+  <div class="render__overlay" data-render-overlay>
+    <button class="render__start-btn" data-render-start>Get Started</button>
+  </div>
+
+  <div class="render__build" data-render-build>
+    <h2 class="render__build-title">Build Anything</h2>
+    <p class="render__build-sub">(This scene was built in Blender)</p>
+  </div>
+  <div class="render__community" data-render-community>
+    <h2 class="render__community-title">Build Together</h2>
+    <p class="render__community-sub">(Built entirely using one of our corporate sponsors exclusive software)</p>
+  </div>
+</section>
+
+<style>
+  .render {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden;
+    background: #000;
+    z-index: 0;
+  }
+
+  .render__canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .render__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .render__start-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.75rem 2.2rem;
+    border-radius: 980px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .render__start-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .render__build {
+    position: absolute;
+    top: 15%;
+    right: 12%;
+    z-index: 1;
+    pointer-events: none;
+    text-align: right;
+  }
+
+  .render__build-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 5vw;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .render__build-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 1vw;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.3em;
+  }
+
+  .render__community {
+    position: absolute;
+    top: 15%;
+    right: 12%;
+    z-index: 1;
+    pointer-events: none;
+    text-align: right;
+  }
+
+  .render__community-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 5vw;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .render__community-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 1vw;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.3em;
+  }
+
+  @media (max-width: 768px) {
+    .render__start-btn {
+      font-size: 0.95rem;
+      padding: 0.65rem 1.8rem;
+    }
+
+    .render__build {
+      top: 12%;
+      right: 8%;
+    }
+
+    .render__build-title {
+      font-size: 28px;
+    }
+
+    .render__build-sub {
+      font-size: 12px;
+    }
+
+    .render__community {
+      top: 12%;
+      right: 8%;
+    }
+
+    .render__community-title {
+      font-size: 28px;
+    }
+
+    .render__community-sub {
+      font-size: 12px;
+    }
+  }
+</style>

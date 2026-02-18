@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import IntroSequence from '../components/IntroSequence.astro';
+import SplitHero from '../components/SplitHero.astro';
+import RenderSection from '../components/RenderSection.astro';
+import AboutSection from '../components/AboutSection.astro';
+import ProjectsSection from '../components/ProjectsSection.astro';
+import LabSection from '../components/LabSection.astro';
+import EventsSection from '../components/EventsSection.astro';
+import BoardSection from '../components/BoardSection.astro';
+import ResourceSection from '../components/ResourceSection.astro';
+---
+
+<BaseLayout title="XR Club">
+  <IntroSequence />
+  <Header />
+
+  <div class="hero-title" data-hero-title>
+    <h1 class="hero-title__heading">XR Club</h1>
+    <p class="hero-title__desc">Designing immersive experiences at the intersection of virtual, augmented, and mixed reality.</p>
+  </div>
+
+  <main data-main>
+    <SplitHero />
+    <RenderSection />
+    <AboutSection />
+  </main>
+
+  <ProjectsSection />
+  <LabSection />
+  <EventsSection />
+  <BoardSection />
+  <ResourceSection />
+  <Footer />
+</BaseLayout>
+
+<style>
+  main {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .hero-title {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: 100dvh;
+    text-align: center;
+  }
+
+  .hero-title__eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  .hero-title__heading {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(5rem, 12vw, 10rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    text-shadow: 0 8px 40px rgba(0, 0, 0, 1), 0 4px 15px rgba(0, 0, 0, 1), 0 0 120px rgba(0, 0, 0, 0.8), 0 0 200px rgba(0, 0, 0, 0.5);
+  }
+
+  .hero-title__desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.6;
+    margin-top: 1.8rem;
+    max-width: 480px;
+  }
+
+  @media (max-width: 768px) {
+    .hero-title {
+      padding-top: 15vh;
+    }
+
+    .hero-title__heading {
+      font-size: clamp(3.5rem, 14vw, 6rem);
+    }
+
+    .hero-title__desc {
+      font-size: 1rem;
+      max-width: 360px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero-title {
+      padding-top: 12vh;
+      padding-left: 5vw;
+      padding-right: 5vw;
+    }
+  }
+</style>
+
+<script>
+  import '../animations/index';
+</script>

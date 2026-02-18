@@ -1,0 +1,218 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<header class="header" data-header>
+  <div class="header__inner">
+    <a href={`${base}`} class="header__logo-link">
+      <img src={`${base}Images/XR Logo.png`} alt="XR Club" class="header__logo-img" fetchpriority="high" />
+    </a>
+    <nav class="header__nav">
+      <a href="#about" class="header__link" data-nav-link data-scroll-to="about">About</a>
+      <a href="#projects" class="header__link" data-nav-link data-scroll-to="projects">Projects</a>
+      <a href="#lab" class="header__link" data-nav-link data-scroll-to="lab">Lab & History</a>
+      <a href="#events" class="header__link" data-nav-link data-scroll-to="events">Events</a>
+      <a href="#board" class="header__link" data-nav-link data-scroll-to="board">Board</a>
+      <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" class="header__link">Discord</a>
+      <a href="https://terplink.umd.edu/organization/xr-club" target="_blank" rel="noopener" class="header__link">TerpLink</a>
+      <a href={`${base}login`} class="header__link" id="auth-login-link">Login / Sign Up</a>
+      <span class="header__user" id="auth-user-info" style="display:none;">
+        <span class="header__user-name" id="auth-user-name"></span>
+        <button class="header__link header__signout" id="auth-signout-btn">Sign Out</button>
+      </span>
+      <a href={`${base}apply`} class="header__btn">Apply Now</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-navigation);
+    pointer-events: none;
+    opacity: 0;
+    padding: 1rem var(--page-padding);
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    width: 100%;
+    pointer-events: auto;
+  }
+
+  .header__logo-link {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .header__logo-img {
+    height: 38px;
+    width: auto;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: none;
+  }
+
+  .header__nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .header__link {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 200ms ease;
+    white-space: nowrap;
+  }
+
+  .header__link:hover {
+    color: #fff;
+  }
+
+  .header__btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.5rem 1.4rem;
+    border-radius: 6px;
+    transition: background 200ms ease, border-color 200ms ease;
+    white-space: nowrap;
+  }
+
+  .header__btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .header__user {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .header__user-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .header__signout {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 768px) {
+    .header__logo-img {
+      height: 32px;
+      border-radius: 7px;
+    }
+
+    .header__nav {
+      gap: 1.2rem;
+    }
+
+    .header__link {
+      font-size: 0.95rem;
+    }
+
+    .header__btn {
+      font-size: 0.95rem;
+      padding: 0.4rem 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header__logo-img {
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    .header__nav {
+      gap: 0.8rem;
+    }
+
+    .header__link {
+      font-size: 0.85rem;
+    }
+
+    .header__btn {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.8rem;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('[data-scroll-to]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = (link as HTMLElement).dataset.scrollTo;
+      if (!target) return;
+
+      if (target === 'about') {
+        const main = document.querySelector('[data-main]') as HTMLElement;
+        if (main) {
+          const vh = window.innerHeight;
+          const pinScrollDist = 4.0 * 1.5 * vh;
+          const aboutPos = main.offsetTop + pinScrollDist * (3.95 / 4.0);
+          window.scrollTo({ top: aboutPos, behavior: 'instant' });
+        }
+        return;
+      }
+
+      const section = document.querySelector(`[data-${target}]`) as HTMLElement;
+      if (section) {
+        section.scrollIntoView({ behavior: 'instant' });
+      }
+    });
+  });
+
+  import { supabase } from '../lib/supabase';
+
+  const loginLink = document.getElementById('auth-login-link');
+  const userInfo = document.getElementById('auth-user-info');
+  const userName = document.getElementById('auth-user-name');
+  const signoutBtn = document.getElementById('auth-signout-btn');
+
+  (async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && loginLink && userInfo && userName) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      userName.textContent = profile?.full_name || user.email || 'User';
+      loginLink.style.display = 'none';
+      userInfo.style.display = 'inline-flex';
+    }
+  })();
+
+  signoutBtn?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = import.meta.env.BASE_URL;
+  });
+</script>

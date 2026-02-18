@@ -1,0 +1,281 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<section class="board" data-board>
+  <img class="board__bg" src={`${base}Images/photo5.jpg`} alt="" />
+  <div class="board__dim"></div>
+
+  <div class="board__layout">
+    <div class="board__header">
+      <div class="board__title-wrap">
+        <span class="board__title-outline">XR</span>
+        <h2 class="board__title">Board</h2>
+      </div>
+      <p class="board__desc">The board is made up of undergraduate and graduate students (many of whom are project leaders) and plays a key role in keeping the club organized. Major club decisions are guided collectively by the full board to ensure a range of perspectives is considered. Our board does not have a formal application process, instead, we as a board vote on project members to decide if they are a good fit for a board position.</p>
+    </div>
+
+    <div class="board__grid">
+      <div class="board__card board__card--lead">
+        <img class="board__photo board__photo--lead" src={`${base}Images/people/russell.jpg`} alt="Russell Mehta" />
+        <h3 class="board__name board__name--lead">Russell Mehta</h3>
+        <p class="board__role">President</p>
+      </div>
+      <div class="board__card board__card--lead">
+        <img class="board__photo board__photo--lead" src={`${base}Images/people/kyle.webp`} alt="Kyle Goh" />
+        <h3 class="board__name board__name--lead">Kyle Goh</h3>
+        <p class="board__role">Vice President</p>
+      </div>
+      <div class="board__card board__card--lead">
+        <img class="board__photo board__photo--lead" src={`${base}Images/XR Logo.png`} alt="Dinushka Jagodige" />
+        <h3 class="board__name board__name--lead">Dinushka Jagodige</h3>
+        <p class="board__role">Treasurer</p>
+      </div>
+
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Samuel Selvin Wiggins" />
+        <h3 class="board__name">Samuel Selvin Wiggins</h3>
+        <p class="board__role">Board Member</p>
+      </div>
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Katherine Hong" />
+        <h3 class="board__name">Katherine Hong</h3>
+        <p class="board__role">Board Member</p>
+      </div>
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Agha Huseynov" />
+        <h3 class="board__name">Agha Huseynov</h3>
+        <p class="board__role">Board Member</p>
+      </div>
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Pallavi Kothapalli" />
+        <h3 class="board__name">Pallavi Kothapalli</h3>
+        <p class="board__role">Board Member</p>
+      </div>
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Mohan Vamsi" />
+        <h3 class="board__name">Mohan Vamsi</h3>
+        <p class="board__role">Board Member</p>
+      </div>
+      <div class="board__card">
+        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Ian E Mcdermott" />
+        <h3 class="board__name">Ian E Mcdermott</h3>
+        <p class="board__role">Faculty Advisor</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .board {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .board::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(rgba(0, 0, 0, 0.95), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .board::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .board__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .board__dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1;
+  }
+
+  .board__layout {
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem var(--page-padding) 3rem;
+    gap: 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .board__header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .board__title-wrap {
+    position: relative;
+  }
+
+  .board__title-outline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(6rem, 11vw, 12rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .board__title {
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 0.9;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+
+  .board__desc {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.78rem, 0.9vw, 0.92rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.6;
+    max-width: 720px;
+  }
+
+  .board__grid {
+    width: 100%;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .board__card {
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0.8rem;
+    gap: 0.4rem;
+    transition: border-color 250ms ease, background 250ms ease;
+  }
+
+  .board__card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .board__card--lead {
+    border-color: rgba(255, 255, 255, 0.14);
+    padding: 1.2rem 0.8rem;
+  }
+
+  .board__photo {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .board__photo--lead {
+    width: 90px;
+    height: 90px;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .board__name {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 1vw, 1rem);
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+
+  .board__name--lead {
+    font-size: clamp(0.95rem, 1.1vw, 1.1rem);
+    font-weight: 700;
+  }
+
+  .board__role {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.7rem, 0.85vw, 0.85rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .board__grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .board__photo {
+      width: 80px;
+      height: 80px;
+    }
+
+    .board__title-outline { font-size: 5rem; }
+    .board__title { font-size: 2.5rem; }
+  }
+
+  @media (max-width: 480px) {
+    .board__layout { padding: 4rem 1rem 3rem; }
+
+    .board__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .board__card {
+      padding: 1rem 0.75rem;
+    }
+
+    .board__photo {
+      width: 70px;
+      height: 70px;
+    }
+
+    .board__title-outline { font-size: 4rem; }
+    .board__title { font-size: 2rem; }
+  }
+</style>

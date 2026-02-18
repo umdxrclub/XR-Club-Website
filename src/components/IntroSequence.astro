@@ -1,0 +1,137 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<div class="intro" data-intro>
+  <div class="intro__bg" id="bg-container">
+    <img id="bg-image" class="intro__bg-image" src={`${base}background/0000.png`} alt="" />
+  </div>
+  <div class="intro__split" id="split-scene">
+    <div class="intro__split-white">
+      <img src={`${base}Images/CS.png`} alt="CS" class="intro__cs-logo" />
+    </div>
+    <div class="intro__split-black" id="split-black">
+      <img src={`${base}Images/IMDM.png`} alt="IMDM" class="intro__imdm-logo" />
+    </div>
+  </div>
+</div>
+
+<style>
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-intro);
+    overflow: hidden;
+    background: #000;
+  }
+
+  .intro__bg {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: #000;
+  }
+
+  .intro__bg-image {
+    width: 1920px;
+    height: 1080px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: none;
+  }
+
+  .intro__split {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .intro__split.visible {
+    opacity: 1;
+  }
+
+  .intro__split-white {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 15%;
+  }
+
+  .intro__split-black {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55%;
+    height: 100%;
+    background: #000;
+    clip-path: polygon(35% 0, 100% 0, 100% 100%, 5% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 10%;
+    transform: translate(120%, -120%);
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .intro__split-black.slide-in {
+    transform: translate(0, 0);
+  }
+
+  .intro__cs-logo {
+    max-height: 25vh;
+    max-width: 40%;
+    width: auto;
+    height: auto;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.2s;
+  }
+
+  .intro__split.visible .intro__cs-logo {
+    opacity: 1;
+  }
+
+  .intro__imdm-logo {
+    max-height: 30vh;
+    max-width: 50%;
+    width: auto;
+    height: auto;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.5s;
+  }
+
+  .intro__split.visible .intro__imdm-logo {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    .intro__bg-image {
+      width: 100vw;
+      height: auto;
+      min-height: 100vh;
+      object-fit: cover;
+    }
+
+    .intro__split-white {
+      justify-content: center;
+      padding-left: 0;
+    }
+
+    .intro__cs-logo {
+      max-height: 15vh;
+      max-width: 50%;
+    }
+
+    .intro__imdm-logo {
+      max-height: 18vh;
+      max-width: 60%;
+    }
+  }
+</style>

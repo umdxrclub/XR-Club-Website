@@ -1,0 +1,491 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="Dashboard — XR Club">
+  <div class="auth-page" id="loading-state">
+    <div class="auth-card" style="text-align:center;">
+      <span class="auth-spinner"></span>
+      <p class="auth-card__subtitle" style="margin-top:1rem;">Loading dashboard…</p>
+    </div>
+  </div>
+
+  <div class="dash" id="dash" style="display:none;">
+    <aside class="dash__sidebar">
+      <div class="dash__sidebar-header">
+        <img src={`${base}Images/XR Logo.png`} alt="XR Club" class="dash__logo" />
+        <div class="dash__user-name" id="user-name"></div>
+        <div class="dash__user-role" id="user-role"></div>
+      </div>
+
+      <nav class="dash__nav">
+        <div class="dash__nav-link dash__nav-link--active" data-tab="applications">Applications</div>
+        <div class="dash__nav-link" data-tab="activity">Activity Log</div>
+        <a href={base} class="dash__nav-link">Back to Site</a>
+      </nav>
+
+      <div class="dash__sidebar-footer">
+        <button class="dash__logout" id="logout-btn">Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="dash__main">
+      <div id="applications-view">
+        <h1 class="dash__title">Applications</h1>
+
+        <div class="dash__stats" id="stats-grid"></div>
+
+        <div class="dash__bulk" id="bulk-bar">
+          <span class="dash__bulk-count" id="bulk-count">0 selected</span>
+          <select class="dash__bulk-btn" id="bulk-status-select" style="appearance:auto; padding:0.4rem;">
+            <option value="">Change status to…</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button class="dash__bulk-btn" id="bulk-apply-btn">Apply</button>
+        </div>
+
+        <div class="dash__toolbar">
+          <input class="dash__search" type="text" id="search-input" placeholder="Search by name, email, or major…" />
+          <select class="dash__filter" id="filter-status">
+            <option value="">All Statuses</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="draft">Draft</option>
+          </select>
+          <button class="dash__export-btn" id="export-btn">Export CSV</button>
+        </div>
+
+        <table class="dash__table" id="app-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" /></th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Major</th>
+              <th>Year</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="app-tbody"></tbody>
+        </table>
+
+        <div class="dash__empty" id="empty-msg" style="display:none;">No applications found.</div>
+      </div>
+
+      <div id="activity-view" class="dash__activity">
+        <h1 class="dash__title">Activity Log</h1>
+        <div id="activity-list"></div>
+        <div class="dash__empty" id="activity-empty" style="display:none;">No activity yet.</div>
+      </div>
+    </main>
+
+    <div class="dash__detail" id="detail-panel">
+      <button class="dash__detail-close" id="detail-close">← Back</button>
+      <div id="detail-content"></div>
+
+      <div class="dash__detail-field">
+        <div class="dash__detail-label">Status</div>
+        <select class="dash__detail-status" id="detail-status">
+          <option value="submitted">Submitted</option>
+          <option value="under_review">Under Review</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div class="dash__notes">
+        <div class="dash__notes-title">Notes</div>
+        <div id="notes-list"></div>
+        <textarea class="dash__note-input" id="note-input" placeholder="Add a note…"></textarea>
+        <button class="dash__note-btn" id="add-note-btn">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+    import type { Application, Profile } from '../lib/types';
+
+    const base = import.meta.env.BASE_URL;
+    let currentUser: Profile | null = null;
+    let applications: (Application & { profiles?: { full_name: string; email: string } })[] = [];
+    let selectedIds = new Set<string>();
+    let openAppId: string | null = null;
+
+    const loadingState = document.getElementById('loading-state')!;
+    const dash = document.getElementById('dash')!;
+    const tbody = document.getElementById('app-tbody')!;
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const filterStatus = document.getElementById('filter-status') as HTMLSelectElement;
+    const statsGrid = document.getElementById('stats-grid')!;
+    const emptyMsg = document.getElementById('empty-msg')!;
+    const selectAll = document.getElementById('select-all') as HTMLInputElement;
+    const bulkBar = document.getElementById('bulk-bar')!;
+    const bulkCount = document.getElementById('bulk-count')!;
+    const detailPanel = document.getElementById('detail-panel')!;
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { window.location.href = `${base}login`; return; }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || (profile.role !== 'board' && profile.role !== 'admin')) {
+        window.location.href = base;
+        return;
+      }
+
+      currentUser = profile as Profile;
+      document.getElementById('user-name')!.textContent = currentUser.full_name;
+      document.getElementById('user-role')!.textContent = currentUser.role;
+
+      loadingState.style.display = 'none';
+      dash.style.display = 'flex';
+
+      await loadApplications();
+      await loadStats();
+    })();
+
+    async function loadApplications() {
+      const { data } = await supabase
+        .from('applications')
+        .select('*, profiles(full_name, email)')
+        .order('submitted_at', { ascending: false, nullsFirst: false });
+
+      applications = (data || []) as typeof applications;
+      renderTable();
+    }
+
+    async function loadStats() {
+      const statuses = ['submitted', 'under_review', 'accepted', 'rejected', 'draft'];
+      const labels = ['Submitted', 'Under Review', 'Accepted', 'Rejected', 'Draft'];
+
+      let html = '';
+      for (let i = 0; i < statuses.length; i++) {
+        const count = applications.filter(a => a.status === statuses[i]).length;
+        html += `<div class="dash__stat">
+          <div class="dash__stat-num">${count}</div>
+          <div class="dash__stat-label">${labels[i]}</div>
+        </div>`;
+      }
+      statsGrid.innerHTML = html;
+    }
+
+    function renderTable() {
+      const query = searchInput.value.toLowerCase().trim();
+      const statusFilter = filterStatus.value;
+
+      const filtered = applications.filter(app => {
+        if (statusFilter && app.status !== statusFilter) return false;
+        if (query) {
+          const name = `${app.first_name || ''} ${app.last_name || ''}`.toLowerCase();
+          const email = (app.umd_email || app.profiles?.email || '').toLowerCase();
+          const major = (app.major || '').toLowerCase();
+          if (!name.includes(query) && !email.includes(query) && !major.includes(query)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg.style.display = 'block';
+        return;
+      }
+
+      emptyMsg.style.display = 'none';
+      tbody.innerHTML = filtered.map(app => {
+        const name = [app.first_name, app.last_name].filter(Boolean).join(' ') || app.profiles?.full_name || '—';
+        const email = app.umd_email || app.profiles?.email || '—';
+        const submitted = app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : '—';
+        const checked = selectedIds.has(app.id) ? 'checked' : '';
+
+        return `<tr data-id="${app.id}">
+          <td><input type="checkbox" class="row-check" data-id="${app.id}" ${checked} /></td>
+          <td>${esc(name)}</td>
+          <td>${esc(email)}</td>
+          <td>${esc(app.major || '—')}</td>
+          <td>${esc(app.year_in_school || '—')}</td>
+          <td><span class="status-badge status-badge--${app.status}">${app.status.replace('_', ' ')}</span></td>
+          <td>${submitted}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).tagName === 'INPUT') return;
+          openDetail(row.dataset.id!);
+        });
+      });
+
+      tbody.querySelectorAll<HTMLInputElement>('.row-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) selectedIds.add(cb.dataset.id!);
+          else selectedIds.delete(cb.dataset.id!);
+          updateBulkBar();
+        });
+      });
+    }
+
+    function esc(s: string) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    searchInput.addEventListener('input', renderTable);
+    filterStatus.addEventListener('change', renderTable);
+
+    selectAll.addEventListener('change', () => {
+      const checks = tbody.querySelectorAll<HTMLInputElement>('.row-check');
+      checks.forEach(cb => {
+        cb.checked = selectAll.checked;
+        if (selectAll.checked) selectedIds.add(cb.dataset.id!);
+        else selectedIds.delete(cb.dataset.id!);
+      });
+      updateBulkBar();
+    });
+
+    function updateBulkBar() {
+      if (selectedIds.size > 0) {
+        bulkBar.classList.add('dash__bulk--visible');
+        bulkCount.textContent = `${selectedIds.size} selected`;
+      } else {
+        bulkBar.classList.remove('dash__bulk--visible');
+      }
+    }
+
+    document.getElementById('bulk-apply-btn')!.addEventListener('click', async () => {
+      const newStatus = (document.getElementById('bulk-status-select') as HTMLSelectElement).value;
+      if (!newStatus || selectedIds.size === 0) return;
+
+      for (const id of selectedIds) {
+        await supabase.from('applications').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+
+        await supabase.from('activity_log').insert({
+          actor_id: currentUser!.id,
+          action: `Changed status to ${newStatus}`,
+          target_application_id: id,
+          details: { new_status: newStatus },
+        });
+      }
+
+      selectedIds.clear();
+      updateBulkBar();
+      selectAll.checked = false;
+      await loadApplications();
+      await loadStats();
+    });
+
+    document.getElementById('export-btn')!.addEventListener('click', () => {
+      const headers = ['Name', 'Email', 'UMD Email', 'Major', 'Year', 'Graduation', 'Experience', 'Interests', 'Why Join', 'Project Preference', 'Portfolio', 'Status', 'Submitted'];
+      const rows = applications.map(a => [
+        [a.first_name, a.last_name].filter(Boolean).join(' '),
+        a.profiles?.email || '',
+        a.umd_email || '',
+        a.major || '',
+        a.year_in_school || '',
+        a.graduation_year?.toString() || '',
+        a.experience_level || '',
+        (a.interests || []).join('; '),
+        (a.why_join || '').replace(/\n/g, ' '),
+        (a.project_preference || '').replace(/\n/g, ' '),
+        a.portfolio_url || '',
+        a.status,
+        a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : '',
+      ]);
+
+      const csv = [headers, ...rows].map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `xr-club-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    async function openDetail(appId: string) {
+      openAppId = appId;
+      const app = applications.find(a => a.id === appId);
+      if (!app) return;
+
+      const content = document.getElementById('detail-content')!;
+      const field = (label: string, value: string | null | undefined) => {
+        if (!value) return '';
+        return `<div class="dash__detail-field">
+          <div class="dash__detail-label">${label}</div>
+          <div class="dash__detail-value">${esc(value)}</div>
+        </div>`;
+      };
+
+      const name = [app.first_name, app.last_name].filter(Boolean).join(' ') || app.profiles?.full_name || 'Unknown';
+      content.innerHTML = `
+        <div class="dash__detail-name">${esc(name)}</div>
+        ${field('UMD Email', app.umd_email)}
+        ${field('Account Email', app.profiles?.email)}
+        ${field('Major', app.major)}
+        ${field('Year in School', app.year_in_school)}
+        ${field('Graduation Year', app.graduation_year?.toString())}
+        ${field('XR Experience', app.experience_level)}
+        ${field('Interests', app.interests?.join(', '))}
+        ${field('Why Join', app.why_join)}
+        ${field('Project Preference', app.project_preference)}
+        ${field('Portfolio', app.portfolio_url)}
+        ${app.resume_path ? `<div class="dash__detail-field">
+          <div class="dash__detail-label">Resume</div>
+          <div class="dash__detail-value"><a href="#" id="download-resume" style="color:#60a5fa; text-decoration:underline;">${esc(app.resume_path.split('/').pop() || 'resume.pdf')}</a></div>
+        </div>` : ''}
+        ${field('Submitted', app.submitted_at ? new Date(app.submitted_at).toLocaleString() : null)}
+      `;
+
+      const statusSelect = document.getElementById('detail-status') as HTMLSelectElement;
+      statusSelect.value = app.status;
+
+      const dlLink = document.getElementById('download-resume');
+      if (dlLink && app.resume_path) {
+        dlLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const { data } = await supabase.storage.from('resumes').createSignedUrl(app.resume_path!, 60);
+          if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+        });
+      }
+
+      await loadNotes(appId);
+
+      detailPanel.classList.add('dash__detail--open');
+    }
+
+    document.getElementById('detail-close')!.addEventListener('click', () => {
+      detailPanel.classList.remove('dash__detail--open');
+      openAppId = null;
+    });
+
+    document.getElementById('detail-status')!.addEventListener('change', async (e) => {
+      if (!openAppId) return;
+      const newStatus = (e.target as HTMLSelectElement).value;
+
+      await supabase
+        .from('applications')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', openAppId);
+
+      await supabase.from('activity_log').insert({
+        actor_id: currentUser!.id,
+        action: `Changed status to ${newStatus}`,
+        target_application_id: openAppId,
+        details: { new_status: newStatus },
+      });
+
+      await loadApplications();
+      await loadStats();
+    });
+
+    async function loadNotes(appId: string) {
+      const notesList = document.getElementById('notes-list')!;
+      const { data: notes } = await supabase
+        .from('admin_notes')
+        .select('*, profiles:author_id(full_name)')
+        .eq('application_id', appId)
+        .order('created_at', { ascending: false });
+
+      if (!notes || notes.length === 0) {
+        notesList.innerHTML = '<p style="font-size:0.8rem; color:rgba(255,255,255,0.3);">No notes yet.</p>';
+        return;
+      }
+
+      notesList.innerHTML = (notes as any[]).map(n => `
+        <div class="dash__note">
+          <div class="dash__note-meta">${esc(n.profiles?.full_name || 'Unknown')} · ${new Date(n.created_at).toLocaleString()}</div>
+          <div class="dash__note-content">${esc(n.content)}</div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('add-note-btn')!.addEventListener('click', async () => {
+      if (!openAppId || !currentUser) return;
+      const input = document.getElementById('note-input') as HTMLTextAreaElement;
+      const content = input.value.trim();
+      if (!content) return;
+
+      await supabase.from('admin_notes').insert({
+        application_id: openAppId,
+        author_id: currentUser.id,
+        content,
+      });
+
+      await supabase.from('activity_log').insert({
+        actor_id: currentUser.id,
+        action: 'Added a note',
+        target_application_id: openAppId,
+        details: { note_preview: content.slice(0, 100) },
+      });
+
+      input.value = '';
+      await loadNotes(openAppId);
+    });
+
+    async function loadActivityLog() {
+      const list = document.getElementById('activity-list')!;
+      const emptyEl = document.getElementById('activity-empty')!;
+
+      const { data: entries } = await supabase
+        .from('activity_log')
+        .select('*, profiles:actor_id(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (!entries || entries.length === 0) {
+        list.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      list.innerHTML = (entries as any[]).map(e => `
+        <div class="dash__activity-item">
+          <div class="dash__activity-dot"></div>
+          <div>
+            <div class="dash__activity-text"><strong>${esc(e.profiles?.full_name || 'Unknown')}</strong> ${esc(e.action)}</div>
+            <div class="dash__activity-time">${new Date(e.created_at).toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+      tab.addEventListener('click', async () => {
+        document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('dash__nav-link--active'));
+        tab.classList.add('dash__nav-link--active');
+
+        const target = (tab as HTMLElement).dataset.tab;
+        const appView = document.getElementById('applications-view')!;
+        const actView = document.getElementById('activity-view')!;
+
+        if (target === 'applications') {
+          appView.style.display = 'block';
+          actView.classList.remove('dash__activity--visible');
+        } else if (target === 'activity') {
+          appView.style.display = 'none';
+          actView.classList.add('dash__activity--visible');
+          await loadActivityLog();
+        }
+      });
+    });
+
+    document.getElementById('logout-btn')!.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = base;
+    });
+  </script>
+</AppLayout>

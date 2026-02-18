@@ -1,0 +1,133 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="Sign Up — XR Club">
+  <div class="auth-page">
+    <div class="auth-card">
+      <img src={`${base}Images/XR Logo.png`} alt="XR Club" class="auth-card__logo" />
+      <h1 class="auth-card__title">Create Account</h1>
+      <p class="auth-card__subtitle">Join the XR Club community</p>
+
+      <div id="error-msg" class="auth-card__error" style="display:none;"></div>
+      <div id="success-msg" class="auth-card__success" style="display:none;"></div>
+
+      <form id="signup-form" class="auth-form">
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="full-name">Full Name</label>
+          <input
+            class="auth-form__input"
+            type="text"
+            id="full-name"
+            name="full_name"
+            placeholder="John Doe"
+            required
+          />
+        </div>
+
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="email">Email</label>
+          <input
+            class="auth-form__input"
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@umd.edu"
+            required
+          />
+        </div>
+
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="password">Password</label>
+          <input
+            class="auth-form__input"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="At least 6 characters"
+            minlength="6"
+            required
+          />
+        </div>
+
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="confirm-password">Confirm Password</label>
+          <input
+            class="auth-form__input"
+            type="password"
+            id="confirm-password"
+            name="confirm_password"
+            placeholder="Re-enter password"
+            minlength="6"
+            required
+          />
+        </div>
+
+        <button type="submit" class="auth-form__btn" id="submit-btn">
+          Create Account
+        </button>
+      </form>
+
+      <p class="auth-card__footer">
+        Already have an account? <a href={`${base}login`} class="auth-card__link">Log in</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const base = import.meta.env.BASE_URL;
+    const form = document.getElementById('signup-form') as HTMLFormElement;
+    const errorMsg = document.getElementById('error-msg')!;
+    const successMsg = document.getElementById('success-msg')!;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+
+      const fullName = (document.getElementById('full-name') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+      const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement).value;
+
+      if (password !== confirmPassword) {
+        errorMsg.textContent = 'Passwords do not match.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="auth-spinner"></span>Creating account…';
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}${base}verify-email`,
+        },
+      });
+
+      if (error) {
+        errorMsg.textContent = error.message;
+        errorMsg.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+        return;
+      }
+
+      form.style.display = 'none';
+      successMsg.innerHTML = 'Account created! Check your email for a verification link. You can close this tab.';
+      successMsg.style.display = 'block';
+    });
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) window.location.href = `${base}apply`;
+    })();
+  </script>
+</AppLayout>

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx astro build)",
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.Drawing; @\\(''photo1.jpg'',''photo2.jpg'',''photo3.jpg'',''photo4.jpg'',''photo5.jpg''\\) | ForEach-Object { $i = [System.Drawing.Image]::FromFile\\(''c:\\\\Users\\\\Kyle\\\\Downloads\\\\VR website\\\\public\\\\Images\\\\'' + $_; Write-Host \\($_+ '': '' + $i.Width + ''x'' + $i.Height\\); $i.Dispose\\(\\) }\")",
+      "Bash(npm run dev)",
+      "Bash(python3:*)",
+      "Bash(npx astro check:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(git init:*)",
+      "Bash(git lfs install:*)",
+      "Bash(git lfs track:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
