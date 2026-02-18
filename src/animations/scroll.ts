@@ -178,6 +178,7 @@ export function initScrollAnimations() {
 
   let bookFallFired = false;
   let bookFallTl: gsap.core.Timeline | null = null;
+  let renderStopped = false;
 
   const frameTriggers: FrameTrigger[] = [];
 
@@ -291,6 +292,14 @@ export function initScrollAnimations() {
     });
   }
 
+  function resetFrameTriggers() {
+    for (const trigger of frameTriggers) {
+      trigger.fired = false;
+    }
+    if (renderBuild) gsap.set(renderBuild, { autoAlpha: 0, x: 80 });
+    if (renderCommunity) gsap.set(renderCommunity, { autoAlpha: 0, x: 80 });
+  }
+
   frameTriggers.push({
     frame: RENDER_TOTAL_FRAMES - 1,
     fired: false,
@@ -324,23 +333,13 @@ export function initScrollAnimations() {
             });
           }
 
-          const st = tl.scrollTrigger;
-          if (st) {
-            gsap.set(render, { clipPath: 'none', zIndex: 0 });
-
-            const targetProgress = 3.95 / totalUnits;
-            tl.progress(targetProgress);
-
-            const aboutPos = st.start + targetProgress * (st.end - st.start);
-            st.scroll(aboutPos);
-
-            gsap.set(about, { visibility: 'visible', scale: 1, x: '0%', y: '0%' });
-            if (aboutContent) gsap.set(aboutContent, { yPercent: 0 });
-            if (aboutHeader) gsap.set(aboutHeader, { x: 0, y: 0, autoAlpha: 1 });
-            aboutCards.forEach(card => {
-              gsap.set(card, { x: 0, y: 0, autoAlpha: 1 });
-            });
-          }
+          gsap.set(render, { clipPath: 'none', zIndex: 0 });
+          gsap.set(about, { visibility: 'visible', scale: 1, x: '0%', y: '0%' });
+          if (aboutContent) gsap.set(aboutContent, { yPercent: 0 });
+          if (aboutHeader) gsap.set(aboutHeader, { x: 0, y: 0, autoAlpha: 1 });
+          aboutCards.forEach(card => {
+            gsap.set(card, { x: 0, y: 0, autoAlpha: 1 });
+          });
         },
       });
 
@@ -378,7 +377,6 @@ export function initScrollAnimations() {
       end: `+=${totalScrollVh}%`,
       scrub: 1.5,
       pin: true,
-      anticipatePin: 1,
       fastScrollEnd: true,
       onUpdate: (self) => {
         const progress = self.progress * totalUnits;
@@ -392,15 +390,25 @@ export function initScrollAnimations() {
               bookFallTl = null;
             }
 
-            gsap.set(render, { clipPath: 'none', visibility: 'visible' });
+            gsap.set(render, { clipPath: 'none', visibility: 'visible', zIndex: 2 });
 
             if (aboutHeader) gsap.killTweensOf(aboutHeader);
             aboutCards.forEach(c => gsap.killTweensOf(c));
+
+            tl.invalidate();
+            tl.progress(self.progress);
           }
         }
 
         if (progress > 2.0) {
-          renderPlayer?.stop();
+          if (!renderStopped) {
+            renderPlayer?.stop();
+            renderStopped = true;
+          }
+        } else if (renderStopped && self.direction === -1) {
+          renderStopped = false;
+          resetFrameTriggers();
+          renderPlayer?.start();
         }
       },
     },

@@ -1,5 +1,6 @@
 import { initIntro } from './intro';
 import { initScrollAnimations } from './scroll';
+import { supabase } from '../lib/supabase';
 
 const base = import.meta.env.BASE_URL;
 
@@ -68,11 +69,19 @@ function skipIntro() {
   }
 }
 
-function init() {
+async function init() {
   if (window.location.hash) {
     skipIntro();
     return;
   }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      skipIntro();
+      return;
+    }
+  } catch {}
 
   initIntro(() => {
     window.scrollTo(0, 0);
@@ -85,7 +94,7 @@ function init() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => init());
 } else {
   init();
 }
