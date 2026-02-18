@@ -389,7 +389,7 @@ export function initScrollAnimations() {
       trigger: main,
       start: 'top top',
       end: `+=${totalScrollVh}%`,
-      scrub: true,
+      scrub: 0.5,
       pin: true,
       onLeave: () => {
         renderPlayer?.stop();
