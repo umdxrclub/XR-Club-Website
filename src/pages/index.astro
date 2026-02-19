@@ -16,6 +16,9 @@ import RecognitionSection from '../components/RecognitionSection.astro';
 ---
 
 <BaseLayout title="XR Club">
+  <div class="loader" data-loader>
+    <img src={`${import.meta.env.BASE_URL}Images/XR logo.png`} alt="XR Club" class="loader__logo" />
+  </div>
   <IntroSequence />
   <Header />
 
@@ -40,6 +43,33 @@ import RecognitionSection from '../components/RecognitionSection.astro';
 </BaseLayout>
 
 <style>
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+  }
+
+  .loader--hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loader__logo {
+    height: 72px;
+    width: auto;
+    border-radius: 10px;
+    animation: loaderPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes loaderPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
 
   .hero-section {
     position: relative;
@@ -114,6 +144,28 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   }
 </style>
 
+<style is:global>
+  .watermark {
+    position: fixed;
+    bottom: 0;
+    right: 0.75rem;
+    z-index: 9999;
+    height: 80px;
+    width: auto;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (max-width: 768px) {
+    .watermark {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 60px;
+    }
+  }
+</style>
+
 <script>
   import '../animations/index';
 
@@ -129,15 +181,6 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   const wm = document.createElement('img');
   wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.png`;
   wm.alt = '';
-  Object.assign(wm.style, {
-    position: 'fixed',
-    bottom: '0',
-    right: '0.75rem',
-    zIndex: '9999',
-    height: '80px',
-    width: 'auto',
-    pointerEvents: 'none',
-    userSelect: 'none',
-  });
+  wm.className = 'watermark';
   document.body.appendChild(wm);
 </script>

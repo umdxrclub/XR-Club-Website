@@ -3,7 +3,6 @@ const base = import.meta.env.BASE_URL;
 ---
 <section class="events" data-events>
   <img class="events__bg" src={`${base}Images/events3.webp`} alt="" decoding="async" />
-  <img src={`${base}Images/kickoff.webp`} alt="" class="events__kickoff-img" decoding="async" />
   <div class="events__dim"></div>
 
   <div class="events__layout">
@@ -24,6 +23,7 @@ const base = import.meta.env.BASE_URL;
           <span class="events__title-outline">XR</span>
           <h2 class="events__title">Events</h2>
         </div>
+        <img src={`${base}Images/kickoff.webp`} alt="Spring Kickoff" class="events__kickoff-img" decoding="async" />
         <p class="events__desc">The XR Club hosts several events throughout the year and often partners with major student organizations. Our flagship event is our project demo presentation, where teams showcase their work. We're also in the middle of organizing a hackathon in partnership with IXA Alliance.</p>
         <p class="events__desc">Past highlights include Mini Demo Day, TerpCon 2026, KAMECON 2026, and the UMD Gaming LAN. We also run workshops and occasional Beat Saber tournaments. <strong>Join our Discord to stay updated on upcoming events!</strong></p>
         <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" class="events__discord">Discord</a>
@@ -119,17 +119,13 @@ const base = import.meta.env.BASE_URL;
   }
 
   .events__kickoff-img {
-    position: absolute;
-    top: 40%;
-    right: 10%;
-    transform: translateY(-50%) rotate(6deg);
-    height: clamp(20rem, 35vw, 35rem);
-    width: auto;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
     object-fit: contain;
     border-radius: 0.75rem;
     filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
-    z-index: 0;
-    pointer-events: none;
+    margin-bottom: 1.2rem;
   }
 
   .events__title-wrap {
@@ -254,9 +250,6 @@ const base = import.meta.env.BASE_URL;
       font-size: clamp(0.85rem, 1vw, 1.1rem);
     }
 
-    .events__kickoff-img {
-      height: clamp(16rem, 28vw, 25rem);
-    }
   }
 
   @media (max-width: 768px) {
@@ -291,11 +284,6 @@ const base = import.meta.env.BASE_URL;
       text-align: center;
     }
 
-    .events__kickoff-img {
-      height: 12rem;
-      right: 5%;
-      transform: translateY(-50%) rotate(4deg);
-    }
 
     .events__collage {
       transform: none;
@@ -337,7 +325,6 @@ const base = import.meta.env.BASE_URL;
     .events__photo--f { display: none; }
 
     .events__desc { font-size: 0.9rem; }
-    .events__kickoff-img { height: 10rem; right: 5%; transform: translateY(-50%) rotate(4deg); }
 
     .events__title-outline { font-size: 5rem; }
     .events__title { font-size: 2.5rem; }

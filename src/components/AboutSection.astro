@@ -257,11 +257,18 @@ const base = import.meta.env.BASE_URL;
   }
 
   @media (max-width: 768px) {
+    .about {
+      height: auto;
+      min-height: 100vh;
+      overflow: visible;
+      contain: layout style;
+    }
+
     .about__content {
       flex-direction: column;
       padding: 6vh var(--page-padding);
       gap: 3vh;
-      overflow-y: auto;
+      height: auto;
     }
 
     .about__left {
@@ -271,13 +278,29 @@ const base = import.meta.env.BASE_URL;
 
     .about__intro {
       max-width: 100%;
-      font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+      font-size: 0.95rem;
     }
 
     .about__right {
       width: 100%;
       height: auto;
       grid-template-columns: 1fr 1fr;
+    }
+
+    .about__card-title {
+      font-size: 1.2rem;
+    }
+
+    .about__card-text {
+      font-size: 0.95rem;
+    }
+
+    .about__level-name {
+      font-size: 1.1rem;
+    }
+
+    .about__level-desc {
+      font-size: 0.9rem;
     }
 
     .about__title-outline {
@@ -290,6 +313,10 @@ const base = import.meta.env.BASE_URL;
   }
 
   @media (max-width: 480px) {
+    .about__content {
+      padding: 4rem 1rem 3rem;
+    }
+
     .about__right {
       grid-template-columns: 1fr;
     }
@@ -297,6 +324,22 @@ const base = import.meta.env.BASE_URL;
     .about__card--text,
     .about__card--levels {
       padding: 1.2rem;
+    }
+
+    .about__card-title {
+      font-size: 1.15rem;
+    }
+
+    .about__card-text {
+      font-size: 0.9rem;
+    }
+
+    .about__level-name {
+      font-size: 1.05rem;
+    }
+
+    .about__level-desc {
+      font-size: 0.88rem;
     }
 
     .about__title-outline {

@@ -2,8 +2,6 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="res" data-resources>
-  <img class="res__decor" src={`${base}Images/decor.png`} alt="" decoding="async" />
-
   <div class="res__layout">
     <div class="res__header">
       <div class="res__title-wrap">
@@ -150,17 +148,6 @@ const base = import.meta.env.BASE_URL;
     background: linear-gradient(rgba(0, 0, 0, 0.95), #000);
     z-index: 2;
     pointer-events: none;
-  }
-
-  .res__decor {
-    position: absolute;
-    top: -5%;
-    right: 10%;
-    width: clamp(24rem, 40vw, 44rem);
-    height: auto;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.85;
   }
 
   .res__layout {
