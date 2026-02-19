@@ -1,0 +1,283 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const base = import.meta.env.BASE_URL;
+
+const departments = [
+  { src: `${base}Images/partners/1.png`, alt: 'UMD Department', dark: true },
+  { src: `${base}Images/partners/2.webp`, alt: 'UMD Department' },
+  { src: `${base}Images/partners/3.png`, alt: 'UMD Department', dark: true },
+  { src: `${base}Images/partners/12.png`, alt: 'UMD Department' },
+  { src: `${base}Images/partners/9.png`, alt: 'HCIL' },
+];
+
+const companies = [
+  { src: `${base}Images/partners/13.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/5.png`, alt: 'Corporate Partner', dark: true },
+  { src: `${base}Images/partners/6.png`, alt: 'Corporate Partner', dark: true },
+  { src: `${base}Images/partners/7.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/8.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/14.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/15.png`, alt: 'Corporate Partner', dark: true },
+  { src: `${base}Images/partners/16.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/17.png`, alt: 'Corporate Partner', dark: true },
+  { src: `${base}Images/partners/18.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/19.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/20.png`, alt: 'Corporate Partner', dark: true },
+  { src: `${base}Images/partners/21.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/23.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/25.png`, alt: 'Corporate Partner', dark: true, round: true },
+  { src: `${base}Images/partners/26.png`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/27.png`, alt: 'Corporate Partner' },
+];
+
+const studentOrgs = [
+  { src: `${base}Images/partners/4.png`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/10.png`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/11.png`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/22.png`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/24.jpg`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/28.jpg`, alt: 'Student Organization' },
+];
+---
+
+<BaseLayout title="Sponsors & Partners - XR Club">
+  <Header />
+
+  <section class="sp">
+    <div class="sp__hero">
+      <div class="sp__title-wrap">
+        <span class="sp__title-outline">XR</span>
+        <h1 class="sp__title">Sponsors & Partners</h1>
+      </div>
+      <p class="sp__subtitle">The organizations and communities that make our work possible.</p>
+    </div>
+
+    <div class="sp__section">
+      <h2 class="sp__section-title">UMD Departments</h2>
+      <div class="sp__track-wrap">
+        <div class="sp__track" data-carousel="left">
+          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark }]} src={d.src} alt={d.alt} decoding="async" />)}
+          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark }]} src={d.src} alt={d.alt} decoding="async" />)}
+          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark }]} src={d.src} alt={d.alt} decoding="async" />)}
+        </div>
+      </div>
+    </div>
+
+    <div class="sp__section">
+      <h2 class="sp__section-title">Corporate Affiliates & Collaborators</h2>
+      <div class="sp__track-wrap">
+        <div class="sp__track" data-carousel="right">
+          {companies.map(c => <img class:list={['sp__logo', { 'sp__logo--dark': c.dark, 'sp__logo--round': c.round }]} src={c.src} alt={c.alt} decoding="async" />)}
+          {companies.map(c => <img class:list={['sp__logo', { 'sp__logo--dark': c.dark, 'sp__logo--round': c.round }]} src={c.src} alt={c.alt} decoding="async" />)}
+        </div>
+      </div>
+    </div>
+
+    <div class="sp__section">
+      <h2 class="sp__section-title">Student Organizations</h2>
+      <div class="sp__track-wrap">
+        <div class="sp__track" data-carousel="left">
+          {studentOrgs.map(s => <img class="sp__logo" src={s.src} alt={s.alt} decoding="async" />)}
+          {studentOrgs.map(s => <img class="sp__logo" src={s.src} alt={s.alt} decoding="async" />)}
+          {studentOrgs.map(s => <img class="sp__logo" src={s.src} alt={s.alt} decoding="async" />)}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .sp {
+    background: #000;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .sp__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(10rem, 18vh, 14rem) var(--page-padding) clamp(2rem, 4vh, 4rem);
+  }
+
+  .sp__title-wrap {
+    position: relative;
+  }
+
+  .sp__title-outline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(8rem, 16vw, 18rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .sp__title {
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 0.95;
+  }
+
+  .sp__subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1rem, 1.3vw, 1.4rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 1.5rem;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  .sp__section {
+    padding: clamp(3rem, 5vh, 5rem) 0;
+  }
+
+  .sp__section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.3rem, 2vw, 2rem);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin-bottom: clamp(2rem, 3vh, 3rem);
+  }
+
+  .sp__track-wrap {
+    width: 100%;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+
+  .sp__track {
+    display: flex;
+    align-items: center;
+    gap: clamp(3rem, 5vw, 5rem);
+    width: max-content;
+    will-change: transform;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  .sp__track--left {
+    animation-name: scrollLeft;
+  }
+
+  .sp__track--right {
+    animation-name: scrollRight;
+  }
+
+  @keyframes scrollLeft {
+    from { transform: translateX(0); }
+    to { transform: translateX(var(--track-set-width)); }
+  }
+
+  @keyframes scrollRight {
+    from { transform: translateX(var(--track-set-width)); }
+    to { transform: translateX(0); }
+  }
+
+  .sp__logo {
+    height: clamp(7rem, 12vw, 12rem);
+    width: auto;
+    max-width: clamp(14rem, 22vw, 22rem);
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 12px;
+  }
+
+  .sp__logo--dark {
+    background: linear-gradient(135deg, rgba(100,150,255,0.25), rgba(60,100,220,0.12));
+    border: 1px solid rgba(100,150,255,0.1);
+    border-radius: 12px;
+    padding: 0.6rem;
+  }
+
+  .sp__logo--round {
+    border-radius: 50%;
+  }
+
+  @media (max-width: 768px) {
+    .sp__hero {
+      padding: 7rem var(--page-padding) 2rem;
+    }
+
+    .sp__title-outline {
+      font-size: 6rem;
+    }
+
+    .sp__title {
+      font-size: 2.5rem;
+    }
+
+    .sp__logo {
+      height: 5.5rem;
+      max-width: 13rem;
+    }
+
+    .sp__section {
+      padding: 2rem 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .sp__hero {
+      padding: 6rem 1rem 1.5rem;
+    }
+
+    .sp__title-outline {
+      font-size: 4.5rem;
+    }
+
+    .sp__title {
+      font-size: 2rem;
+    }
+
+    .sp__logo {
+      height: 5rem;
+      max-width: 11rem;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('[data-carousel]').forEach(track => {
+    const el = track as HTMLElement;
+    const direction = el.dataset.carousel;
+    const children = el.children.length;
+    // Each set is duplicated 2-3x, find one set's width
+    const divisor = direction === 'right' ? 2 : 3;
+    const setCount = children / divisor;
+    let setWidth = 0;
+    for (let i = 0; i < setCount; i++) {
+      const child = el.children[i] as HTMLElement;
+      setWidth += child.offsetWidth;
+    }
+    const gap = parseFloat(getComputedStyle(el).gap) || 0;
+    setWidth += setCount * gap;
+
+    el.style.animationDuration = `${setWidth / 40}s`;
+    el.classList.add(direction === 'left' ? 'sp__track--left' : 'sp__track--right');
+    el.style.setProperty('--track-set-width', `-${setWidth}px`);
+  });
+</script>

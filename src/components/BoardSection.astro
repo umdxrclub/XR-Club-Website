@@ -2,7 +2,7 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="board" data-board>
-  <img class="board__bg" src={`${base}Images/photo5.jpg`} alt="" />
+  <img class="board__bg" src={`${base}Images/photo5.webp`} alt="" decoding="async" />
   <div class="board__dim"></div>
 
   <div class="board__layout">
@@ -16,7 +16,7 @@ const base = import.meta.env.BASE_URL;
 
     <div class="board__grid">
       <div class="board__card board__card--lead">
-        <img class="board__photo board__photo--lead" src={`${base}Images/people/russell.jpg`} alt="Russell Mehta" />
+        <img class="board__photo board__photo--lead" decoding="async" src={`${base}Images/people/russell.webp`} alt="Russell Mehta" />
         <h3 class="board__name board__name--lead">Russell Mehta</h3>
         <p class="board__role">President</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/russell-mehta-98368a217/" target="_blank" rel="noopener" aria-label="Russell Mehta LinkedIn">
@@ -24,12 +24,12 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card board__card--lead">
-        <img class="board__photo board__photo--lead" src={`${base}Images/people/kyle.webp`} alt="Kyle Goh" />
+        <img class="board__photo board__photo--lead" decoding="async" src={`${base}Images/people/kyle.jpg`} alt="Kyle Goh" />
         <h3 class="board__name board__name--lead">Kyle Goh</h3>
         <p class="board__role">Vice President</p>
       </div>
       <div class="board__card board__card--lead">
-        <img class="board__photo board__photo--lead" src={`${base}Images/people/dinushka.jpg`} alt="Dinushka Jagodige" />
+        <img class="board__photo board__photo--lead" decoding="async" src={`${base}Images/people/dinushka.webp`} alt="Dinushka Jagodige" />
         <h3 class="board__name board__name--lead">Dinushka Jagodige</h3>
         <p class="board__role">Treasurer</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/dinushka-jagodige-5410b3333/" target="_blank" rel="noopener" aria-label="Dinushka Jagodige LinkedIn">
@@ -38,7 +38,7 @@ const base = import.meta.env.BASE_URL;
       </div>
 
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/Aga.jpg`} alt="Agha Huseynov" />
+        <img class="board__photo" decoding="async" src={`${base}Images/people/Aga.webp`} alt="Agha Huseynov" />
         <h3 class="board__name">Agha Huseynov</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/agha-huseynov-9867a024a" target="_blank" rel="noopener" aria-label="Agha Huseynov LinkedIn">
@@ -46,7 +46,7 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/pallavi.jpg`} alt="Pallavi Kothapalli" />
+        <img class="board__photo" decoding="async" src={`${base}Images/people/pallavi.webp`} alt="Pallavi Kothapalli" />
         <h3 class="board__name">Pallavi Kothapalli</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/pallavi-kothapalli" target="_blank" rel="noopener" aria-label="Pallavi Kothapalli LinkedIn">
@@ -54,7 +54,7 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/mohan.jpg`} alt="Mohan Vamsi" />
+        <img class="board__photo" decoding="async" src={`${base}Images/people/mohan.webp`} alt="Mohan Vamsi" />
         <h3 class="board__name">Mohan Vamsi</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://in.linkedin.com/in/mohan-vamsi-vp" target="_blank" rel="noopener" aria-label="Mohan Vamsi LinkedIn">
@@ -62,15 +62,15 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/Sam.jpg`} alt="Samuel Selvin Wiggins" />
-        <h3 class="board__name">Samuel Selvin Wiggins</h3>
+        <img class="board__photo" decoding="async" src={`${base}Images/people/Sam.webp`} alt="Samuel Wiggins" />
+        <h3 class="board__name">Samuel Wiggins</h3>
         <p class="board__role">Board Member</p>
-        <a class="board__linkedin" href="https://www.linkedin.com/in/swiggins25" target="_blank" rel="noopener" aria-label="Samuel Selvin Wiggins LinkedIn">
+        <a class="board__linkedin" href="https://www.linkedin.com/in/swiggins25" target="_blank" rel="noopener" aria-label="Samuel Wiggins LinkedIn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Katherine Hong" />
+        <img class="board__photo" decoding="async" src={`${base}Images/XR logo.png`} alt="Katherine Hong" />
         <h3 class="board__name">Katherine Hong</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/katherine-hong0" target="_blank" rel="noopener" aria-label="Katherine Hong LinkedIn">
@@ -78,7 +78,7 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/javin.jpg`} alt="Javin Ahuja" />
+        <img class="board__photo" decoding="async" src={`${base}Images/people/javin.webp`} alt="Javin Ahuja" />
         <h3 class="board__name">Javin Ahuja</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/javin-ahuja-560100237/" target="_blank" rel="noopener" aria-label="Javin Ahuja LinkedIn">
@@ -86,15 +86,15 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/jack.jpg`} alt="Jack Burke" />
-        <h3 class="board__name">Jack Burke</h3>
+        <img class="board__photo" decoding="async" src={`${base}Images/people/jack b.jpg`} alt="Jack Babu" />
+        <h3 class="board__name">Jack Babu</h3>
         <p class="board__role">Board Member</p>
-        <a class="board__linkedin" href="https://www.linkedin.com/in/jack-burke-umd" target="_blank" rel="noopener" aria-label="Jack Burke LinkedIn">
+        <a class="board__linkedin" href="https://www.linkedin.com/in/jack-burke-umd" target="_blank" rel="noopener" aria-label="Jack Babu LinkedIn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/XR Logo.png`} alt="Tamanna Jindal" />
+        <img class="board__photo" decoding="async" src={`${base}Images/XR logo.png`} alt="Tamanna Jindal" />
         <h3 class="board__name">Tamanna Jindal</h3>
         <p class="board__role">Board Member</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/tamanna-jindal-b0823233b" target="_blank" rel="noopener" aria-label="Tamanna Jindal LinkedIn">
@@ -102,7 +102,7 @@ const base = import.meta.env.BASE_URL;
         </a>
       </div>
       <div class="board__card">
-        <img class="board__photo" src={`${base}Images/people/IAN.avif`} alt="Ian McDermott" />
+        <img class="board__photo" decoding="async" src={`${base}Images/people/IAN.webp`} alt="Ian McDermott" />
         <h3 class="board__name">Ian McDermott</h3>
         <p class="board__role">Faculty Advisor</p>
         <a class="board__linkedin" href="https://www.linkedin.com/in/ian-mcdermott" target="_blank" rel="noopener" aria-label="Ian McDermott LinkedIn">
@@ -119,7 +119,8 @@ const base = import.meta.env.BASE_URL;
     width: 100%;
     min-height: 100vh;
     overflow: hidden;
-    visibility: hidden;
+    will-change: transform;
+    contain: content;
   }
 
   .board::before {
@@ -171,7 +172,7 @@ const base = import.meta.env.BASE_URL;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 7.5rem var(--page-padding) 3rem;
+    padding: 9rem var(--page-padding) 3rem;
     gap: 1.2rem;
     box-sizing: border-box;
   }
@@ -304,10 +305,46 @@ const base = import.meta.env.BASE_URL;
     height: 100%;
   }
 
+  @media (max-width: 1024px) {
+    .board__layout {
+      padding: 8rem var(--page-padding) 3rem;
+      gap: 1rem;
+    }
+
+    .board__grid {
+      max-width: 56rem;
+      gap: 1.5vw 0;
+    }
+
+    .board__photo {
+      width: clamp(5rem, 9vw, 9rem);
+      height: clamp(5rem, 9vw, 9rem);
+    }
+
+    .board__desc {
+      max-width: 45vw;
+      font-size: clamp(0.85rem, 1vw, 1.1rem);
+    }
+
+    .board__name {
+      font-size: clamp(0.8rem, 1vw, 1.1rem);
+    }
+
+    .board__role {
+      font-size: clamp(0.7rem, 0.85vw, 1rem);
+    }
+  }
+
   @media (max-width: 768px) {
+    .board__layout {
+      padding: 6vh var(--page-padding) 3rem;
+      gap: 1rem;
+    }
+
     .board__grid {
       grid-template-columns: repeat(3, 1fr);
       gap: 3vw 2vw;
+      max-width: 100%;
     }
 
     .board__photo {
@@ -317,6 +354,15 @@ const base = import.meta.env.BASE_URL;
 
     .board__desc {
       max-width: 70vw;
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+    }
+
+    .board__name {
+      font-size: clamp(0.8rem, 2vw, 1rem);
+    }
+
+    .board__role {
+      font-size: clamp(0.7rem, 1.5vw, 0.9rem);
     }
 
     .board__title-outline { font-size: 5rem; }
@@ -324,7 +370,10 @@ const base = import.meta.env.BASE_URL;
   }
 
   @media (max-width: 480px) {
-    .board__layout { padding: 4rem 1rem 3rem; }
+    .board__layout {
+      padding: 4rem 1rem 3rem;
+      gap: 0.8rem;
+    }
 
     .board__grid {
       grid-template-columns: repeat(3, 1fr);
@@ -346,6 +395,7 @@ const base = import.meta.env.BASE_URL;
 
     .board__desc {
       max-width: 85vw;
+      font-size: 0.9rem;
     }
 
     .board__title-outline { font-size: 4rem; }

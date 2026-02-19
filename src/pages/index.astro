@@ -1,77 +1,92 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
+
 import Footer from '../components/Footer.astro';
 import IntroSequence from '../components/IntroSequence.astro';
 import SplitHero from '../components/SplitHero.astro';
-import RenderSection from '../components/RenderSection.astro';
 import AboutSection from '../components/AboutSection.astro';
 import ProjectsSection from '../components/ProjectsSection.astro';
 import LabSection from '../components/LabSection.astro';
 import EventsSection from '../components/EventsSection.astro';
 import BoardSection from '../components/BoardSection.astro';
 import ResourceSection from '../components/ResourceSection.astro';
+import RenderSection from '../components/RenderSection.astro';
+import RecognitionSection from '../components/RecognitionSection.astro';
 ---
 
 <BaseLayout title="XR Club">
   <IntroSequence />
   <Header />
 
-  <div class="hero-title" data-hero-title>
-    <h1 class="hero-title__heading">XR Club</h1>
-    <p class="hero-title__desc">Designing immersive experiences at the intersection of virtual, augmented, and mixed reality.</p>
-  </div>
-
-  <main data-main>
+  <section class="hero-section" data-hero-wrapper>
     <SplitHero />
-    <RenderSection />
-    <AboutSection />
-  </main>
+    <div class="hero-title" data-hero-title>
+      <img class="hero-ring" src={`${import.meta.env.BASE_URL}Images/ring.png`} alt="" />
+      <p class="hero-title__tagline">Design, Engineer, Create</p>
+      <h1 class="hero-title__heading">XR Club</h1>
+    </div>
+  </section>
 
+  <AboutSection />
   <ProjectsSection />
   <LabSection />
   <EventsSection />
+  <RecognitionSection />
   <BoardSection />
   <ResourceSection />
+  <RenderSection />
   <Footer />
 </BaseLayout>
 
 <style>
-  main {
+
+  .hero-section {
     position: relative;
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    overflow: hidden;
   }
 
   .hero-title {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
+    bottom: 0;
     z-index: 3;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    height: 100dvh;
     text-align: center;
+    perspective: 800px;
   }
 
-  .hero-title__eyebrow {
+  .hero-ring {
+    position: absolute;
+    width: clamp(28rem, 60vw, 56rem);
+    height: auto;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+    transform: translateY(10%) rotateX(55deg);
+    filter: drop-shadow(0 0 40px rgba(180, 120, 255, 0.3));
+  }
+
+  .hero-title__tagline {
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.45);
-    letter-spacing: 0.15em;
+    font-size: clamp(0.9rem, 1.4vw, 1.3rem);
+    font-weight: 400;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
-    margin-bottom: 1.2rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 1rem;
   }
 
   .hero-title__heading {
+    position: relative;
     font-family: 'Inter', sans-serif;
     font-size: clamp(5rem, 12vw, 10rem);
     font-weight: 800;
@@ -81,34 +96,18 @@ import ResourceSection from '../components/ResourceSection.astro';
     text-shadow: 0 8px 40px rgba(0, 0, 0, 1), 0 4px 15px rgba(0, 0, 0, 1), 0 0 120px rgba(0, 0, 0, 0.8), 0 0 200px rgba(0, 0, 0, 0.5);
   }
 
-  .hero-title__desc {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.5);
-    line-height: 1.6;
-    margin-top: 1.8rem;
-    max-width: 480px;
-  }
-
   @media (max-width: 768px) {
-    .hero-title {
-      padding-top: 15vh;
+    .hero-ring {
+      width: clamp(18rem, 70vw, 28rem);
     }
 
     .hero-title__heading {
       font-size: clamp(3.5rem, 14vw, 6rem);
     }
-
-    .hero-title__desc {
-      font-size: 1rem;
-      max-width: 360px;
-    }
   }
 
   @media (max-width: 480px) {
     .hero-title {
-      padding-top: 12vh;
       padding-left: 5vw;
       padding-right: 5vw;
     }
@@ -117,4 +116,28 @@ import ResourceSection from '../components/ResourceSection.astro';
 
 <script>
   import '../animations/index';
+
+  // Handle hash navigation from other pages
+  if (window.location.hash) {
+    const target = window.location.hash.slice(1);
+    const section = document.querySelector(`[data-${target}]`) as HTMLElement;
+    if (section) {
+      setTimeout(() => section.scrollIntoView({ behavior: 'instant' }), 100);
+    }
+  }
+
+  const wm = document.createElement('img');
+  wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.png`;
+  wm.alt = '';
+  Object.assign(wm.style, {
+    position: 'fixed',
+    bottom: '0',
+    right: '0.75rem',
+    zIndex: '9999',
+    height: '80px',
+    width: 'auto',
+    pointerEvents: 'none',
+    userSelect: 'none',
+  });
+  document.body.appendChild(wm);
 </script>

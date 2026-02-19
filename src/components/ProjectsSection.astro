@@ -2,23 +2,18 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="proj" data-projects>
-  <img class="proj__bg" src={`${base}Images/XR CLUB.jpg`} alt="" />
+  <img class="proj__bg" src={`${base}Images/XR CLUB.webp`} alt="" decoding="async" />
   <div class="proj__dim"></div>
 
   <div class="proj__layout">
-    <div class="proj__partners">
-      <h3 class="proj__partners-title">Our Sponsors & Partners</h3>
-      <img src={`${base}Images/sponsors.png`} alt="Our Sponsors and Partners" class="proj__partners-img" />
-    </div>
-
     <div class="proj__content">
       <div class="proj__left">
         <div class="proj__title-wrap">
           <span class="proj__title-outline">XR</span>
-          <h2 class="proj__title">Projects</h2>
+          <h2 class="proj__title">XR Creators</h2>
         </div>
-        <p class="proj__desc">Most of our projects fall under the intermediate category and involve corporate sponsorships as listed above. You can submit your own proposal and request resources or equipment, but approval isn't guaranteed and requires strong prior experience.</p>
-        <p class="proj__desc proj__desc--spaced">Instead, many members start in a gateway or intermediate project, and may expand the scope of their project over time to gain additional resources and sponsors. <strong>All details and current projects can be found on the application page.</strong></p>
+        <p class="proj__desc">XR Creators are at the core of our membership. They are engineers, designers, and risk-takers who refuse to settle for what they've built and push themselves to create something greater. Whether you're a freshman with no experience but a strong drive to learn, or a senior with extensive experience, you're welcome here.</p>
+        <p class="proj__desc proj__desc--spaced">As an XR Creator, you can propose your own projects and request the resources or equipment needed to bring them to life. Note that new project proposals may undergo a more rigorous review than applications to join existing projects.</p>
         <a href="#apply" class="proj__apply">Apply Now</a>
       </div>
 
@@ -27,11 +22,11 @@ const base = import.meta.env.BASE_URL;
           <div class="proj__vid-wrap">
             <video class="proj__vid" src={`${base}demo.mp4`} preload="metadata" playsinline data-proj-video></video>
             <button class="proj__play" data-play-btn aria-label="Play/Pause">
-              <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21"></polygon></svg>
+              <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><polygon points="5,3 19,12 5,21"></polygon></svg>
               <svg class="proj__icon-pause" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="display:none"><rect x="5" y="3" width="4" height="18"></rect><rect x="15" y="3" width="4" height="18"></rect></svg>
             </button>
             <button class="proj__fullscreen" data-fullscreen-btn aria-label="Fullscreen">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
             </button>
             <p class="proj__caption">Explore a walkthrough of "Nyctophobia Simulator", created by Dinushka Jagodige '28, Ricky Jiang '29, Oliver Blevins '29, and Ronit Munshi '29 entirely from scratch using VIRNECT's exclusive software.</p>
           </div>
@@ -41,11 +36,11 @@ const base = import.meta.env.BASE_URL;
           <div class="proj__vid-wrap">
             <video class="proj__vid" src={`${base}testimony.MOV`} preload="metadata" playsinline data-proj-video></video>
             <button class="proj__play" data-play-btn aria-label="Play/Pause">
-              <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21"></polygon></svg>
+              <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><polygon points="5,3 19,12 5,21"></polygon></svg>
               <svg class="proj__icon-pause" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="display:none"><rect x="5" y="3" width="4" height="18"></rect><rect x="15" y="3" width="4" height="18"></rect></svg>
             </button>
             <button class="proj__fullscreen" data-fullscreen-btn aria-label="Fullscreen">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
             </button>
             <p class="proj__caption">Ricky Jiang's testimony on working with VIRNECT with minimal prior coding experience.</p>
           </div>
@@ -104,7 +99,8 @@ const base = import.meta.env.BASE_URL;
     width: 100%;
     height: 100vh;
     overflow: hidden;
-    visibility: hidden;
+    will-change: transform;
+    contain: content;
   }
 
   .proj::before {
@@ -154,30 +150,8 @@ const base = import.meta.env.BASE_URL;
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 4.5rem var(--page-padding) 5rem;
-    gap: 1vh;
-  }
-
-  .proj__partners {
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .proj__partners-title {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(1.4rem, 2vw, 2rem);
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.3rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
-  }
-
-  .proj__partners-img {
-    width: 100%;
-    max-height: 12vh;
-    display: block;
-    object-fit: contain;
+    padding: clamp(5rem, 8vh, 8rem) var(--page-padding) clamp(4rem, 6vh, 6rem);
+    gap: 1.5vh;
   }
 
   .proj__content {
@@ -195,7 +169,7 @@ const base = import.meta.env.BASE_URL;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    max-width: 420px;
+    max-width: 28vw;
   }
 
   .proj__title-wrap {
@@ -232,7 +206,7 @@ const base = import.meta.env.BASE_URL;
 
   .proj__desc {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+    font-size: clamp(0.9rem, 0.9vw, 1.4rem);
     font-weight: 300;
     color: rgba(255, 255, 255, 0.6);
     line-height: 1.75;
@@ -250,14 +224,15 @@ const base = import.meta.env.BASE_URL;
 
   .proj__apply {
     display: inline-block;
-    margin-top: 0.5rem;
+    margin-top: 1.5rem;
+    align-self: flex-start;
     font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
+    font-size: clamp(1rem, 1.2vw, 1.4rem);
     font-weight: 500;
     color: #fff;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 0.4rem 1.2rem;
+    padding: 0.75rem 2.5rem;
     border-radius: 980px;
     transition: all 200ms ease;
     cursor: pointer;
@@ -271,9 +246,10 @@ const base = import.meta.env.BASE_URL;
 
   .proj__right {
     flex: none;
+    width: 45vw;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
+    gap: clamp(0.75rem, 1vw, 1.25rem);
   }
 
   .proj__card {
@@ -285,8 +261,8 @@ const base = import.meta.env.BASE_URL;
     position: relative;
     border-radius: 12px;
     overflow: hidden;
+    width: 100%;
     aspect-ratio: 1;
-    width: min(24vw, 380px);
   }
 
   .proj__vid {
@@ -301,8 +277,8 @@ const base = import.meta.env.BASE_URL;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.55);
     border: 1.5px solid rgba(255, 255, 255, 0.3);
@@ -327,11 +303,11 @@ const base = import.meta.env.BASE_URL;
 
   .proj__fullscreen {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    bottom: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: rgba(0, 0, 0, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
@@ -359,19 +335,21 @@ const base = import.meta.env.BASE_URL;
     left: 0;
     right: 0;
     font-family: 'Inter', sans-serif;
-    font-size: clamp(0.5rem, 0.65vw, 0.7rem);
+    font-size: clamp(0.85rem, 1vw, 1.2rem);
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.85);
-    line-height: 1.3;
-    padding: 0.4rem 0.5rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.5;
+    padding: 1.2rem 0.9rem 0.8rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
     z-index: 2;
   }
 
   @media (max-width: 768px) {
     .proj__content {
       flex-direction: column;
+      padding: 0;
       gap: 2vh;
+      overflow-y: auto;
     }
 
     .proj__left {
@@ -382,10 +360,7 @@ const base = import.meta.env.BASE_URL;
 
     .proj__right {
       width: 100%;
-    }
-
-    .proj__vid-wrap {
-      width: 100%;
+      grid-template-columns: 1fr 1fr;
     }
 
     .proj__title-outline { font-size: 5rem; }

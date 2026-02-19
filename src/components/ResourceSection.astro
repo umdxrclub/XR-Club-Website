@@ -2,10 +2,7 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="res" data-resources>
-  <div class="res__bg"></div>
-  <div class="res__glow res__glow--tl"></div>
-  <div class="res__glow res__glow--br"></div>
-  <div class="res__glow res__glow--center"></div>
+  <img class="res__decor" src={`${base}Images/decor.png`} alt="" decoding="async" />
 
   <div class="res__layout">
     <div class="res__header">
@@ -17,116 +14,118 @@ const base = import.meta.env.BASE_URL;
 
     <div class="res__grid">
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/1.webp`} alt="Meta Quest 3" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/1.webp`} alt="Meta Quest 3" />
         <p class="res__name">Meta Quest 3</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/2.webp`} alt="Quest Pro" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/2.webp`} alt="Quest Pro" />
         <p class="res__name">Quest Pro</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/3.webp`} alt="Meta Quest 2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/3.webp`} alt="Meta Quest 2" />
         <p class="res__name">Meta Quest 2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/4.webp`} alt="HTC Vive Pro 2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/4.webp`} alt="HTC Vive Pro 2" />
         <p class="res__name">HTC Vive Pro 2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/5.webp`} alt="Varjo Aero" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/5.webp`} alt="Varjo Aero" />
         <p class="res__name">Varjo Aero</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/6.webp`} alt="HP Reverb G2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/6.webp`} alt="HP Reverb G2" />
         <p class="res__name">HP Reverb G2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/7.webp`} alt="PlayStation VR2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/7.webp`} alt="PlayStation VR2" />
         <p class="res__name">PlayStation VR2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/8.webp`} alt="Microsoft HoloLens 2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/8.webp`} alt="Microsoft HoloLens 2" />
         <p class="res__name">Microsoft HoloLens 2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/9.webp`} alt="Tilt Five" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/9.webp`} alt="Tilt Five" />
         <p class="res__name">Tilt Five</p>
       </div>
 
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/23.png`} alt="KAT VR Treadmill" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/23.png`} alt="KAT VR Treadmill" />
         <p class="res__name">KAT VR Treadmill</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/24.png`} alt="Unitree Go2" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/24.png`} alt="Unitree Go2" />
         <p class="res__name">Unitree Go2</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/25.png`} alt="DJI Mini 3" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/25.png`} alt="DJI Mini 3" />
         <p class="res__name">DJI Mini 3</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/26.png`} alt="DJI Mavic 2 Pro" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/26.png`} alt="DJI Mavic 2 Pro" />
         <p class="res__name">DJI Mavic 2 Pro</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/27.png`} alt="DJI Avata 2 Fly" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/27.png`} alt="DJI Avata 2 Fly" />
         <p class="res__name">DJI Avata 2 Fly</p>
       </div>
 
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/10.webp`} alt="Valve Index Controllers" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/10.webp`} alt="Valve Index Controllers" />
         <p class="res__name">Valve Index Controllers</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/11.webp`} alt="Vive Tracker 3.0" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/11.webp`} alt="Vive Tracker 3.0" />
         <p class="res__name">Vive Tracker 3.0</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/12.webp`} alt="TactSuit X40" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/12.webp`} alt="TactSuit X40" />
         <p class="res__name">TactSuit X40</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/13.webp`} alt="Insta360 Camera" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/13.webp`} alt="Insta360 Camera" />
         <p class="res__name">Insta360 Camera</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/14.webp`} alt="HOTAS Warthog" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/14.webp`} alt="HOTAS Warthog" />
         <p class="res__name">HOTAS Warthog</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/15.webp`} alt="TPR Rudder Pedals" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/15.webp`} alt="TPR Rudder Pedals" />
         <p class="res__name">TPR Rudder Pedals</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/16.webp`} alt="TactVisor" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/16.webp`} alt="TactVisor" />
         <p class="res__name">TactVisor</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/17.webp`} alt="Tactosy for Arms" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/17.webp`} alt="Tactosy for Arms" />
         <p class="res__name">Tactosy for Arms</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/18.webp`} alt="Tactosy for Feet" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/18.webp`} alt="Tactosy for Feet" />
         <p class="res__name">Tactosy for Feet</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/19.webp`} alt="Tactosy for Hands" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/19.webp`} alt="Tactosy for Hands" />
         <p class="res__name">Tactosy for Hands</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/20.webp`} alt="Yeti Microphone" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/20.webp`} alt="Yeti Microphone" />
         <p class="res__name">Yeti Microphone</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/21.webp`} alt="Alienware w/ 2080 Ti" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/21.webp`} alt="Alienware w/ 2080 Ti" />
         <p class="res__name">Alienware w/ 2080 Ti</p>
       </div>
       <div class="res__card">
-        <img class="res__img" src={`${base}Images/equipment/22.webp`} alt="iMac Pro" />
+        <img class="res__img" decoding="async" src={`${base}Images/equipment/22.webp`} alt="iMac Pro" />
         <p class="res__name">iMac Pro</p>
       </div>
     </div>
+
+    <button class="res__trigger" data-render-trigger>Press Me</button>
   </div>
 </section>
 
@@ -136,7 +135,9 @@ const base = import.meta.env.BASE_URL;
     width: 100%;
     min-height: 100vh;
     overflow: hidden;
-    visibility: hidden;
+    will-change: transform;
+    contain: content;
+    background: #000;
   }
 
   .res::before {
@@ -145,66 +146,21 @@ const base = import.meta.env.BASE_URL;
     top: 0;
     left: 0;
     right: 0;
-    height: 120px;
-    background: linear-gradient(rgba(0, 0, 0, 0.95), transparent);
-    z-index: 3;
+    height: 7.5rem;
+    background: linear-gradient(rgba(0, 0, 0, 0.95), #000);
+    z-index: 2;
     pointer-events: none;
   }
 
-  .res::after {
-    content: '';
+  .res__decor {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 120px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
-    z-index: 3;
+    top: -5%;
+    right: 10%;
+    width: clamp(24rem, 40vw, 44rem);
+    height: auto;
+    z-index: 1;
     pointer-events: none;
-  }
-
-  .res__bg {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 120%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(255, 255, 255, 0.025) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 80% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 55%),
-      linear-gradient(180deg, #000 0%, #0a0a0a 30%, #080808 60%, #000 100%);
-    z-index: 0;
-  }
-
-  .res__glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(120px);
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .res__glow--tl {
-    width: 600px;
-    height: 600px;
-    top: -10%;
-    left: -5%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
-  }
-
-  .res__glow--br {
-    width: 700px;
-    height: 700px;
-    bottom: -15%;
-    right: -8%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.035) 0%, transparent 70%);
-  }
-
-  .res__glow--center {
-    width: 500px;
-    height: 500px;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
+    opacity: 0.85;
   }
 
   .res__layout {
@@ -214,7 +170,7 @@ const base = import.meta.env.BASE_URL;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 5rem var(--page-padding) 6rem;
+    padding: 9rem var(--page-padding) 6rem;
     gap: 3rem;
   }
 
@@ -323,5 +279,31 @@ const base = import.meta.env.BASE_URL;
 
     .res__title-outline { font-size: 4rem; }
     .res__title { font-size: 2rem; }
+  }
+
+  .res__trigger {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 1rem 3rem;
+    border-radius: 980px;
+    cursor: pointer;
+    transition: background 200ms ease, border-color 200ms ease;
+  }
+
+  .res__trigger:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    .res__trigger {
+      font-size: 1.2rem;
+      padding: 0.8rem 2rem;
+    }
   }
 </style>

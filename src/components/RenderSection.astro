@@ -1,28 +1,199 @@
 <section class="render" data-render>
-  <canvas class="render__canvas" data-render-canvas></canvas>
-
-  <div class="render__overlay" data-render-overlay>
-    <button class="render__start-btn" data-render-start>Get Started</button>
-  </div>
-
-  <div class="render__build" data-render-build>
-    <h2 class="render__build-title">Build Anything</h2>
-    <p class="render__build-sub">(This scene was built in Blender)</p>
-  </div>
-  <div class="render__community" data-render-community>
-    <h2 class="render__community-title">Build Together</h2>
-    <p class="render__community-sub">(Built entirely using one of our corporate sponsors exclusive software)</p>
+  <div class="render__fullscreen" data-render-fullscreen>
+    <canvas class="render__canvas" data-render-canvas></canvas>
+    <div class="render__build" data-render-build>
+      <h2 class="render__build-title">Build Anything</h2>
+      <p class="render__build-sub">(This scene was built in Blender)</p>
+    </div>
+    <div class="render__community" data-render-community>
+      <h2 class="render__community-title">Build Together</h2>
+      <p class="render__community-sub">(Built entirely using one of our corporate sponsors exclusive software)</p>
+    </div>
+    <button class="render__close" data-render-close aria-label="Close">&times;</button>
   </div>
 </section>
 
+<script>
+  import { initRenderCanvas } from '../animations/scroll';
+  import type { FrameTrigger } from '../animations/scroll';
+
+  const trigger = document.querySelector('[data-render-trigger]');
+  const overlay = document.querySelector('[data-render-fullscreen]') as HTMLElement;
+  const canvas = document.querySelector('[data-render-canvas]') as HTMLCanvasElement;
+  const closeBtn = document.querySelector('[data-render-close]');
+
+  const renderBuild = document.querySelector('[data-render-build]') as HTMLElement;
+  const renderCommunity = document.querySelector('[data-render-community]') as HTMLElement;
+
+  if (renderBuild) renderBuild.style.opacity = '0';
+  if (renderCommunity) renderCommunity.style.opacity = '0';
+
+  const frameTriggers: FrameTrigger[] = [];
+
+  if (renderBuild) {
+    frameTriggers.push({
+      frame: 435,
+      fired: false,
+      callback: () => {
+        renderBuild.style.transition = 'opacity 0.5s ease';
+        renderBuild.style.opacity = '1';
+      },
+    });
+    frameTriggers.push({
+      frame: 569,
+      fired: false,
+      callback: () => {
+        renderBuild.style.transition = 'opacity 0.4s ease';
+        renderBuild.style.opacity = '0';
+      },
+    });
+  }
+
+  if (renderCommunity) {
+    frameTriggers.push({
+      frame: 704,
+      fired: false,
+      callback: () => {
+        renderCommunity.style.transition = 'opacity 0.5s ease';
+        renderCommunity.style.opacity = '1';
+      },
+    });
+    frameTriggers.push({
+      frame: 810,
+      fired: false,
+      callback: () => {
+        renderCommunity.style.transition = 'opacity 0.4s ease';
+        renderCommunity.style.opacity = '0';
+      },
+    });
+  }
+
+  let player: ReturnType<typeof initRenderCanvas> | null = null;
+  const base = import.meta.env.BASE_URL;
+  const audioQueue: HTMLAudioElement[] = [];
+
+  // Sound triggers tied to frame timings across the ~30s render
+  // bootup: frame 0 (start), scifi: frame 435 (~14.5s, "Build Anything"), immersed: frame 704 (~23.5s, "Build Together")
+  frameTriggers.push({
+    frame: 1,
+    fired: false,
+    callback: () => {
+      const bootup = new Audio(`${base}bootup.mp3`);
+      audioQueue.push(bootup);
+      bootup.play().catch(() => {});
+    },
+  });
+
+  frameTriggers.push({
+    frame: 170,
+    fired: false,
+    callback: () => {
+      const immersed = new Audio(`${base}immersed.mp3`);
+      audioQueue.push(immersed);
+      immersed.play().catch(() => {});
+    },
+  });
+
+  frameTriggers.push({
+    frame: 184,
+    fired: false,
+    callback: () => {
+      const imm = audioQueue.find(a => a.src.includes('immersed'));
+      if (imm) { imm.pause(); imm.currentTime = 0; }
+    },
+  });
+
+  let scifiRef: HTMLAudioElement | null = null;
+  frameTriggers.push({
+    frame: 435,
+    fired: false,
+    callback: () => {
+      const scifi = new Audio(`${base}scifi.mp3`);
+      scifi.currentTime = 36;
+      audioQueue.push(scifi);
+      scifiRef = scifi;
+      scifi.play().catch(() => {});
+    },
+  });
+
+  frameTriggers.push({
+    frame: 800,
+    fired: false,
+    callback: () => {
+      if (!scifiRef) return;
+      const fadeInterval = setInterval(() => {
+        if (!scifiRef || scifiRef.volume <= 0.02) {
+          if (scifiRef) { scifiRef.pause(); scifiRef.currentTime = 0; }
+          clearInterval(fadeInterval);
+          return;
+        }
+        scifiRef.volume = Math.max(0, scifiRef.volume - 0.03);
+      }, 100);
+    },
+  });
+
+  frameTriggers.push({
+    frame: 898,
+    fired: false,
+    callback: () => {
+      if (scifiRef) { scifiRef.pause(); scifiRef.currentTime = 0; scifiRef = null; }
+    },
+  });
+
+  function stopAudio() {
+    for (const a of audioQueue) {
+      a.pause();
+      a.currentTime = 0;
+    }
+    audioQueue.length = 0;
+  }
+
+  function openRender() {
+    if (!overlay || !canvas) return;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!player) {
+          player = initRenderCanvas(canvas, frameTriggers);
+        }
+        player!.start();
+      });
+    });
+  }
+
+  function closeRender() {
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    player?.stop();
+    stopAudio();
+  }
+
+  trigger?.addEventListener('click', openRender);
+  closeBtn?.addEventListener('click', closeRender);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay?.style.display === 'flex') {
+      closeRender();
+    }
+  });
+</script>
+
 <style>
   .render {
-    position: absolute;
+    position: relative;
+    width: 100%;
+  }
+
+  .render__fullscreen {
+    display: none;
+    position: fixed;
     inset: 0;
-    overflow: hidden;
-    visibility: hidden;
+    z-index: 10000;
     background: #000;
-    z-index: 0;
+    align-items: center;
+    justify-content: center;
   }
 
   .render__canvas {
@@ -32,35 +203,6 @@
     width: 100%;
     height: 100%;
     display: block;
-  }
-
-  .render__overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .render__start-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 500;
-    letter-spacing: 0;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 0.75rem 2.2rem;
-    border-radius: 980px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .render__start-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.35);
   }
 
   .render__build {
@@ -115,12 +257,32 @@
     margin-top: 0.3em;
   }
 
-  @media (max-width: 768px) {
-    .render__start-btn {
-      font-size: 0.95rem;
-      padding: 0.65rem 1.8rem;
-    }
+  .render__close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 200ms ease, background 200ms ease;
+    line-height: 1;
+  }
 
+  .render__close:hover {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  @media (max-width: 768px) {
     .render__build {
       top: 12%;
       right: 8%;
@@ -145,6 +307,14 @@
 
     .render__community-sub {
       font-size: 12px;
+    }
+
+    .render__close {
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+      font-size: 1.5rem;
     }
   }
 </style>

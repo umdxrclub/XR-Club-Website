@@ -1,0 +1,420 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<section class="recog" data-recognition>
+  <img class="recog__bg" src={`${base}Images/partners/recognition.webp`} alt="" decoding="async" />
+  <div class="recog__dim"></div>
+
+  <div class="recog__layout">
+    <div class="recog__left">
+      <div class="recog__title-wrap">
+        <span class="recog__title-outline">XR</span>
+        <h2 class="recog__title">Recognition</h2>
+      </div>
+
+      <div class="recog__award">
+        <img src={`${base}Images/partners/award.png`} alt="Immersive Technology Leadership Award" class="recog__award-img" decoding="async" />
+        <h3 class="recog__award-title">Immersive Technology Leadership Award</h3>
+        <p class="recog__award-desc">Honored by the UMD CMSC department for advancing AR/VR through community education, hands on workshops, and collaborative development projects.</p>
+        <span class="recog__award-date">May 2025</span>
+      </div>
+    </div>
+
+    <div class="recog__right">
+      <div class="recog__hack-header">
+        <img src={`${base}Images/partners/realityhack.png`} alt="Reality Hack" class="recog__hack-img" decoding="async" />
+        <div>
+          <h3 class="recog__hack-title">MIT Reality Hack 2025</h3>
+          <p class="recog__hack-sub">Our club's winners</p>
+        </div>
+      </div>
+
+      <div class="recog__winners">
+        <div class="recog__winner">
+          <h4 class="recog__winner-name">Samuel Wiggins '27</h4>
+          <p class="recog__winner-role">Former XR Vice-President</p>
+          <p class="recog__winner-prize">Best App for Raven Glasses Prize for <strong>R-Eye-Der</strong>.</p>
+          <p class="recog__winner-detail">As part of their award, Samuel will receive RAVEN AR glasses, scheduled to be shipped to each team member in late 2026.</p>
+          <div class="recog__video">
+            <iframe src="https://www.youtube.com/embed/eBeCEY2OcjE" title="R-Eye-Der" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <a href="https://devpost.com/software/r-eye-der" target="_blank" rel="noopener" class="recog__link">View on Devpost</a>
+        </div>
+
+        <div class="recog__winner">
+          <h4 class="recog__winner-name">Ananya Srinivasan '26</h4>
+          <p class="recog__winner-role">Former XR Developer Intern at NASA Glenn Research Center</p>
+          <p class="recog__winner-prize">3rd Place in the XR Health and Wellness Design & Research Track for <strong>Rain With Me</strong>.</p>
+          <div class="recog__video">
+            <iframe src="https://player.vimeo.com/video/1158221253?h=42e0e04632" title="Rain With Me" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" allowfullscreen></iframe>
+          </div>
+          <a href="https://devpost.com/software/rain-with-me" target="_blank" rel="noopener" class="recog__link">View on Devpost</a>
+        </div>
+
+        <div class="recog__winner">
+          <h4 class="recog__winner-name">Jack Babu '27 & Damian Figueroa '24</h4>
+          <p class="recog__winner-role">Former XR President (Damian)</p>
+          <p class="recog__winner-prize">Best XR Experience, for their project <strong>Reboot: Anomaly Holdout</strong>.</p>
+          <div class="recog__video">
+            <iframe src="https://www.youtube.com/embed/02chYaUk4OM" title="Reboot: Anomaly Holdout" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <a href="https://devpost.com/software/anomaly-holdout" target="_blank" rel="noopener" class="recog__link">View on Devpost</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .recog {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    will-change: transform;
+    contain: layout style;
+  }
+
+  .recog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 7.5rem;
+    background: linear-gradient(rgba(0, 0, 0, 0.95), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .recog::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 7.5rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .recog__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .recog__dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1;
+  }
+
+  .recog__layout {
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(5rem, 8vh, 8rem) var(--page-padding) clamp(4rem, 6vh, 6rem);
+    gap: 4vw;
+    box-sizing: border-box;
+  }
+
+  .recog__left {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 22vw;
+    min-width: 200px;
+  }
+
+  .recog__title-wrap {
+    position: relative;
+    margin-bottom: clamp(3rem, 5vh, 5rem);
+  }
+
+  .recog__title-outline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(7rem, 12vw, 14rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .recog__title {
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 0.9;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+
+  .recog__award {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .recog__award-img {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    border-radius: 12px;
+    margin-bottom: 1.2rem;
+    filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.6));
+  }
+
+  .recog__award-title {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.4rem, 1.8vw, 2.2rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .recog__award-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1vw, 1.3rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.75;
+    margin-bottom: 0.6rem;
+  }
+
+  .recog__award-date {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .recog__right {
+    flex: none;
+    width: 55vw;
+    min-width: 0;
+  }
+
+  .recog__hack-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: clamp(3.5rem, 5vh, 5rem);
+  }
+
+  .recog__hack-img {
+    width: clamp(6rem, 10vw, 9rem);
+    height: auto;
+    border-radius: 12px;
+    filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5));
+  }
+
+  .recog__hack-title {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(2.5rem, 3.5vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  .recog__hack-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1rem, 1.2vw, 1.4rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.4rem;
+  }
+
+  .recog__winners {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.2rem, 1.5vw, 2rem);
+    align-items: stretch;
+  }
+
+  .recog__winner {
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .recog__video {
+    margin-top: auto;
+  }
+
+  .recog__winner-name {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.1rem, 1.3vw, 1.6rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.2rem;
+  }
+
+  .recog__winner-role {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 0.95vw, 1.1rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 0.5rem;
+  }
+
+  .recog__winner-prize {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1vw, 1.2rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.65;
+    margin-bottom: 0.5rem;
+  }
+
+  .recog__winner-prize strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .recog__winner-detail {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 0.9vw, 1.1rem);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.65;
+    margin-bottom: 0.8rem;
+  }
+
+  .recog__video {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+    background: #000;
+  }
+
+  .recog__video iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .recog__link {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1vw, 1.1rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 200ms ease;
+  }
+
+  .recog__link:hover {
+    color: #fff;
+  }
+
+  @media (max-width: 1024px) {
+    .recog__left {
+      width: 24vw;
+    }
+
+    .recog__right {
+      width: 58vw;
+    }
+
+    .recog__winners {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .recog__layout {
+      flex-direction: column;
+      padding: 6vh var(--page-padding);
+      gap: 2rem;
+    }
+
+    .recog__left {
+      width: 100%;
+      min-width: 0;
+      align-items: center;
+      text-align: center;
+    }
+
+    .recog__right {
+      width: 100%;
+    }
+
+    .recog__award-img {
+      max-width: 200px;
+    }
+
+    .recog__hack-header {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .recog__winners {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .recog__winner:last-child {
+      grid-column: span 2;
+      max-width: 50%;
+      margin: 0 auto;
+    }
+
+    .recog__title-outline { font-size: 7rem; }
+    .recog__title { font-size: 3rem; }
+  }
+
+  @media (max-width: 480px) {
+    .recog__layout {
+      padding: 4rem 1rem 3rem;
+    }
+
+    .recog__award-img {
+      max-width: 160px;
+    }
+
+    .recog__winners {
+      grid-template-columns: 1fr;
+    }
+
+    .recog__winner:last-child {
+      grid-column: auto;
+      max-width: 100%;
+    }
+
+    .recog__winner {
+      padding-left: 1rem;
+    }
+
+    .recog__title-outline { font-size: 5rem; }
+    .recog__title { font-size: 2.5rem; }
+  }
+</style>

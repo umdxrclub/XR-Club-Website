@@ -4,7 +4,7 @@ import { $ } from '../utils/dom';
 const base = import.meta.env.BASE_URL;
 
 const TOTAL_FRAMES = 130;
-const AUTO_SPEED = 0.0008;
+const AUTO_SPEED = 0.1;
 const SCENE_DURATIONS = { background: 150, split: 55 };
 const TOTAL = SCENE_DURATIONS.background + SCENE_DURATIONS.split;
 const PHASE_END = { background: SCENE_DURATIONS.background / TOTAL };
@@ -14,37 +14,46 @@ function easeOutCubic(t: number): number {
 }
 
 export function initIntro(onComplete: () => void) {
-  const bgImage = $<HTMLImageElement>('#bg-image');
+  const bgCanvas = $<HTMLCanvasElement>('#bg-canvas');
   const bgContainer = $('#bg-container');
   const splitScene = $('#split-scene');
   const splitBlack = $('#split-black');
   const intro = $('[data-intro]');
 
-  if (!bgImage || !bgContainer || !splitScene || !splitBlack || !intro) return;
+  if (!bgCanvas || !bgContainer || !splitScene || !splitBlack || !intro) return;
+
+  const ctx = bgCanvas.getContext('2d')!;
+
+  const frames: (HTMLImageElement | null)[] = new Array(TOTAL_FRAMES).fill(null);
+  let lastDrawnFrame = -1;
+
+  const sizeCanvas = () => {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    bgCanvas!.width = window.innerWidth * dpr;
+    bgCanvas!.height = window.innerHeight * dpr;
+    lastDrawnFrame = -1;
+  };
+  sizeCanvas();
+  window.addEventListener('resize', sizeCanvas);
 
   const preloadHero = new Image();
-  preloadHero.src = `${base}Images/photo4.jpg`;
+  preloadHero.src = `${base}Images/photo4.webp`;
   const preloadLogo = new Image();
-  preloadLogo.src = `${base}Images/XR Logo.png`;
+  preloadLogo.src = `${base}Images/XR logo.png`;
   const criticalReady = Promise.all([
     preloadHero.decode().catch(() => {}),
     preloadLogo.decode().catch(() => {}),
   ]);
 
-  let maxLoadedFrame = 0;
-  const frames: HTMLImageElement[] = [];
-
-  for (let i = 0; i < TOTAL_FRAMES; i++) {
+  function loadFrame(i: number) {
+    if (frames[i]) return;
     const img = new Image();
     img.src = `${base}background/${String(i).padStart(4, '0')}.png`;
-    img.onload = () => {
-      if (i === maxLoadedFrame) {
-        while (maxLoadedFrame < TOTAL_FRAMES && frames[maxLoadedFrame]?.complete) {
-          maxLoadedFrame++;
-        }
-      }
-    };
-    frames.push(img);
+    frames[i] = img;
+  }
+
+  for (let i = 0; i < Math.min(40, TOTAL_FRAMES); i++) {
+    loadFrame(i);
   }
 
   let progress = 0;
@@ -57,8 +66,15 @@ export function initIntro(onComplete: () => void) {
       const frameProgress = p / PHASE_END.background;
       const idx = Math.floor(frameProgress * (TOTAL_FRAMES - 1));
 
-      if (frames[idx]?.complete) {
-        bgImage!.src = frames[idx].src;
+      const img = frames[idx];
+      if (img?.complete && idx !== lastDrawnFrame) {
+        lastDrawnFrame = idx;
+        const cw = bgCanvas!.width;
+        const ch = bgCanvas!.height;
+        const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+        const dw = img.naturalWidth * scale;
+        const dh = img.naturalHeight * scale;
+        ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
       }
 
       bgContainer!.style.opacity = '1';
@@ -105,59 +121,11 @@ export function initIntro(onComplete: () => void) {
     if (transitionStarted) return;
     transitionStarted = true;
 
-    const footer = $('[data-footer]') as HTMLElement;
-    const csLogo = intro!.querySelector('.intro__cs-logo') as HTMLImageElement;
-    const imdmLogo = intro!.querySelector('.intro__imdm-logo') as HTMLImageElement;
-
-    const csStart = csLogo.getBoundingClientRect();
-    const imdmStart = imdmLogo.getBoundingClientRect();
-
-    if (footer) {
-      footer.style.visibility = 'visible';
-      footer.style.opacity = '1';
-    }
-    const footerCSImg = footer?.querySelector('[data-footer-logo-left] .footer__logo') as HTMLElement;
-    const footerIMDMImg = footer?.querySelector('[data-footer-logo-right] .footer__logo') as HTMLElement;
-    const csEnd = footerCSImg?.getBoundingClientRect();
-    const imdmEnd = footerIMDMImg?.getBoundingClientRect();
-    if (footer) {
-      footer.style.visibility = 'hidden';
-      footer.style.opacity = '0';
-    }
-
-    const fixLogo = (logo: HTMLImageElement, rect: DOMRect) => {
-      logo.style.cssText = `
-        position: fixed;
-        z-index: 10000;
-        pointer-events: none;
-        left: 0;
-        top: 0;
-        width: ${rect.width}px;
-        height: ${rect.height}px;
-        transform: translate(${rect.left}px, ${rect.top}px);
-        will-change: transform;
-        opacity: 1;
-        max-height: none;
-        max-width: none;
-        transition: none;
-      `;
-      document.body.appendChild(logo);
-    };
-
-    fixLogo(csLogo, csStart);
-    fixLogo(imdmLogo, imdmStart);
-
-    if (footer) {
-      footer.style.visibility = 'visible';
-      footer.style.opacity = '1';
-    }
-
     const tl = gsap.timeline({
       delay: 0.3,
       onComplete: () => {
-        csLogo.remove();
-        imdmLogo.remove();
         criticalReady.then(() => {
+          window.removeEventListener('resize', sizeCanvas);
           intro!.remove();
           onComplete();
         });
@@ -169,47 +137,31 @@ export function initIntro(onComplete: () => void) {
       duration: 0.8,
       ease: 'power2.inOut',
     }, 0);
-
-    if (csEnd) {
-      tl.to(csLogo, {
-        x: csEnd.left,
-        y: csEnd.top,
-        width: csEnd.width,
-        height: csEnd.height,
-        duration: 1,
-        ease: 'power2.inOut',
-      }, 0.2);
-    }
-
-    if (imdmEnd) {
-      tl.to(imdmLogo, {
-        x: imdmEnd.left,
-        y: imdmEnd.top,
-        width: imdmEnd.width,
-        height: imdmEnd.height,
-        duration: 1,
-        ease: 'power2.inOut',
-      }, 0.2);
-    }
   }
 
-  function loop() {
-    if (!done) {
-      const frameProgress = progress / PHASE_END.background;
-      const targetFrame = Math.floor(frameProgress * (TOTAL_FRAMES - 1));
+  let lastTime = 0;
 
-      if (progress <= PHASE_END.background && targetFrame >= maxLoadedFrame) {
-        requestAnimationFrame(loop);
-        return;
+  function loop(now: number) {
+    if (!lastTime) lastTime = now;
+    const dt = Math.min((now - lastTime) / 1000, 0.1);
+    lastTime = now;
+
+    if (!done) {
+      progress = Math.min(progress + AUTO_SPEED * dt, 1);
+      update(progress);
+
+      if (progress <= PHASE_END.background) {
+        const currentIdx = Math.floor((progress / PHASE_END.background) * (TOTAL_FRAMES - 1));
+        for (let i = currentIdx; i < Math.min(currentIdx + 40, TOTAL_FRAMES); i++) {
+          loadFrame(i);
+        }
       }
 
-      progress = Math.min(progress + AUTO_SPEED, 1);
-      update(progress);
       requestAnimationFrame(loop);
     } else {
       startTransition();
     }
   }
 
-  loop();
+  requestAnimationFrame(loop);
 }

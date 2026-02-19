@@ -13,5 +13,8 @@
     "@supabase/supabase-js": "^2.96.0",
     "astro": "^5.16.11",
     "gsap": "^3.14.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }
