@@ -152,6 +152,39 @@
   cursor: not-allowed;
 }
 
+.pw-reqs {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.pw-req {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 200ms ease;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pw-req::before {
+  content: '○';
+  font-size: 0.6rem;
+  flex-shrink: 0;
+}
+
+.pw-req--met {
+  color: #34d399;
+}
+
+.pw-req--met::before {
+  content: '●';
+}
+
 .auth-spinner {
   display: inline-block;
   width: 16px;

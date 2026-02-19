@@ -48,10 +48,16 @@ import RecognitionSection from '../components/RecognitionSection.astro';
     inset: 0;
     z-index: 100000;
     background: #000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     transition: opacity 0.5s ease;
+  }
+
+  @media (max-width: 768px) {
+    .loader {
+      display: flex;
+    }
   }
 
   .loader--hidden {
