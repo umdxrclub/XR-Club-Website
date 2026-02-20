@@ -6,40 +6,40 @@ import Footer from '../components/Footer.astro';
 const base = import.meta.env.BASE_URL;
 
 const departments = [
-  { src: `${base}Images/partners/1.webp`, alt: 'UMD Department' },
-  { src: `${base}Images/partners/2.webp`, alt: 'UMD Department', dark: true },
-  { src: `${base}Images/partners/3.webp`, alt: 'UMD Department' },
-  { src: `${base}Images/partners/12.webp`, alt: 'UMD Department' },
-  { src: `${base}Images/partners/9.webp`, alt: 'HCIL' },
+  { src: `${base}Images/partners/1.webp`, alt: 'UMD Department', url: 'https://www.cs.umd.edu/' },
+  { src: `${base}Images/partners/2.webp`, alt: 'UMD Department', dark: true, url: 'https://www.cs.umd.edu/' },
+  { src: `${base}Images/partners/3.webp`, alt: 'UMD Department', url: 'https://eng.umd.edu/' },
+  { src: `${base}Images/partners/12.webp`, alt: 'UMD Department', url: 'https://appdevclub.com/' },
+  { src: `${base}Images/partners/9.webp`, alt: 'HCIL', url: 'https://nianticlabs.com/?hl=en' },
 ];
 
 const companies = [
-  { src: `${base}Images/partners/13.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/5.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/6.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/7.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/8.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/14.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/15.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/16.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/17.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/18.webp`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/13.webp`, alt: 'Corporate Partner', url: 'https://mavric.umd.edu/' },
+  { src: `${base}Images/partners/5.webp`, alt: 'Corporate Partner', url: 'https://paraverse.cc/' },
+  { src: `${base}Images/partners/6.webp`, alt: 'Corporate Partner', url: 'https://www.virnect.io/en-us/' },
+  { src: `${base}Images/partners/7.webp`, alt: 'Corporate Partner', url: 'https://hcil.umd.edu/' },
+  { src: `${base}Images/partners/8.webp`, alt: 'Corporate Partner', url: 'https://terplink.umd.edu/organization/UMCPG' },
+  { src: `${base}Images/partners/14.webp`, alt: 'Corporate Partner', url: 'https://terps-making-games.itch.io/' },
+  { src: `${base}Images/partners/15.webp`, alt: 'Corporate Partner', url: 'https://umterps.com/' },
+  { src: `${base}Images/partners/16.webp`, alt: 'Corporate Partner', url: 'https://www.projectaria.com/' },
+  { src: `${base}Images/partners/17.webp`, alt: 'Corporate Partner', url: 'https://tanitxr.org/' },
+  { src: `${base}Images/partners/18.webp`, alt: 'Corporate Partner', url: 'https://www.baltivirtual.com/' },
   { src: `${base}Images/partners/19.webp`, alt: 'Corporate Partner', dark: true },
-  { src: `${base}Images/partners/20.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/21.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/23.webp`, alt: 'Corporate Partner' },
-  { src: `${base}Images/partners/25.webp`, alt: 'Corporate Partner' },
+  { src: `${base}Images/partners/20.webp`, alt: 'Corporate Partner', url: 'https://www.vuse-xr.de/' },
+  { src: `${base}Images/partners/21.webp`, alt: 'Corporate Partner', url: 'https://www.awexr.com/' },
+  { src: `${base}Images/partners/23.webp`, alt: 'Corporate Partner', url: 'https://neural-lab.com/' },
+  { src: `${base}Images/partners/25.webp`, alt: 'Corporate Partner', url: 'https://www.doublepoint.com/' },
 ];
 
 const studentOrgs = [
-  { src: `${base}Images/partners/4.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/10.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/11.webp`, alt: 'Student Organization', dark: true },
-  { src: `${base}Images/partners/22.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/24.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/26.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/27.webp`, alt: 'Student Organization' },
-  { src: `${base}Images/partners/28.webp`, alt: 'Student Organization' },
+  { src: `${base}Images/partners/4.webp`, alt: 'Student Organization', url: 'https://ixalliance.org/' },
+  { src: `${base}Images/partners/10.webp`, alt: 'Student Organization', url: 'https://tas.umd.edu/' },
+  { src: `${base}Images/partners/11.webp`, alt: 'Student Organization', dark: true, url: 'https://www.icxr.org/' },
+  { src: `${base}Images/partners/22.webp`, alt: 'Student Organization', url: 'https://terplink.umd.edu/organization/terrapin-beats-society' },
+  { src: `${base}Images/partners/24.webp`, alt: 'Student Organization', url: 'https://tech.facebook.com/reality-labs/' },
+  { src: `${base}Images/partners/26.webp`, alt: 'Student Organization', url: 'https://startupshell.org/' },
+  { src: `${base}Images/partners/27.webp`, alt: 'Student Organization', url: 'https://bit.camp/' },
+  { src: `${base}Images/partners/28.webp`, alt: 'Student Organization', url: 'https://neurotech.umd.edu/' },
 ];
 ---
 
@@ -59,9 +59,7 @@ const studentOrgs = [
       <h2 class="sp__section-title">UMD Departments</h2>
       <div class="sp__track-wrap">
         <div class="sp__track" data-carousel="left">
-          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark, 'sp__logo--invert': d.invert }]} src={d.src} alt={d.alt} decoding="async" />)}
-          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark, 'sp__logo--invert': d.invert }]} src={d.src} alt={d.alt} decoding="async" />)}
-          {departments.map(d => <img class:list={['sp__logo', { 'sp__logo--dark': d.dark, 'sp__logo--invert': d.invert }]} src={d.src} alt={d.alt} decoding="async" />)}
+          {[...departments, ...departments, ...departments].map(d => d.url ? <a href={d.url} target="_blank" rel="noopener" class="sp__link"><img class:list={['sp__logo', { 'sp__logo--dark': d.dark, 'sp__logo--invert': d.invert }]} src={d.src} alt={d.alt} decoding="async" /></a> : <img class:list={['sp__logo', { 'sp__logo--dark': d.dark, 'sp__logo--invert': d.invert }]} src={d.src} alt={d.alt} decoding="async" />)}
         </div>
       </div>
     </div>
@@ -70,8 +68,7 @@ const studentOrgs = [
       <h2 class="sp__section-title">Corporate Affiliates & Collaborators</h2>
       <div class="sp__track-wrap">
         <div class="sp__track" data-carousel="right">
-          {companies.map(c => <img class:list={['sp__logo', { 'sp__logo--dark': c.dark }]} src={c.src} alt={c.alt} decoding="async" />)}
-          {companies.map(c => <img class:list={['sp__logo', { 'sp__logo--dark': c.dark }]} src={c.src} alt={c.alt} decoding="async" />)}
+          {[...companies, ...companies].map(c => c.url ? <a href={c.url} target="_blank" rel="noopener" class="sp__link"><img class:list={['sp__logo', { 'sp__logo--dark': c.dark }]} src={c.src} alt={c.alt} decoding="async" /></a> : <img class:list={['sp__logo', { 'sp__logo--dark': c.dark }]} src={c.src} alt={c.alt} decoding="async" />)}
         </div>
       </div>
     </div>
@@ -80,9 +77,7 @@ const studentOrgs = [
       <h2 class="sp__section-title">Student Organizations</h2>
       <div class="sp__track-wrap">
         <div class="sp__track" data-carousel="left">
-          {studentOrgs.map(s => <img class:list={['sp__logo', { 'sp__logo--dark': s.dark }]} src={s.src} alt={s.alt} decoding="async" />)}
-          {studentOrgs.map(s => <img class:list={['sp__logo', { 'sp__logo--dark': s.dark }]} src={s.src} alt={s.alt} decoding="async" />)}
-          {studentOrgs.map(s => <img class:list={['sp__logo', { 'sp__logo--dark': s.dark }]} src={s.src} alt={s.alt} decoding="async" />)}
+          {[...studentOrgs, ...studentOrgs, ...studentOrgs].map(s => s.url ? <a href={s.url} target="_blank" rel="noopener" class="sp__link"><img class:list={['sp__logo', { 'sp__logo--dark': s.dark }]} src={s.src} alt={s.alt} decoding="async" /></a> : <img class:list={['sp__logo', { 'sp__logo--dark': s.dark }]} src={s.src} alt={s.alt} decoding="async" />)}
         </div>
       </div>
     </div>
@@ -213,6 +208,16 @@ const studentOrgs = [
 
   .sp__logo--invert {
     filter: invert(1);
+  }
+
+  .sp__link {
+    flex-shrink: 0;
+    display: flex;
+    transition: transform 200ms ease;
+  }
+
+  .sp__link:hover {
+    transform: scale(1.05);
   }
 
   @media (max-width: 768px) {
