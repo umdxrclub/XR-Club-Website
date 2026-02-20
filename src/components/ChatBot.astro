@@ -41,84 +41,10 @@ const base = import.meta.env.BASE_URL;
   import { supabase } from '../lib/supabase';
   import { navigate } from 'astro:transitions/client';
 
-  const chatEl = document.querySelector('[data-chat]') as HTMLElement;
-  const panel = document.querySelector('[data-chat-window]') as HTMLElement;
-  const feed = document.querySelector('[data-chat-msgs]') as HTMLElement;
-
-  // Hide during intro sequence, show after
-  const introEl = document.querySelector('[data-intro]');
-  if (introEl) {
-    const obs = new MutationObserver(() => {
-      if (!document.querySelector('[data-intro]')) {
-        chatEl.classList.remove('chat--hidden');
-        obs.disconnect();
-      }
-    });
-    obs.observe(document.body, { childList: true });
-  } else {
-    chatEl.classList.remove('chat--hidden');
-  }
-  const form = document.querySelector('[data-chat-form]') as HTMLFormElement;
-  const input = document.querySelector('[data-chat-input]') as HTMLInputElement;
-  const titleEl = document.querySelector('[data-chat-title]') as HTMLElement;
-  const toggles = document.querySelectorAll('[data-chat-toggle]');
-  const closeBtn = document.querySelector('[data-chat-close]');
-
-  // Detect page mode
-  const isIdeatePage = !!document.querySelector('[data-ideate-page]');
-  const mode = isIdeatePage ? 'ideate' : 'chat';
-
+  // ── Module-level state (survives across navigations) ──
   let isOpen = false;
   const history: { role: string; content: string }[] = [];
-
-  // Set up page-specific defaults
-  if (isIdeatePage) {
-    titleEl.textContent = 'XR Ideator';
-    // Auto-open on ideate page
-    setTimeout(() => { if (!isOpen) openChat(); }, 800);
-  }
-
-  // Restore chat state from sessionStorage (survives navigation)
-  const saved = sessionStorage.getItem('xr-chat');
-  if (saved) {
-    try {
-      const state = JSON.parse(saved);
-      if (state.messages && Array.isArray(state.messages)) {
-        state.messages.forEach((m: { role: string; content: string }) => {
-          addMsg(m.content, m.role === 'user' ? 'user' : 'bot');
-          history.push(m);
-        });
-      }
-      sessionStorage.removeItem('xr-chat');
-      // Re-open the panel if it was open before navigation
-      if (state.wasOpen) {
-        setTimeout(() => openChat(), 300);
-      }
-    } catch {}
-  } else {
-    // Add initial bot message only if no saved state
-    const welcomeMsg = isIdeatePage
-      ? "I'll help you build a project proposal. What kind of XR experience do you want to create? (VR game, AR app, mixed reality, research, creative/art, etc.)"
-      : "Have any questions about XR Club or the XR industry? Ask away!";
-    addMsg(welcomeMsg, 'bot');
-  }
-
-  function openChat() {
-    isOpen = true;
-    panel.classList.add('chat__panel--open');
-    input.focus();
-  }
-
-  function closeChat() {
-    isOpen = false;
-    panel.classList.remove('chat__panel--open');
-  }
-
-  toggles.forEach(btn => btn.addEventListener('click', () => {
-    if (isOpen) closeChat(); else openChat();
-  }));
-
-  closeBtn?.addEventListener('click', closeChat);
+  let ac: AbortController | null = null;
 
   function esc(s: string) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -132,7 +58,133 @@ const base = import.meta.env.BASE_URL;
     return s;
   }
 
-  function addMsg(text: string, type: 'user' | 'bot' | 'typing') {
+  // ── Bind / rebind all DOM references + handlers ──
+  function bindChat() {
+    // Tear down previous listeners
+    ac?.abort();
+    ac = new AbortController();
+    const { signal } = ac;
+
+    const chatEl = document.querySelector('[data-chat]') as HTMLElement;
+    const panel = document.querySelector('[data-chat-window]') as HTMLElement;
+    const feed = document.querySelector('[data-chat-msgs]') as HTMLElement;
+    const form = document.querySelector('[data-chat-form]') as HTMLFormElement;
+    const input = document.querySelector('[data-chat-input]') as HTMLInputElement;
+    const titleEl = document.querySelector('[data-chat-title]') as HTMLElement;
+    if (!chatEl || !panel || !feed || !form || !input) return;
+
+    // ── Visibility ──
+    const introEl = document.querySelector('[data-intro]');
+    if (introEl) {
+      const obs = new MutationObserver(() => {
+        if (!document.querySelector('[data-intro]')) {
+          chatEl.classList.remove('chat--hidden');
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.body, { childList: true });
+    } else {
+      chatEl.classList.remove('chat--hidden');
+    }
+
+    // ── Page mode ──
+    const isIdeatePage = !!document.querySelector('[data-ideate-page]');
+    const mode = isIdeatePage ? 'ideate' : 'chat';
+
+    if (isIdeatePage && titleEl) {
+      titleEl.textContent = 'XR Ideator';
+      setTimeout(() => { if (!isOpen) openChat(); }, 800);
+    }
+
+    // ── Welcome message (only if feed is empty) ──
+    if (feed.children.length === 0 && history.length === 0) {
+      const welcomeMsg = isIdeatePage
+        ? "I'll help you build a project proposal. What kind of XR experience do you want to create? (VR game, AR app, mixed reality, research, creative/art, etc.)"
+        : "Have any questions about XR Club or the XR industry? Ask away!";
+      addMsg(feed, welcomeMsg, 'bot');
+    }
+
+    // ── Restore open state ──
+    if (isOpen) {
+      panel.classList.add('chat__panel--open');
+    }
+
+    function openChat() {
+      isOpen = true;
+      panel.classList.add('chat__panel--open');
+      input.focus();
+    }
+
+    function closeChat() {
+      isOpen = false;
+      panel.classList.remove('chat__panel--open');
+    }
+
+    // ── Toggle / close ──
+    document.querySelectorAll('[data-chat-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (isOpen) closeChat(); else openChat();
+      }, { signal });
+    });
+
+    document.querySelector('[data-chat-close]')?.addEventListener('click', () => closeChat(), { signal });
+
+    // ── Handle navigation from chat ──
+    function handleNavigate(target: string) {
+      const base = import.meta.env.BASE_URL;
+      if (target.startsWith('/')) {
+        navigate(base + target.slice(1));
+      } else {
+        const section = document.querySelector(`[data-${target}]`) as HTMLElement;
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          navigate(`${base}#${target}`);
+        }
+      }
+    }
+
+    // ── Form submit ──
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMsg(feed, text, 'user');
+      input.value = '';
+      history.push({ role: 'user', content: text });
+
+      const typing = addMsg(feed, mode === 'ideate' ? 'Ideating...' : 'Thinking...', 'typing');
+
+      try {
+        const { data, error } = await supabase.functions.invoke('chat', {
+          body: { messages: history, mode },
+        });
+
+        typing.remove();
+        if (error) throw error;
+
+        const reply = data?.reply || "Sorry, I couldn't process that.";
+        addMsg(feed, reply, 'bot');
+        history.push({ role: 'assistant', content: reply });
+
+        if (data?.navigate) {
+          setTimeout(() => handleNavigate(data.navigate), 500);
+        }
+
+        if (data?.blocks && Array.isArray(data.blocks) && data.blocks.length > 0) {
+          window.dispatchEvent(new CustomEvent('ideate-content', {
+            detail: { blocks: data.blocks },
+          }));
+        }
+      } catch {
+        typing.remove();
+        addMsg(feed, "Something went wrong. Try again!", 'bot');
+      }
+    }, { signal });
+  }
+
+  function addMsg(feed: HTMLElement, text: string, type: 'user' | 'bot' | 'typing') {
     const el = document.createElement('div');
     el.className = `chat__bubble chat__bubble--${type}`;
     el.innerHTML = `<p>${type === 'user' ? esc(text) : fmt(text)}</p>`;
@@ -141,66 +193,10 @@ const base = import.meta.env.BASE_URL;
     return el;
   }
 
-  function saveChat() {
-    sessionStorage.setItem('xr-chat', JSON.stringify({
-      messages: history,
-      wasOpen: isOpen,
-    }));
-  }
-
-  function handleNavigate(target: string) {
-    const base = import.meta.env.BASE_URL;
-    if (target.startsWith('/')) {
-      navigate(base + target.slice(1));
-    } else {
-      const section = document.querySelector(`[data-${target}]`) as HTMLElement;
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        navigate(`${base}#${target}`);
-      }
-    }
-  }
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = input.value.trim();
-    if (!text) return;
-
-    addMsg(text, 'user');
-    input.value = '';
-    history.push({ role: 'user', content: text });
-
-    const typing = addMsg(mode === 'ideate' ? 'Ideating...' : 'Thinking...', 'typing');
-
-    try {
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: { messages: history, mode },
-      });
-
-      typing.remove();
-
-      if (error) throw error;
-
-      const reply = data?.reply || "Sorry, I couldn't process that.";
-      addMsg(reply, 'bot');
-      history.push({ role: 'assistant', content: reply });
-
-      // Handle navigation
-      if (data?.navigate) {
-        setTimeout(() => handleNavigate(data.navigate), 500);
-      }
-
-      // Handle ideate blocks
-      if (data?.blocks && Array.isArray(data.blocks) && data.blocks.length > 0) {
-        window.dispatchEvent(new CustomEvent('ideate-content', {
-          detail: { blocks: data.blocks },
-        }));
-      }
-    } catch {
-      typing.remove();
-      addMsg("Something went wrong. Try again!", 'bot');
-    }
+  // ── Run on every page load (initial + navigations) ──
+  document.addEventListener('astro:page-load', () => {
+    // Small delay lets intro-skip run first on home page
+    setTimeout(() => bindChat(), 100);
   });
 </script>
 

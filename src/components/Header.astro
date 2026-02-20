@@ -62,9 +62,9 @@ const base = import.meta.env.BASE_URL;
           <span class="header__user-name" id="auth-user-name"></span>
           <button class="header__link header__signout" id="auth-signout-btn">Sign Out</button>
         </span>
-        <div class="header__join header__apply-wrap" id="auth-apply-wrap">
+        <div class="header__join" id="auth-apply-wrap">
           <a href={`${base}apply`} class="header__btn">Apply Now</a>
-          <div class="header__join-dropdown header__apply-dropdown" id="auth-login-dropdown">
+          <div class="header__join-dropdown" id="auth-login-dropdown">
             <a href={`${base}login`} class="header__join-item" id="auth-login-link">Login / Sign Up</a>
           </div>
         </div>
@@ -175,6 +175,7 @@ const base = import.meta.env.BASE_URL;
     border-color: rgba(255, 255, 255, 0.5);
   }
 
+
   .header__join {
     position: relative;
   }
@@ -255,17 +256,14 @@ const base = import.meta.env.BASE_URL;
     min-width: 160px;
   }
 
-  .header__apply-wrap {
-    position: relative;
+  #auth-login-dropdown {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 0.3rem;
   }
 
-  .header__apply-wrap > .header__apply-dropdown {
-    min-width: 140px;
-    right: 0;
-    left: auto;
-    transform: none;
-    text-align: center;
-  }
 
   .header__dropdown-divider {
     height: 1px;
