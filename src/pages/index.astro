@@ -180,7 +180,10 @@ import RecognitionSection from '../components/RecognitionSection.astro';
     const target = window.location.hash.slice(1);
     const section = document.querySelector(`[data-${target}]`) as HTMLElement;
     if (section) {
-      setTimeout(() => section.scrollIntoView({ behavior: 'instant' }), 100);
+      setTimeout(() => {
+        section.scrollIntoView({ behavior: 'instant' });
+        history.replaceState(null, '', window.location.pathname);
+      }, 100);
     }
   }
 
