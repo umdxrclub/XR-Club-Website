@@ -55,6 +55,12 @@ export async function init() {
   } catch {}
 
   dismissLoader();
+
+  const skipBtn = document.getElementById('intro-skip-btn');
+  skipBtn?.addEventListener('click', () => {
+    skipIntro();
+  });
+
   initIntro(() => {
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
