@@ -84,18 +84,26 @@ const base = import.meta.env.BASE_URL;
       googleBtn.disabled = true;
       googleBtn.textContent = 'Redirecting...';
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}${base}login?redirect=${encodeURIComponent(redirect)}`,
-          queryParams: {
-            hd: 'terpmail.umd.edu',
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}${base}login?redirect=${encodeURIComponent(redirect)}`,
+            queryParams: {
+              hd: 'terpmail.umd.edu',
+              prompt: 'consent',
+            },
           },
-        },
-      });
+        });
 
-      if (error) {
-        errorMsg.textContent = error.message;
+        if (error) {
+          errorMsg.textContent = error.message;
+          errorMsg.style.display = 'block';
+          googleBtn.disabled = false;
+          googleBtn.textContent = 'Sign in with TerpMail';
+        }
+      } catch (e: any) {
+        errorMsg.textContent = e?.message || 'Something went wrong. Try again.';
         errorMsg.style.display = 'block';
         googleBtn.disabled = false;
         googleBtn.textContent = 'Sign in with TerpMail';

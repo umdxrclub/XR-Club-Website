@@ -357,6 +357,23 @@ select.apply-input option {
   margin-top: 0.5rem;
 }
 
+.apply-warning {
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  margin-top: 1.5rem;
+}
+
+.apply-warning__text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(250, 204, 21, 0.8);
+  line-height: 1.5;
+  margin: 0;
+}
+
 .apply-actions {
   display: flex;
   justify-content: flex-end;
