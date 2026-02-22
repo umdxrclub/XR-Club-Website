@@ -33,6 +33,7 @@ const base = import.meta.env.BASE_URL;
     <div id="apply-form-wrap" style="display:none;">
       <div class="apply-header">
         <h1 class="apply-title">Project Application</h1>
+        <span class="status-badge" id="apply-status-badge" style="display:none;"></span>
       </div>
 
       <form id="apply-form" autocomplete="off" novalidate>
@@ -249,23 +250,15 @@ const base = import.meta.env.BASE_URL;
         <div id="apply-msg" style="display:none;"></div>
 
         <!-- Actions -->
-        <p class="apply-edit-note">You can edit your application after submitting.</p>
-        <div class="apply-actions">
+        <div class="apply-actions" id="apply-actions-edit" style="display:none;flex-direction:column;align-items:center;">
+          <p class="apply-edit-note">Your application has been submitted. Click below to make changes.</p>
+          <button type="button" class="apply-btn apply-btn--edit" id="edit-app-btn">Edit Application</button>
+        </div>
+        <div class="apply-actions" id="apply-actions-submit">
           <button type="submit" class="apply-btn apply-btn--submit" id="submit-btn">Submit Application</button>
         </div>
         <p class="apply-autosave" id="autosave-status"></p>
       </form>
-    </div>
-
-    <!-- Already submitted view -->
-    <div id="apply-submitted" style="display:none;">
-      <div class="apply-header">
-        <h1 class="apply-title">Application Submitted</h1>
-        <span class="status-badge status-badge--submitted">Submitted</span>
-      </div>
-      <div class="apply-submitted">
-        <p>Your application has been submitted. We'll review it and get back to you soon! Join our <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;">Discord</a> for updates!</p>
-      </div>
     </div>
 
     <!-- Submit confirmation modal -->
@@ -531,8 +524,32 @@ const base = import.meta.env.BASE_URL;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.35);
       text-align: center;
-      margin-top: 1.5rem;
-      margin-bottom: 0;
+      margin-bottom: 0.8rem;
+    }
+
+    .apply-btn--edit {
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      color: #60a5fa;
+    }
+
+    .apply-btn--edit:hover {
+      background: rgba(96, 165, 250, 0.2);
+    }
+
+    .apply-form--readonly .apply-input,
+    .apply-form--readonly .search-select__input,
+    .apply-form--readonly select,
+    .apply-form--readonly textarea {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .apply-form--readonly .apply-radio,
+    .apply-form--readonly input[type="checkbox"],
+    .apply-form--readonly input[type="file"] {
+      pointer-events: none;
+      opacity: 0.6;
     }
 
     /* Submit confirmation modal */
@@ -1159,7 +1176,6 @@ const base = import.meta.env.BASE_URL;
       const loading = document.getElementById('apply-loading');
       const introView = document.getElementById('apply-intro');
       const formWrap = document.getElementById('apply-form-wrap');
-      const submittedView = document.getElementById('apply-submitted');
       const form = document.getElementById('apply-form') as HTMLFormElement | null;
       const msg = document.getElementById('apply-msg') as HTMLElement;
       const autosaveStatus = document.getElementById('autosave-status') as HTMLElement;
@@ -1376,6 +1392,7 @@ const base = import.meta.env.BASE_URL;
       }
 
       function toggleProjectSelection(projectId: string) {
+        if ((window as any).__pselReadonly) return;
         const idx = selectedProjects.findIndex(sp => sp.project_id === projectId);
         if (idx >= 0) {
           // Deselect
@@ -1809,6 +1826,7 @@ const base = import.meta.env.BASE_URL;
       }
 
       async function autoSave() {
+        if ((window as any).__pselReadonly) return;
         if (isSaving) return;
         isSaving = true;
         setAutosaveStatus('Saving...', 'saving');
@@ -1986,9 +2004,41 @@ const base = import.meta.env.BASE_URL;
         if (error) {
           showMsg('Failed to submit. ' + error.message, 'error');
         } else {
-          showMsg('Application submitted successfully! You can still edit your answers anytime.', 'success');
-          submitBtn.textContent = 'Update Application';
+          showMsg('Application submitted successfully!', 'success');
+          const badge = document.getElementById('apply-status-badge')!;
+          badge.textContent = 'Pending Review';
+          badge.className = 'status-badge status-badge--submitted';
+          badge.style.display = '';
+          // Lock form
+          form!.classList.add('apply-form--readonly');
+          document.getElementById('apply-actions-submit')!.style.display = 'none';
+          document.getElementById('apply-actions-edit')!.style.display = '';
+          (window as any).__pselReadonly = true;
         }
+      });
+
+      // Edit Application button — unlocks form and changes status to draft
+      document.getElementById('edit-app-btn')!.addEventListener('click', async () => {
+        if (!appId) return;
+
+        // Update status to draft in DB
+        await supabase.from('applications').update({
+          status: 'draft',
+          submitted_at: null,
+        }).eq('id', appId);
+
+        // Unlock form
+        form!.classList.remove('apply-form--readonly');
+        document.getElementById('apply-actions-edit')!.style.display = 'none';
+        document.getElementById('apply-actions-submit')!.style.display = '';
+        (window as any).__pselReadonly = false;
+
+        // Update badge
+        const badge = document.getElementById('apply-status-badge')!;
+        badge.textContent = 'Draft';
+        badge.className = 'status-badge status-badge--draft';
+
+        showMsg('Application unlocked for editing. Remember to submit when you\'re done.', 'success');
       });
 
       // Intro screen logic
@@ -2037,8 +2087,29 @@ const base = import.meta.env.BASE_URL;
           appId = app.id;
           populateForm(app);
           await loadProjectSelections();
-          if (app.status === 'submitted') {
-            submitBtn.textContent = 'Update Application';
+
+          // Show status badge
+          const statusBadge = document.getElementById('apply-status-badge')!;
+          const statusLabels: Record<string, string> = {
+            draft: 'Draft',
+            submitted: 'Pending Review',
+            under_review: 'Under Review',
+            accepted: 'Accepted',
+            rejected: 'Not Accepted',
+            waitlisted: 'Waitlisted',
+          };
+          statusBadge.textContent = statusLabels[app.status] || app.status;
+          statusBadge.className = `status-badge status-badge--${app.status}`;
+          statusBadge.style.display = '';
+
+          // If already submitted, lock the form
+          const isSubmitted = app.status !== 'draft';
+          if (isSubmitted) {
+            form!.classList.add('apply-form--readonly');
+            document.getElementById('apply-actions-submit')!.style.display = 'none';
+            document.getElementById('apply-actions-edit')!.style.display = '';
+            // Disable project card clicks
+            (window as any).__pselReadonly = true;
           }
           formWrap!.style.display = 'block';
         } else if (localStorage.getItem('xr-apply-intro-seen')) {
