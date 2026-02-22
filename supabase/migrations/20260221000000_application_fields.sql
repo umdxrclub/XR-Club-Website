@@ -1,0 +1,17 @@
+ALTER TABLE applications
+  ADD COLUMN IF NOT EXISTS full_name text,
+  ADD COLUMN IF NOT EXISTS uid text,
+  ADD COLUMN IF NOT EXISTS major_minor text,
+  ADD COLUMN IF NOT EXISTS current_year text,
+  ADD COLUMN IF NOT EXISTS student_status text,
+  ADD COLUMN IF NOT EXISTS relevant_experience text,
+  ADD COLUMN IF NOT EXISTS current_commitments text,
+  ADD COLUMN IF NOT EXISTS your_story text,
+  ADD COLUMN IF NOT EXISTS your_dream text,
+  ADD COLUMN IF NOT EXISTS proud_of_building text,
+  ADD COLUMN IF NOT EXISTS natural_skills text,
+  ADD COLUMN IF NOT EXISTS uncertainty_failures text,
+  ADD COLUMN IF NOT EXISTS leadership_experiences text,
+  ADD COLUMN IF NOT EXISTS interest_in_xr text,
+  ADD COLUMN IF NOT EXISTS linkedin_url text,
+  ADD COLUMN IF NOT EXISTS github_url text;

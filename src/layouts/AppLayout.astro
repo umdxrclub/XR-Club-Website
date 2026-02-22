@@ -8,9 +8,11 @@ import { ClientRouter } from 'astro:transitions';
 interface Props {
   title: string;
   description?: string;
+  hideHeader?: boolean;
+  hideChatBot?: boolean;
 }
 
-const { title, description = 'XR Club - University of Maryland' } = Astro.props;
+const { title, description = 'XR Club - University of Maryland', hideHeader = false, hideChatBot = false } = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -28,9 +30,9 @@ const base = import.meta.env.BASE_URL;
     <title>{title}</title>
   </head>
   <body style="background: #0a0a0a; margin: 0;">
-    <Header />
+    {!hideHeader && <Header />}
     <slot />
-    <ChatBot transition:persist />
+    {!hideChatBot && <ChatBot transition:persist />}
 
     <style>
       :global([data-header]) {

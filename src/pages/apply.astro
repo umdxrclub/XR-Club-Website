@@ -3,70 +3,1051 @@ import AppLayout from '../layouts/AppLayout.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
-<AppLayout title="Apply — XR Club">
-  <div class="closed-page">
-    <div class="closed-card">
-      <h1 class="closed-title">Applications Closed</h1>
-      <p class="closed-desc">Applications are not currently open. Check back soon for the next application cycle.</p>
-      <a href={base} class="closed-btn">Back to Home</a>
+<AppLayout title="Project Application — XR Club">
+  <div class="apply-page" id="apply-root">
+    <!-- Loading state -->
+    <div id="apply-loading" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+      <p style="color:rgba(255,255,255,0.4);font-family:Inter,sans-serif;">Loading...</p>
+    </div>
+
+    <!-- Intro screen (shown once before form) -->
+    <div id="apply-intro" style="display:none;">
+      <div class="apply-header">
+        <h1 class="apply-title">Project Application</h1>
+      </div>
+      <div class="apply-intro-card">
+        <p class="apply-intro-text">You're about to begin the application. Please put in genuine effort and answer honestly. We care about the quality and thoughtfulness of your responses, not the length.</p>
+        <p class="apply-intro-text">Once you're accepted into a project, you won't need to complete this full application again. We'll keep your information on file, and you'll only need to apply for specific projects in the future.</p>
+        <p class="apply-intro-text">If we feel your application does not reflect your best effort, we may waitlist you and ask you to revise it before making a final decision. While we aim to accept as many students as possible, we have limited space in our projects. Depending on demand, we may have to decline some applications, but you are always welcome to apply again next cycle.</p>
+        <p class="apply-intro-text">You can save your application at the bottom of the form if you'd like to come back and work on it later.</p>
+        <p class="apply-intro-text apply-intro-text--hint">(If you were planning to have ChatGPT reword or generate your responses, just use the chatbot helper, it's connected to their API.)</p>
+        <label class="apply-intro-agree">
+          <input type="checkbox" id="intro-agree-check" />
+          <span>I understand</span>
+        </label>
+        <button type="button" class="apply-btn apply-btn--submit apply-intro-btn" id="intro-continue-btn" disabled>Continue to Application</button>
+      </div>
+    </div>
+
+    <!-- Project Application form (hidden by default) -->
+    <div id="apply-form-wrap" style="display:none;">
+      <div class="apply-header">
+        <h1 class="apply-title">Project Application</h1>
+      </div>
+
+      <form id="apply-form" autocomplete="off" novalidate>
+        <!-- Basic Info -->
+        <div class="apply-section">
+          <h2 class="apply-section__title">Basic Information</h2>
+          <div class="apply-grid">
+            <div class="apply-field apply-field--full">
+              <label for="full_name">Full Name <span class="apply-req">*</span></label>
+              <input id="full_name" name="full_name" type="text" class="apply-input" required placeholder="Your full name" />
+            </div>
+            <div class="apply-field">
+              <label for="uid">UID <span class="apply-req">*</span></label>
+              <input id="uid" name="uid" type="text" class="apply-input" required placeholder="123456789" inputmode="numeric" pattern="\d{9}" maxlength="9" />
+            </div>
+            <div class="apply-field apply-field--full">
+              <label>Major <span class="apply-req">*</span></label>
+              <div class="search-select" data-search-select="major1">
+                <input type="text" class="apply-input search-select__input" placeholder="Search majors..." autocomplete="off" />
+                <input type="hidden" name="major1" required />
+                <div class="search-select__dropdown"></div>
+              </div>
+            </div>
+            <div class="apply-field apply-field--full" id="major2-field" style="display:none;">
+              <div class="apply-field__header">
+                <label>Second Major <span class="apply-hint">(Double Major)</span></label>
+                <button type="button" class="apply-remove-btn" id="remove-major2-btn">&times; Remove</button>
+              </div>
+              <div class="search-select" data-search-select="major2">
+                <input type="text" class="apply-input search-select__input" placeholder="Search majors..." autocomplete="off" />
+                <input type="hidden" name="major2" />
+                <div class="search-select__dropdown"></div>
+              </div>
+            </div>
+            <div class="apply-field apply-field--full">
+              <button type="button" class="apply-add-btn" id="add-major2-btn">+ Add Second Major</button>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label>Minor</label>
+              <div class="search-select" data-search-select="minor1">
+                <input type="text" class="apply-input search-select__input" placeholder="Search minors..." autocomplete="off" />
+                <input type="hidden" name="minor1" />
+                <div class="search-select__dropdown"></div>
+              </div>
+            </div>
+            <div class="apply-field">
+              <label for="current_year">Current Year <span class="apply-req">*</span></label>
+              <select id="current_year" name="current_year" class="apply-input" required>
+                <option value="" disabled selected>Select year</option>
+                <option value="Freshman">Freshman</option>
+                <option value="Sophomore">Sophomore</option>
+                <option value="Junior">Junior</option>
+                <option value="Senior">Senior</option>
+                <option value="Graduate">Graduate</option>
+              </select>
+            </div>
+            <div class="apply-field">
+              <label for="graduation_year">Anticipated Graduation <span class="apply-req">*</span></label>
+              <select id="graduation_year" name="graduation_year" class="apply-input" required>
+                <option value="" disabled selected>Select year</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+                <option value="2031">2031</option>
+                <option value="2032">2032</option>
+                <option value="2033">2033</option>
+                <option value="2034">2034</option>
+                <option value="2035">2035</option>
+                <option value="2036">2036</option>
+                <option value="2037">2037</option>
+                <option value="2038">2038</option>
+                <option value="2039">2039</option>
+                <option value="2040">2040</option>
+              </select>
+            </div>
+            <div class="apply-field">
+              <label for="student_status">Student Status <span class="apply-req">*</span></label>
+              <select id="student_status" name="student_status" class="apply-input" required>
+                <option value="" disabled selected>Select status</option>
+                <option value="Undergraduate">Undergraduate</option>
+                <option value="Masters">Masters</option>
+                <option value="PhD">PhD</option>
+                <option value="Combined BS/MS">Combined Bachelor-Masters</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Experience & Background -->
+        <div class="apply-section">
+          <h2 class="apply-section__title">Experience & Background</h2>
+          <div class="apply-grid">
+            <div class="apply-field apply-field--full">
+              <label for="relevant_experience">Relevant Classes, Coursework, and Experience in XR <span class="apply-req">*</span></label>
+              <textarea id="relevant_experience" name="relevant_experience" class="apply-input" required placeholder="e.g. CMSC131, CMSC132, CMSC427, IMDM101, built a Unity VR project, Blender modeling, any XR related research"></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="current_commitments">Current Commitments <span class="apply-req">*</span></label>
+              <textarea id="current_commitments" name="current_commitments" class="apply-input" required placeholder="Share your current course load and other major commitments or circumstances."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- About You -->
+        <div class="apply-section">
+          <h2 class="apply-section__title">About You</h2>
+          <div class="apply-grid">
+            <div class="apply-field apply-field--full">
+              <label for="your_story">Tell us your story <span class="apply-req">*</span></label>
+              <textarea id="your_story" name="your_story" class="apply-input" required placeholder="Introduce yourself and describe the experiences, values, and motivations that shape who you are."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="your_dream">What's your dream? <span class="apply-req">*</span></label>
+              <textarea id="your_dream" name="your_dream" class="apply-input" required placeholder="Describe the impact you hope to make and the direction you see your future taking."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="proud_of_building">What were you proud of building? <span class="apply-req">*</span></label>
+              <textarea id="proud_of_building" name="proud_of_building" class="apply-input" required placeholder="Share something you created that you are proud of, technical or non technical, and why it mattered to you."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="natural_skills">What skills do you find yourself naturally great at? <span class="apply-req">*</span></label>
+              <textarea id="natural_skills" name="natural_skills" class="apply-input" required placeholder="List your strengths, talents, and qualities."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="uncertainty_failures">How have you dealt with uncertainty, failure, or challenging collaborators? <span class="apply-req">*</span></label>
+              <textarea id="uncertainty_failures" name="uncertainty_failures" class="apply-input" required placeholder="Describe a challenge and explain how you handled it and what you learned."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="leadership_experiences">Any leadership experiences? <span class="apply-req">*</span></label>
+              <textarea id="leadership_experiences" name="leadership_experiences" class="apply-input" required placeholder="Share examples of formal or informal leadership and the impact you had as a leader."></textarea>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="interest_in_xr">What makes you interested in XR? <span class="apply-req">*</span></label>
+              <textarea id="interest_in_xr" name="interest_in_xr" class="apply-input" required placeholder="Explain what excites you about extended reality and why you want to explore it further."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club Involvement -->
+        <div class="apply-section">
+          <h2 class="apply-section__title">Club Involvement</h2>
+          <div class="apply-grid">
+            <div class="apply-field apply-field--full">
+              <label for="attended_kickoff">Did you attend our kick off event? <span class="apply-req">*</span></label>
+              <select id="attended_kickoff" name="attended_kickoff" class="apply-input" required>
+                <option value="" disabled selected>Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="member_over_year">Have you been a member of XR Club for a year or more? <span class="apply-req">*</span></label>
+              <select id="member_over_year" name="member_over_year" class="apply-input" required>
+                <option value="" disabled selected>Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional -->
+        <div class="apply-section">
+          <h2 class="apply-section__title">Optional</h2>
+          <div class="apply-grid">
+            <div class="apply-field">
+              <label for="linkedin_url">LinkedIn</label>
+              <input id="linkedin_url" name="linkedin_url" type="url" class="apply-input" placeholder="https://linkedin.com/in/..." />
+            </div>
+            <div class="apply-field">
+              <label for="github_url">GitHub</label>
+              <input id="github_url" name="github_url" type="url" class="apply-input" placeholder="https://github.com/..." />
+            </div>
+            <div class="apply-field apply-field--full">
+              <label for="portfolio_url">Portfolio / Personal Website</label>
+              <input id="portfolio_url" name="portfolio_url" type="url" class="apply-input" placeholder="https://..." />
+            </div>
+            <div class="apply-field apply-field--full">
+              <label>Resume</label>
+              <div class="apply-upload" id="resume-drop">
+                <input type="file" id="resume-file" accept=".pdf" hidden />
+                <p class="apply-upload__text">Drop your resume here or click to browse</p>
+                <p class="apply-upload__hint">PDF only</p>
+                <div class="apply-upload__file" id="resume-name" style="display:none;">
+                  <span class="apply-upload__filename"></span>
+                  <button type="button" class="apply-remove-btn" id="remove-resume-btn">&times; Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error / Success messages -->
+        <div id="apply-msg" style="display:none;"></div>
+
+        <!-- Actions -->
+        <div class="apply-actions">
+          <button type="button" class="apply-btn apply-btn--draft" id="save-draft-btn">Save Draft</button>
+          <button type="submit" class="apply-btn apply-btn--submit" id="submit-btn">Submit Application</button>
+        </div>
+        <p class="apply-autosave" id="autosave-status"></p>
+      </form>
+    </div>
+
+    <!-- Already submitted view -->
+    <div id="apply-submitted" style="display:none;">
+      <div class="apply-header">
+        <h1 class="apply-title">Application Submitted</h1>
+        <span class="status-badge status-badge--submitted">Submitted</span>
+      </div>
+      <div class="apply-submitted">
+        <p>Your application has been submitted. We'll review it and get back to you. Join our <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;">Discord</a> for updates!</p>
+      </div>
     </div>
   </div>
 
   <style>
-    .closed-page {
-      min-height: 100vh;
+    .apply-intro-card {
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .apply-intro-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.7;
+      margin-bottom: 1.2rem;
+    }
+
+    .apply-intro-text--hint {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+
+    .apply-intro-agree {
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      background: #000;
-    }
-
-    .closed-card {
-      text-align: center;
-      max-width: 480px;
-      padding: 3rem 2.5rem;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      backdrop-filter: blur(12px);
-    }
-
-    .closed-title {
+      gap: 0.6rem;
       font-family: 'Inter', sans-serif;
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      margin-top: 0.5rem;
       margin-bottom: 1rem;
     }
 
-    .closed-desc {
-      font-family: 'Inter', sans-serif;
-      font-size: 1.05rem;
-      font-weight: 300;
-      color: rgba(255, 255, 255, 0.5);
-      line-height: 1.7;
-      margin-bottom: 2rem;
+    .apply-intro-agree input[type="checkbox"] {
+      accent-color: #fff;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
     }
 
-    .closed-btn {
-      display: inline-block;
+    .apply-intro-btn {
+      margin-top: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .apply-req {
+      color: rgba(255, 100, 100, 0.7);
+    }
+
+    .apply-hint {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .apply-field__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+    }
+
+    .apply-field__header label {
+      margin-bottom: 0;
+    }
+
+    .apply-remove-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 100, 100, 0.6);
       font-family: 'Inter', sans-serif;
-      font-size: 1rem;
-      font-weight: 500;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 0.7rem 2rem;
-      border-radius: 980px;
-      text-decoration: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      transition: color 200ms;
+    }
+
+    .apply-remove-btn:hover {
+      color: rgba(255, 100, 100, 1);
+    }
+
+    .apply-add-btn {
+      background: none;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.45);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
       transition: all 200ms ease;
+      width: 100%;
     }
 
-    .closed-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
+    .apply-add-btn:hover {
       border-color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .apply-upload__hint {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.25);
+      margin-top: 0.3rem;
+    }
+
+    .apply-upload__file {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+
+    .apply-upload__file .apply-upload__filename {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-select {
+      position: relative;
+    }
+
+    .search-select__dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 220px;
+      overflow-y: auto;
+      background: rgba(20, 20, 20, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      z-index: 100;
+    }
+
+    .search-select__dropdown.open {
+      display: block;
+    }
+
+    .search-select__option {
+      padding: 0.55rem 0.9rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+
+    .search-select__option:hover,
+    .search-select__option.highlighted {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .search-select__empty {
+      padding: 0.55rem 0.9rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.3);
+      font-style: italic;
+    }
+
+    #apply-msg {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    #apply-msg.msg--error {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+    }
+
+    #apply-msg.msg--success {
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    /* Custom validation tooltip */
+    .apply-field--invalid .apply-input,
+    .apply-field--invalid .search-select__input {
+      border-color: rgba(248, 113, 113, 0.5);
+    }
+
+    .apply-validate-tip {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: #f87171;
+      margin-top: 0.3rem;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+
+    .apply-validate-tip--visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Auto-save indicator */
+    .apply-autosave {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.3);
+      text-align: right;
+      margin-top: 0.3rem;
+      min-height: 1.2em;
+      transition: color 300ms ease;
+    }
+
+    .apply-autosave--saving {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .apply-autosave--saved {
+      color: rgba(52, 211, 153, 0.6);
+    }
+
+    .apply-autosave--error {
+      color: rgba(248, 113, 113, 0.6);
     }
   </style>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+    import { navigate } from 'astro:transitions/client';
+
+    document.addEventListener('astro:page-load', () => {
+      const root = document.getElementById('apply-root');
+      if (!root) return;
+
+      const loading = document.getElementById('apply-loading');
+      const introView = document.getElementById('apply-intro');
+      const formWrap = document.getElementById('apply-form-wrap');
+      const submittedView = document.getElementById('apply-submitted');
+      const form = document.getElementById('apply-form') as HTMLFormElement | null;
+      const msg = document.getElementById('apply-msg') as HTMLElement;
+      const autosaveStatus = document.getElementById('autosave-status') as HTMLElement;
+      const draftBtn = document.getElementById('save-draft-btn') as HTMLButtonElement;
+      const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+      const resumeDrop = document.getElementById('resume-drop') as HTMLElement;
+      const resumeFile = document.getElementById('resume-file') as HTMLInputElement;
+      const resumeNameWrap = document.getElementById('resume-name') as HTMLElement;
+      const resumeNameText = resumeNameWrap?.querySelector('.apply-upload__filename') as HTMLElement;
+      const removeResumeBtn = document.getElementById('remove-resume-btn');
+
+      if (!form) return;
+
+      const textFields = [
+        'full_name', 'uid', 'relevant_experience',
+        'current_commitments', 'your_story', 'your_dream', 'proud_of_building',
+        'natural_skills', 'uncertainty_failures', 'leadership_experiences',
+        'interest_in_xr', 'linkedin_url', 'github_url', 'portfolio_url'
+      ];
+      const selectFields = ['current_year', 'graduation_year', 'student_status', 'attended_kickoff', 'member_over_year'];
+      const allFields = [...textFields, ...selectFields];
+
+      let appId: string | null = null;
+
+      // UMD Majors & Minors
+      const UMD_MAJORS = [
+        'Accounting','Aerospace Engineering','African American Studies','Agricultural and Resource Economics','Agricultural and Resource Economics: Agribusiness','Agricultural and Resource Economics: Environmental and Resource Economics','Agricultural Science and Technology: Agricultural and Extension Education','Agricultural Science and Technology: Agronomy','Agricultural Science and Technology: Environmental Horticulture','American Studies','Animal Sciences: Animal Care and Management','Animal Sciences: Combined Ag/Veterinary Medicine','Animal Sciences: Science/Pre-Professional','Anthropology','Arabic Studies','Architecture','Art Education','Art History and Archaeology','Astronomy','Atmospheric and Oceanic Science','Biochemistry','Biocomputational Engineering','Bioengineering','Biological Sciences: Cell Biology and Genetics','Biological Sciences: Ecology and Evolution','Biological Sciences: General Biology','Biological Sciences: Microbiology','Biological Sciences: Physiology and Neurobiology','Chemical and Biomolecular Engineering','Chemistry','Chinese','Cinema & Media Studies','Civil and Environmental Engineering','Classics','Communication','Community Health','Computer Engineering','Computer Science','Computer Science: Cybersecurity','Computer Science: Data Science','Computer Science: Machine Learning','Computer Science: Quantum Information','Criminology and Criminal Justice','Dance','Early Childhood and Early Childhood Special Education','Economics','Electrical Engineering','Elementary Education','Elementary/Middle Special Education','Embedded Systems and Internet of Things','English','Environmental Science and Policy','Environmental Science and Technology: Ecological Technology Design','Environmental Science and Technology: Environmental Health','Environmental Science and Technology: Natural Resources Management','Environmental Science and Technology: Soil and Watershed Science','Family Science','Fermentation Science','Finance','Fire Protection Engineering','French Language & Literature','Geographical Sciences','Geology','German Studies','Government and Politics','Government and Politics: International Relations','Hearing and Speech Sciences','History','Human Development','Immersive Media Design: Computing','Immersive Media Design: Creative','Individual Studies Program','Information Science','Information Systems','International Business','Italian Studies','Japanese','Journalism','Kinesiology','Landscape Architecture','Letters and Sciences (Undecided/Undeclared)','Linguistics','Management','Marketing','Materials Science and Engineering','Mathematics','Mathematics: Applied Math','Mathematics: Education','Mathematics: Statistics','Mechanical Engineering','Middle School Math and Science Education','Music: Education','Music: Liberal Arts Program','Music: Professional Program','Neuroscience','Nutrition and Food Science: Dietetics','Nutrition and Food Science: Food Science','Nutrition and Food Sciences: Nutritional Science','Operations Management and Business Analytics','Persian Studies','Philosophy','Philosophy, Politics and Economics','Physics','Plant Sciences: Plant Biology','Plant Sciences: Turf and Golf Course Management','Plant Sciences: Urban Forestry','Psychology','Public Health Science','Public Policy','Real Estate and the Built Environment','Religions of the Ancient Middle East','Romance Languages','Russian Language and Literature','Secondary Education: English Area of Concentration','Secondary Education: Mathematics (Terrapin Teachers) Area of Concentration','Secondary Education: Science (Terrapin Teachers) Area of Concentration','Secondary Education: Social Studies Area of Concentration','Secondary Education: World Languages Area of Concentration','Social Data Science','Sociology','Spanish Language, Literature and Cultures','Studio Art','Supply Chain Management','Technology and Information Design','Theatre','Women, Gender, and Sexuality Studies'
+      ];
+
+      const UMD_MINORS = [
+        'Actuarial Mathematics','Advanced Cybersecurity Experience','African Studies','Agricultural Science and Technology','Arabic','Archaeology','Army Leadership Studies','Art History','Arts Leadership','Asian American Studies','Atmospheric Chemistry','Atmospheric Sciences','Black Women\'s Studies','Business Analytics','Chinese Language','Classical Mythology','Computer Engineering','Computer Science','Construction Project Management','Creative Writing','Demography','Disability Studies','Earth History','Earth Materials Properties','Entomology','French Studies','General Business','Geochemistry','Geographic Information Sciences','Geophysics','German Studies','Global Engineering Leadership','Global Poverty','Global Terrorism Studies','Greek Language and Culture','Hearing and Speech Sciences','Hebrew Studies','History','Human Development','Humanities, Health and Medicine','Hydrology','Innovation and Entrepreneurship','International Development and Conflict Management','Israel Studies','Italian Language and Culture','Japanese','Jewish Studies','Korean Studies','Landscape Management','Latin American Studies','Latin Language and Literature','Law and Society','Leadership Studies','LGBTQ Studies','Linguistics','Mathematics','Meteorology','Middle East Studies','Music and Culture','Music Performance','Nanoscale Science and Technology','Neuroscience','Nonprofit Leadership and Social Innovation','Nuclear Engineering','Paleobiology','Persian Studies','Philosophy','Physics','Planetary Sciences','Portuguese Languages, Literatures and Cultures','Professional Writing','Project Management','Public Leadership','Real Estate Development','Religious Studies','Remote Sensing of Environmental Change','Rhetoric','Robotics and Autonomous Systems','Russian Studies','Science, Technology, Ethics and Policy','Second Language Education','Secondary Education','Social Data Science','Sociology','Soil Science','Spanish','Statistics','Surficial Geology','Survey Methodology','Sustainability','Technology Entrepreneurship','U.S. Latina/o Studies'
+      ];
+
+      // Searchable dropdown logic
+      function initSearchSelect(container: HTMLElement, options: string[]) {
+        const input = container.querySelector('.search-select__input') as HTMLInputElement;
+        const hidden = container.querySelector('input[type="hidden"]') as HTMLInputElement;
+        const dropdown = container.querySelector('.search-select__dropdown') as HTMLElement;
+        let highlightIdx = -1;
+
+        function render(filter: string) {
+          const q = filter.toLowerCase();
+          const filtered = q ? options.filter(o => o.toLowerCase().includes(q)) : options;
+          dropdown.innerHTML = '';
+          if (filtered.length === 0) {
+            dropdown.innerHTML = '<div class="search-select__empty">No matches — type to use custom value</div>';
+          } else {
+            filtered.slice(0, 50).forEach((opt, i) => {
+              const div = document.createElement('div');
+              div.className = 'search-select__option';
+              div.textContent = opt;
+              div.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                select(opt);
+              });
+              dropdown.appendChild(div);
+            });
+          }
+          highlightIdx = -1;
+        }
+
+        function select(val: string) {
+          input.value = val;
+          hidden.value = val;
+          dropdown.classList.remove('open');
+        }
+
+        input.addEventListener('focus', () => {
+          render(input.value);
+          dropdown.classList.add('open');
+        });
+
+        input.addEventListener('input', () => {
+          render(input.value);
+          dropdown.classList.add('open');
+          // Also set hidden value to typed value (for custom entries)
+          hidden.value = input.value.trim();
+        });
+
+        input.addEventListener('blur', () => {
+          dropdown.classList.remove('open');
+          // Keep typed value as custom entry
+          if (input.value.trim()) hidden.value = input.value.trim();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          const items = dropdown.querySelectorAll('.search-select__option');
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
+            items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+            items[highlightIdx]?.scrollIntoView({ block: 'nearest' });
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightIdx = Math.max(highlightIdx - 1, 0);
+            items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+            items[highlightIdx]?.scrollIntoView({ block: 'nearest' });
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightIdx >= 0 && items[highlightIdx]) {
+              select(items[highlightIdx].textContent || '');
+            } else if (input.value.trim()) {
+              select(input.value.trim());
+            }
+          } else if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+            input.blur();
+          }
+        });
+      }
+
+      // Init all search selects
+      const major1Container = form.querySelector('[data-search-select="major1"]') as HTMLElement;
+      const major2Container = form.querySelector('[data-search-select="major2"]') as HTMLElement;
+      const minor1Container = form.querySelector('[data-search-select="minor1"]') as HTMLElement;
+      if (major1Container) initSearchSelect(major1Container, UMD_MAJORS);
+      if (major2Container) initSearchSelect(major2Container, UMD_MAJORS);
+      if (minor1Container) initSearchSelect(minor1Container, UMD_MINORS);
+
+      // Add second major button
+      const addMajor2Btn = document.getElementById('add-major2-btn');
+      const major2Field = document.getElementById('major2-field');
+      const removeMajor2Btn = document.getElementById('remove-major2-btn');
+      addMajor2Btn?.addEventListener('click', () => {
+        major2Field!.style.display = 'block';
+        addMajor2Btn!.style.display = 'none';
+      });
+      removeMajor2Btn?.addEventListener('click', () => {
+        major2Field!.style.display = 'none';
+        addMajor2Btn!.style.display = 'block';
+        const m2Input = form!.querySelector('[data-search-select="major2"] .search-select__input') as HTMLInputElement;
+        const m2Hidden = form!.querySelector('[name="major2"]') as HTMLInputElement;
+        if (m2Input) m2Input.value = '';
+        if (m2Hidden) m2Hidden.value = '';
+      });
+
+      function showMsg(text: string, type: 'error' | 'success') {
+        msg.textContent = text;
+        msg.className = type === 'error' ? 'msg--error' : 'msg--success';
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 5000);
+      }
+
+      function getFormData(): Record<string, string | null> {
+        const data: Record<string, string | null> = {};
+        for (const f of allFields) {
+          const el = form!.querySelector(`[name="${f}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+          data[f] = el?.value?.trim() || null;
+        }
+        // Combine major/minor fields into major_minor
+        const m1 = (form!.querySelector('[name="major1"]') as HTMLInputElement)?.value?.trim() || '';
+        const m2 = (form!.querySelector('[name="major2"]') as HTMLInputElement)?.value?.trim() || '';
+        const mi = (form!.querySelector('[name="minor1"]') as HTMLInputElement)?.value?.trim() || '';
+        const parts: string[] = [];
+        if (m1) parts.push(m1);
+        if (m2) parts.push(m2);
+        const majorStr = parts.join(' & ');
+        data.major_minor = majorStr + (mi ? ' / ' + mi : '') || null;
+        return data;
+      }
+
+      function populateForm(app: Record<string, unknown>) {
+        for (const f of allFields) {
+          const el = form!.querySelector(`[name="${f}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+          if (el && app[f]) el.value = String(app[f]);
+        }
+        // Parse major_minor back into separate fields
+        if (app.major_minor) {
+          const mm = String(app.major_minor);
+          const [majorPart, minorPart] = mm.split(' / ');
+          const majors = majorPart ? majorPart.split(' & ') : [];
+          if (majors[0]) {
+            const m1Input = form!.querySelector('[data-search-select="major1"] .search-select__input') as HTMLInputElement;
+            const m1Hidden = form!.querySelector('[name="major1"]') as HTMLInputElement;
+            if (m1Input) m1Input.value = majors[0].trim();
+            if (m1Hidden) m1Hidden.value = majors[0].trim();
+          }
+          if (majors[1]) {
+            const m2Input = form!.querySelector('[data-search-select="major2"] .search-select__input') as HTMLInputElement;
+            const m2Hidden = form!.querySelector('[name="major2"]') as HTMLInputElement;
+            if (m2Input) m2Input.value = majors[1].trim();
+            if (m2Hidden) m2Hidden.value = majors[1].trim();
+            major2Field!.style.display = 'block';
+            addMajor2Btn!.style.display = 'none';
+          }
+          if (minorPart?.trim()) {
+            const miInput = form!.querySelector('[data-search-select="minor1"] .search-select__input') as HTMLInputElement;
+            const miHidden = form!.querySelector('[name="minor1"]') as HTMLInputElement;
+            if (miInput) miInput.value = minorPart.trim();
+            if (miHidden) miHidden.value = minorPart.trim();
+          }
+        }
+        if (app.resume_path) {
+          resumeNameText.textContent = 'Resume uploaded';
+          resumeNameWrap.style.display = 'flex';
+          resumeDrop.classList.add('apply-upload--active');
+        }
+      }
+
+      // Resume upload
+      resumeDrop?.addEventListener('click', () => resumeFile?.click());
+      resumeDrop?.addEventListener('dragover', (e) => { e.preventDefault(); resumeDrop.classList.add('apply-upload--active'); });
+      resumeDrop?.addEventListener('dragleave', () => { resumeDrop.classList.remove('apply-upload--active'); });
+      resumeDrop?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        resumeDrop.classList.remove('apply-upload--active');
+        if (e.dataTransfer?.files?.[0]) {
+          const file = e.dataTransfer.files[0];
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            alert('Please upload a PDF file only.');
+            return;
+          }
+          resumeFile.files = e.dataTransfer.files;
+          resumeNameText.textContent = file.name;
+          resumeNameWrap.style.display = 'flex';
+          resumeDrop.classList.add('apply-upload--active');
+        }
+      });
+      resumeFile?.addEventListener('change', () => {
+        if (resumeFile.files?.[0]) {
+          resumeNameText.textContent = resumeFile.files[0].name;
+          resumeNameWrap.style.display = 'flex';
+          resumeDrop.classList.add('apply-upload--active');
+        }
+      });
+      removeResumeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resumeFile.value = '';
+        resumeNameText.textContent = '';
+        resumeNameWrap.style.display = 'none';
+        resumeDrop.classList.remove('apply-upload--active');
+      });
+
+      // Listen for chatbot fill-field commands
+      window.addEventListener('apply-fill-fields', ((e: CustomEvent) => {
+        const fields = e.detail;
+        if (!fields || typeof fields !== 'object') return;
+
+        // Map of special fields that need search-select handling
+        const searchSelectMap: Record<string, string> = {
+          major_minor: 'major1', // simplified — fills primary major
+        };
+
+        for (const [key, val] of Object.entries(fields)) {
+          if (!val || typeof val !== 'string') continue;
+
+          // Handle select dropdowns
+          if (selectFields.includes(key)) {
+            const sel = form!.querySelector(`[name="${key}"]`) as HTMLSelectElement;
+            if (sel) {
+              // Try to match an option
+              const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === val.toLowerCase());
+              if (opt) { sel.value = opt.value; }
+              else { sel.value = val; }
+            }
+            continue;
+          }
+
+          // Handle search-select fields
+          if (searchSelectMap[key]) {
+            const name = searchSelectMap[key];
+            const visInput = form!.querySelector(`[data-search-select="${name}"] .search-select__input`) as HTMLInputElement;
+            const hidInput = form!.querySelector(`[name="${name}"]`) as HTMLInputElement;
+            if (visInput) visInput.value = val;
+            if (hidInput) hidInput.value = val;
+            continue;
+          }
+
+          // Handle regular text/textarea fields
+          const el = form!.querySelector(`[name="${key}"]`) as HTMLInputElement | HTMLTextAreaElement;
+          if (el) {
+            el.value = val;
+            // Auto-resize textareas
+            if (el.tagName === 'TEXTAREA') {
+              el.style.height = 'auto';
+              el.style.height = el.scrollHeight + 'px';
+            }
+          }
+        }
+      }) as EventListener);
+
+      async function uploadResume(userId: string): Promise<string | null> {
+        const file = resumeFile?.files?.[0];
+        if (!file) return null;
+        const ext = file.name.split('.').pop();
+        const path = `${userId}/resume.${ext}`;
+        const { error } = await supabase.storage.from('resumes').upload(path, file, { upsert: true });
+        if (error) { console.error('Resume upload error:', error); return null; }
+        return path;
+      }
+
+      async function saveApplication(status: 'draft' | 'submitted') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const formData = getFormData();
+        // Only upload resume on explicit save/submit, not on autosave
+        if (status === 'submitted' || resumeFile?.files?.[0]) {
+          const resumePath = await uploadResume(user.id);
+          if (resumePath) formData.resume_path = resumePath;
+        }
+
+        const payload = { ...formData, status, user_id: user.id } as Record<string, unknown>;
+        if (status === 'submitted') payload.submitted_at = new Date().toISOString();
+
+        let error;
+        if (appId) {
+          ({ error } = await supabase.from('applications').update(payload).eq('id', appId));
+        } else {
+          const res = await supabase.from('applications').insert(payload).select('id').single();
+          error = res.error;
+          if (res.data) appId = res.data.id;
+        }
+
+        return error;
+      }
+
+      // ── Auto-save (debounced) ──
+      let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+      let isSaving = false;
+
+      function setAutosaveStatus(text: string, state: '' | 'saving' | 'saved' | 'error') {
+        if (!autosaveStatus) return;
+        autosaveStatus.textContent = text;
+        autosaveStatus.className = 'apply-autosave' + (state ? ` apply-autosave--${state}` : '');
+      }
+
+      async function autoSave() {
+        if (isSaving) return;
+        isSaving = true;
+        setAutosaveStatus('Saving...', 'saving');
+        const error = await saveApplication('draft');
+        isSaving = false;
+        if (error) {
+          setAutosaveStatus('Auto-save failed', 'error');
+        } else {
+          setAutosaveStatus('Saved', 'saved');
+          setTimeout(() => setAutosaveStatus('', ''), 3000);
+        }
+      }
+
+      function scheduleAutoSave() {
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => autoSave(), 2000);
+      }
+
+      // Attach auto-save listeners to all form fields
+      form.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('input', scheduleAutoSave);
+        el.addEventListener('change', scheduleAutoSave);
+      });
+      // Also catch search-select hidden input changes
+      form.querySelectorAll('input[type="hidden"]').forEach(el => {
+        const obs = new MutationObserver(scheduleAutoSave);
+        obs.observe(el, { attributes: true, attributeFilter: ['value'] });
+      });
+
+      // ── Custom validation ──
+      function clearValidation() {
+        form!.querySelectorAll('.apply-field--invalid').forEach(f => f.classList.remove('apply-field--invalid'));
+        form!.querySelectorAll('.apply-validate-tip').forEach(t => t.remove());
+      }
+
+      function showFieldError(field: HTMLElement, message: string) {
+        const wrapper = field.closest('.apply-field');
+        if (!wrapper) return;
+        wrapper.classList.add('apply-field--invalid');
+        let tip = wrapper.querySelector('.apply-validate-tip') as HTMLElement;
+        if (!tip) {
+          tip = document.createElement('span');
+          tip.className = 'apply-validate-tip';
+          wrapper.appendChild(tip);
+        }
+        tip.textContent = message;
+        requestAnimationFrame(() => tip.classList.add('apply-validate-tip--visible'));
+      }
+
+      function validateForm(): boolean {
+        clearValidation();
+        let firstInvalid: HTMLElement | null = null;
+
+        // Check required text/textarea fields
+        form!.querySelectorAll('[required]').forEach(el => {
+          const input = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+          if (!input.value || !input.value.trim()) {
+            showFieldError(input, 'Please fill out this field');
+            if (!firstInvalid) firstInvalid = input;
+          }
+        });
+
+        // Check UID is exactly 9 digits
+        const uidInput = form!.querySelector('#uid') as HTMLInputElement;
+        if (uidInput && uidInput.value.trim() && !/^\d{9}$/.test(uidInput.value.trim())) {
+          showFieldError(uidInput, 'UID must be exactly 9 digits');
+          if (!firstInvalid) firstInvalid = uidInput;
+        }
+
+        // Check required search-select (hidden inputs)
+        const major1Hidden = form!.querySelector('[name="major1"]') as HTMLInputElement;
+        if (major1Hidden && !major1Hidden.value.trim()) {
+          const visInput = form!.querySelector('[data-search-select="major1"] .search-select__input') as HTMLElement;
+          if (visInput) {
+            showFieldError(visInput, 'Please select a major');
+            if (!firstInvalid) firstInvalid = visInput;
+          }
+        }
+
+        if (firstInvalid) {
+          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (firstInvalid as HTMLElement).focus?.();
+          return false;
+        }
+        return true;
+      }
+
+      // Clear individual field errors on input
+      form.addEventListener('input', (e) => {
+        const target = e.target as HTMLElement;
+        const wrapper = target.closest('.apply-field');
+        if (wrapper?.classList.contains('apply-field--invalid')) {
+          wrapper.classList.remove('apply-field--invalid');
+          const tip = wrapper.querySelector('.apply-validate-tip');
+          if (tip) tip.remove();
+        }
+      });
+      form.addEventListener('change', (e) => {
+        const target = e.target as HTMLElement;
+        const wrapper = target.closest('.apply-field');
+        if (wrapper?.classList.contains('apply-field--invalid')) {
+          wrapper.classList.remove('apply-field--invalid');
+          const tip = wrapper.querySelector('.apply-validate-tip');
+          if (tip) tip.remove();
+        }
+      });
+
+      // UID: only allow digits
+      const uidField = document.getElementById('uid') as HTMLInputElement;
+      uidField?.addEventListener('input', () => {
+        uidField.value = uidField.value.replace(/\D/g, '');
+      });
+
+      // Save draft
+      draftBtn?.addEventListener('click', async () => {
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        draftBtn.disabled = true;
+        setAutosaveStatus('Saving...', 'saving');
+        const error = await saveApplication('draft');
+        draftBtn.disabled = false;
+        if (error) {
+          showMsg('Failed to save draft. ' + error.message, 'error');
+          setAutosaveStatus('', '');
+        } else {
+          setAutosaveStatus('Draft saved', 'saved');
+          setTimeout(() => setAutosaveStatus('', ''), 3000);
+        }
+      });
+
+      // Submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        if (!validateForm()) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        const error = await saveApplication('submitted');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+
+        if (error) {
+          showMsg('Failed to submit. ' + error.message, 'error');
+        } else {
+          formWrap!.style.display = 'none';
+          submittedView!.style.display = 'block';
+        }
+      });
+
+      // Intro screen logic
+      const introAgree = document.getElementById('intro-agree-check') as HTMLInputElement;
+      const introContinueBtn = document.getElementById('intro-continue-btn') as HTMLButtonElement;
+
+      introAgree?.addEventListener('change', () => {
+        introContinueBtn.disabled = !introAgree.checked;
+      });
+
+      function showForm() {
+        introView!.style.display = 'none';
+        formWrap!.style.display = 'block';
+      }
+
+      introContinueBtn?.addEventListener('click', () => {
+        localStorage.setItem('xr-apply-intro-seen', '1');
+        showForm();
+      });
+
+      // Init
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        loading!.style.display = 'none';
+
+        if (!user) {
+          const b = import.meta.env.BASE_URL;
+          window.location.href = `${b}login?redirect=${encodeURIComponent(b + 'apply')}`;
+          return;
+        }
+
+        // Check for existing application
+        const { data: app } = await supabase
+          .from('applications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (app && app.status === 'submitted') {
+          submittedView!.style.display = 'block';
+          return;
+        }
+
+        // Returning draft — skip intro, go straight to form
+        if (app) {
+          appId = app.id;
+          populateForm(app);
+          formWrap!.style.display = 'block';
+        } else if (localStorage.getItem('xr-apply-intro-seen')) {
+          // Already seen intro this session
+          formWrap!.style.display = 'block';
+        } else {
+          // New applicant — show intro
+          introView!.style.display = 'block';
+        }
+
+        // Pre-fill name from profile
+        if (!app?.full_name) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+          if (profile?.full_name) {
+            const nameEl = form.querySelector('[name="full_name"]') as HTMLInputElement;
+            if (nameEl && !nameEl.value) nameEl.value = profile.full_name;
+          }
+        }
+      })();
+    });
+  </script>
 </AppLayout>

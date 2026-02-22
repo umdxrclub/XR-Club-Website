@@ -7,111 +7,135 @@ const base = import.meta.env.BASE_URL;
   <div class="auth-page">
     <div class="auth-card">
       <img src={`${base}Images/XR logo.png`} alt="XR Club" class="auth-card__logo" />
-      <h1 class="auth-card__title">Welcome Back</h1>
-      <p class="auth-card__subtitle">Log in to your XR Club account</p>
+      <h1 class="auth-card__title">Welcome</h1>
+      <p class="auth-card__subtitle">Sign in with your TerpMail account</p>
 
       <div id="error-msg" class="auth-card__error" style="display:none;"></div>
 
-      <form id="login-form" class="auth-form">
-        <div class="auth-form__field">
-          <label class="auth-form__label" for="email">Email</label>
-          <input
-            class="auth-form__input"
-            type="email"
-            id="email"
-            name="email"
-            placeholder="you@umd.edu"
-            required
-          />
-        </div>
+      <button type="button" class="google-btn" id="google-btn">
+        <svg class="google-btn__icon" viewBox="0 0 24 24" width="20" height="20">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign in with TerpMail
+      </button>
 
-        <div class="auth-form__field">
-          <label class="auth-form__label" for="password">Password</label>
-          <input
-            class="auth-form__input"
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Your password"
-            required
-          />
-        </div>
-
-        <button type="submit" class="auth-form__btn" id="submit-btn">
-          Log In
-        </button>
-      </form>
-
-      <p class="auth-card__footer" style="margin-top:0.8rem;">
-        <a href={`${base}forgot-password`} class="auth-card__link">Forgot password?</a>
-      </p>
-      <p class="auth-card__footer">
-        Don't have an account? <a href={`${base}signup`} class="auth-card__link">Sign up</a>
-      </p>
+      <p class="auth-card__hint">Only @terpmail.umd.edu accounts are accepted.</p>
     </div>
   </div>
+
+  <style>
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 0.75rem 1.2rem;
+      margin-top: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .google-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .google-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .google-btn__icon {
+      flex-shrink: 0;
+    }
+
+    .auth-card__hint {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.3);
+      text-align: center;
+      margin-top: 1rem;
+    }
+  </style>
 
   <script>
     import { supabase } from '../lib/supabase';
 
     const base = import.meta.env.BASE_URL;
-    const form = document.getElementById('login-form') as HTMLFormElement;
     const errorMsg = document.getElementById('error-msg')!;
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const googleBtn = document.getElementById('google-btn') as HTMLButtonElement;
 
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect') || `${base}apply`;
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorMsg.style.display = 'none';
+    // Handle Google sign-in
+    googleBtn.addEventListener('click', async () => {
+      googleBtn.disabled = true;
+      googleBtn.textContent = 'Redirecting...';
 
-      const email = (document.getElementById('email') as HTMLInputElement).value.trim();
-      const password = (document.getElementById('password') as HTMLInputElement).value;
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="auth-spinner"></span>Logging in…';
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}${base}login?redirect=${encodeURIComponent(redirect)}`,
+          queryParams: {
+            hd: 'terpmail.umd.edu',
+          },
+        },
       });
 
       if (error) {
         errorMsg.textContent = error.message;
         errorMsg.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Log In';
+        googleBtn.disabled = false;
+        googleBtn.textContent = 'Sign in with TerpMail';
+      }
+    });
+
+    // Check if already logged in (handles OAuth callback too)
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Verify email domain
+      const email = user.email || '';
+      if (!email.endsWith('@terpmail.umd.edu')) {
+        await supabase.auth.signOut();
+        errorMsg.textContent = 'Only @terpmail.umd.edu accounts are accepted.';
+        errorMsg.style.display = 'block';
         return;
       }
 
+      // Ensure profile exists
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
+        .select('id, role')
+        .eq('id', user.id)
         .single();
+
+      if (!profile) {
+        await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email!,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          role: 'member',
+        });
+      }
 
       if (profile && (profile.role === 'board' || profile.role === 'admin')) {
         window.location.href = `${base}dashboard`;
       } else {
         window.location.href = redirect;
-      }
-    });
-
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (profile && (profile.role === 'board' || profile.role === 'admin')) {
-          window.location.href = `${base}dashboard`;
-        } else {
-          window.location.href = redirect;
-        }
       }
     })();
   </script>

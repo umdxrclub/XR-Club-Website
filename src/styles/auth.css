@@ -204,7 +204,7 @@
 .apply-page {
   max-width: 800px;
   margin: 0 auto;
-  padding: 6rem 2rem 4rem;
+  padding: 9rem 2rem 4rem;
 }
 
 .apply-header {
@@ -462,6 +462,7 @@ select.apply-input option {
 .status-badge--under_review { color: #fbbf24; border-color: rgba(251,191,36,0.3); }
 .status-badge--accepted { color: #34d399; border-color: rgba(52,211,153,0.3); }
 .status-badge--rejected { color: #f87171; border-color: rgba(248,113,113,0.3); }
+.status-badge--waitlisted { color: #c084fc; border-color: rgba(192,132,252,0.3); }
 
 .dash {
   display: flex;
@@ -581,7 +582,7 @@ select.apply-input option {
 
 .dash__stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.8rem;
   margin-bottom: 1.5rem;
 }
@@ -763,6 +764,36 @@ select.apply-input option {
   background: rgba(255, 255, 255, 0.15);
 }
 
+.dash__bulk-select {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.4rem 2rem 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: all 200ms ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+.dash__bulk-select:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+.dash__bulk-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
 .dash__detail {
   position: fixed;
   top: 0;
@@ -917,6 +948,30 @@ select.apply-input option {
 
 .dash__note-btn:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.dash__danger-zone {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dash__delete-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 150ms ease;
+}
+
+.dash__delete-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
 }
 
 .dash__activity {

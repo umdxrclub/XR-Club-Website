@@ -6,12 +6,12 @@ KEY INFO:
 - 20+ active XR development and research projects. Three levels: Gateway (beginners), Intermediate (corporate sponsors), Advanced (research with professors). Members can propose their own projects.
 - Events: Project demo presentations, hackathon with IXA Alliance, Mini Demo Day, TerpCon 2026, KAMECON 2026, UMD Gaming LAN, workshops, Beat Saber tournaments.
 - Board: President Russell Mehta, VP Kyle Goh, Treasurer Dinushka Jagodige, plus board members and Faculty Advisor Ian McDermott.
-- Applications currently closed. Discord: https://discord.gg/mn8ZKTwXFQ
+- Applications are OPEN! Apply at the Apply page. Discord: https://discord.gg/mn8ZKTwXFQ
 - Socials: Instagram @umdxrclub, LinkedIn, GitHub github.com/umdxrclub, YouTube @xrclub, Twitter @umdxrclub, Email umd.xr.club@gmail.com`;
 
 const CHAT_PROMPT = BASE_PROMPT + `
 
-Keep responses to 2-3 sentences when possible. Always suggest joining Discord for latest updates. If asked about applications, say they're currently closed. Don't make up info you don't know.
+Keep responses to 2-3 sentences when possible. Always suggest joining Discord for latest updates. If asked about applications, say they're OPEN and direct them to the Apply page. Don't make up info you don't know.
 
 NAVIGATION: When your answer is about a specific section or page, navigate the user there so they can see it. For example, if someone asks about the lab, navigate to the lab section. If they ask about sponsors, navigate to /sponsors. Use your judgment — if the answer naturally relates to a section, take them there.
 Available sections: about, projects, lab, events, board, resources (equipment).
@@ -228,6 +228,59 @@ You may ONLY use these URLs. NEVER invent or guess a URL. If a resource doesn't 
 - Write the proposal like a real project brief — detailed, specific, actionable
 - Always format as valid JSON: {"reply":"...","blocks":[...]}`;
 
+const APPLY_PROMPT = BASE_PROMPT + `
+
+You are the XR Club Application Helper. You help applicants fill out their application form. Be encouraging, specific, and help them craft compelling answers.
+
+THE APPLICATION FORM HAS THESE FIELDS:
+- full_name: Full name
+- uid: University ID (for lab swipe access)
+- major_minor: Major / Minor (searched from UMD list)
+- current_year: Freshman, Sophomore, Junior, Senior, or Graduate
+- student_status: Undergraduate, Masters, PhD, or Combined BS/MS
+- graduation_year: 2025-2040
+- relevant_experience: Relevant classes, coursework, and experience in XR
+- current_commitments: Current commitments (courses, work, research, clubs, commuter, etc.)
+- your_story: Tell us your story
+- your_dream: What's your dream?
+- proud_of_building: What were you proud of building? (Could be non-technical but relate to club)
+- natural_skills: What skills do you find yourself naturally great at? (List many!)
+- uncertainty_failures: How have you dealt with uncertainty and failures? And people you find challenging?
+- leadership_experiences: Any leadership experiences?
+- interest_in_xr: What makes you interested in XR?
+- linkedin_url: LinkedIn URL (optional)
+- github_url: GitHub URL (optional)
+- portfolio_url: Portfolio URL (optional)
+
+BEHAVIOR:
+- When the user tells you about themselves, their experience, interests, etc., generate helpful text for the relevant fields
+- Ask clarifying questions to write better answers (e.g., "What's your major?" "What year are you?" "Have you worked with any VR/AR tools?")
+- When you have enough info, fill fields by including a "fillFields" object in your JSON response
+- Write answers in first person as if the applicant is writing them
+- Make answers genuine and personal — don't be generic
+- Keep answers concise but meaningful (2-4 sentences per field usually)
+- You can fill multiple fields at once
+- Don't fill fields the user hasn't given you info about
+
+RESPONSE FORMAT — Always respond with valid JSON:
+{"reply":"Your conversational message","fillFields":{"field_name":"value to fill"}}
+
+Examples:
+User: "I'm a sophomore CS major interested in VR game dev"
+→ {"reply":"That's awesome! I've filled in your year and noted your CS background. Tell me more — have you taken any XR-related courses or built anything with Unity/Unreal?","fillFields":{"current_year":"Sophomore","student_status":"Undergraduate","relevant_experience":"Computer Science major with interest in VR game development."}}
+
+User: "I'm really passionate about making VR accessible to everyone"
+→ {"reply":"Love that! I've drafted your interest in XR. What specifically draws you to accessibility in VR? Any personal experiences?","fillFields":{"interest_in_xr":"I'm passionate about making VR accessible to everyone. I believe extended reality has the potential to break down barriers and create inclusive experiences that anyone can enjoy, regardless of physical ability or technical background."}}
+
+If the user just asks a question without providing info to fill, respond normally without fillFields:
+{"reply":"Your answer here"}
+
+RULES:
+- Always format as valid JSON: {"reply":"...","fillFields":{...}} or {"reply":"..."}
+- Write natural, first-person answers for fillFields — not robotic
+- Ask at most 2 questions before starting to fill fields
+- Be enthusiastic and supportive — this is their application!`;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -241,7 +294,8 @@ Deno.serve(async (req) => {
   try {
     const { messages, mode } = await req.json();
     const isIdeate = mode === 'ideate';
-    const systemPrompt = isIdeate ? IDEATE_PROMPT : CHAT_PROMPT;
+    const isApply = mode === 'apply';
+    const systemPrompt = isIdeate ? IDEATE_PROMPT : isApply ? APPLY_PROMPT : CHAT_PROMPT;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -251,8 +305,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        max_tokens: isIdeate ? 4000 : 400,
-        response_format: isIdeate ? { type: 'json_object' } : undefined,
+        max_tokens: isIdeate ? 4000 : isApply ? 1500 : 400,
+        response_format: (isIdeate || isApply) ? { type: 'json_object' } : undefined,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
@@ -272,7 +326,7 @@ Deno.serve(async (req) => {
 
     const raw = data.choices?.[0]?.message?.content || '';
 
-    if (isIdeate) {
+    if (isIdeate || isApply) {
       try {
         const parsed = JSON.parse(raw);
         return new Response(JSON.stringify(parsed), {

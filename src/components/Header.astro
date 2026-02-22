@@ -4,9 +4,12 @@ const base = import.meta.env.BASE_URL;
 <header class="header" data-header>
   <div class="header__bar">
     <div class="header__inner">
-      <a href={`${base}#home`} class="header__logo-link">
-        <img src={`${base}Images/XR logo.png`} alt="XR Club" class="header__logo-img" fetchpriority="high" />
-      </a>
+      <div class="header__left">
+        <a href={`${base}#home`} class="header__logo-link">
+          <img src={`${base}Images/XR logo.png`} alt="XR Club" class="header__logo-img" fetchpriority="high" />
+        </a>
+        <a href={`${base}dashboard`} class="header__link header__dash-link" id="auth-dash-link" style="display:none;">Dashboard</a>
+      </div>
       <nav class="header__nav">
         <div class="header__join">
           <span class="header__link header__join-trigger">Explore</span>
@@ -62,11 +65,8 @@ const base = import.meta.env.BASE_URL;
           <span class="header__user-name" id="auth-user-name"></span>
           <button class="header__link header__signout" id="auth-signout-btn">Sign Out</button>
         </span>
-        <div class="header__join" id="auth-apply-wrap">
+        <div id="auth-apply-wrap">
           <a href={`${base}apply`} class="header__btn">Apply Now</a>
-          <div class="header__join-dropdown" id="auth-login-dropdown">
-            <a href={`${base}login`} class="header__join-item" id="auth-login-link">Login / Sign Up</a>
-          </div>
         </div>
       </nav>
     </div>
@@ -103,6 +103,13 @@ const base = import.meta.env.BASE_URL;
     justify-content: space-between;
     width: 100%;
     padding: 0.5rem 1.5rem;
+  }
+
+  .header__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
   }
 
   .header__logo-link {
@@ -256,15 +263,6 @@ const base = import.meta.env.BASE_URL;
     min-width: 160px;
   }
 
-  #auth-login-dropdown {
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    margin-top: 0.3rem;
-  }
-
-
   .header__dropdown-divider {
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
@@ -283,6 +281,15 @@ const base = import.meta.env.BASE_URL;
     font-weight: 600;
     color: #fff;
     white-space: nowrap;
+  }
+
+  .header__dash-link {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+
+  .header__dash-link:hover {
+    color: #93c5fd;
   }
 
   .header__signout {
@@ -381,23 +388,26 @@ const base = import.meta.env.BASE_URL;
       });
     });
 
-    const loginDropdown = document.getElementById('auth-login-dropdown');
     const userInfo = document.getElementById('auth-user-info');
     const userName = document.getElementById('auth-user-name');
     const signoutBtn = document.getElementById('auth-signout-btn');
+    const dashLink = document.getElementById('auth-dash-link');
 
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && userInfo && userName) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, role')
           .eq('id', user.id)
           .single();
 
         userName.textContent = profile?.full_name || user.email || 'User';
-        if (loginDropdown) loginDropdown.style.display = 'none';
         userInfo.style.display = 'inline-flex';
+
+        if (dashLink && (profile?.role === 'board' || profile?.role === 'admin')) {
+          dashLink.style.display = '';
+        }
       }
     })();
 

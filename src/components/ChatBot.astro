@@ -4,6 +4,7 @@ const base = import.meta.env.BASE_URL;
 
 <div class="chat chat--hidden" data-chat>
   <div class="chat__trigger" data-chat-toggle>
+    <div class="chat__speech" data-chat-speech>Need help on your application?</div>
     <model-viewer
       class="chat__model"
       src={`${base}Images/stickman.glb`}
@@ -89,18 +90,38 @@ const base = import.meta.env.BASE_URL;
 
     // ── Page mode ──
     const isIdeatePage = !!document.querySelector('[data-ideate-page]');
-    const mode = isIdeatePage ? 'ideate' : 'chat';
+    const isApplyPage = window.location.pathname.includes('/apply');
+    const mode = isIdeatePage ? 'ideate' : isApplyPage ? 'apply' : 'chat';
 
     if (isIdeatePage && titleEl) {
       titleEl.textContent = 'XR Ideator';
       setTimeout(() => { if (!isOpen) openChat(); }, 800);
     }
 
+    if (isApplyPage && titleEl) {
+      titleEl.textContent = 'Application Helper';
+    }
+
+    // ── Speech bubble (apply page only) ──
+    const speechBubble = document.querySelector('[data-chat-speech]') as HTMLElement;
+    if (speechBubble) {
+      if (isApplyPage && !isOpen) {
+        speechBubble.classList.add('chat__speech--visible');
+      } else {
+        speechBubble.classList.remove('chat__speech--visible');
+      }
+    }
+
     // ── Welcome message (only if feed is empty) ──
     if (feed.children.length === 0 && history.length === 0) {
-      const welcomeMsg = isIdeatePage
-        ? "I'll help you build a project proposal. What kind of XR experience do you want to create? (VR game, AR app, mixed reality, research, creative/art, etc.)"
-        : "Have any questions about XR Club or the XR industry? Ask away!";
+      let welcomeMsg: string;
+      if (isIdeatePage) {
+        welcomeMsg = "I'll help you build a project proposal. What kind of XR experience do you want to create? (VR game, AR app, mixed reality, research, creative/art, etc.)";
+      } else if (isApplyPage) {
+        welcomeMsg = "Need help with your application? I can help you brainstorm answers, refine your responses, or fill out sections for you. Just tell me what you need!";
+      } else {
+        welcomeMsg = "Have any questions about XR Club or the XR industry? Ask away!";
+      }
       addMsg(feed, welcomeMsg, 'bot');
     }
 
@@ -112,12 +133,14 @@ const base = import.meta.env.BASE_URL;
     function openChat() {
       isOpen = true;
       panel.classList.add('chat__panel--open');
+      speechBubble?.classList.remove('chat__speech--visible');
       input.focus();
     }
 
     function closeChat() {
       isOpen = false;
       panel.classList.remove('chat__panel--open');
+      if (isApplyPage) speechBubble?.classList.add('chat__speech--visible');
     }
 
     // ── Toggle / close ──
@@ -177,6 +200,13 @@ const base = import.meta.env.BASE_URL;
             detail: { blocks: data.blocks },
           }));
         }
+
+        // Handle fill-field commands from apply mode
+        if (data?.fillFields && typeof data.fillFields === 'object') {
+          window.dispatchEvent(new CustomEvent('apply-fill-fields', {
+            detail: data.fillFields,
+          }));
+        }
       } catch {
         typing.remove();
         addMsg(feed, "Something went wrong. Try again!", 'bot');
@@ -215,6 +245,7 @@ const base = import.meta.env.BASE_URL;
 
   /* --- 3D Model trigger --- */
   .chat__trigger {
+    position: relative;
     width: 180px;
     height: 180px;
     cursor: pointer;
@@ -225,6 +256,32 @@ const base = import.meta.env.BASE_URL;
     height: 100%;
     --poster-color: transparent;
     background: transparent;
+  }
+
+  /* --- Speech bubble --- */
+  .chat__speech {
+    position: absolute;
+    top: -8px;
+    left: 140px;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 0.4rem 0.75rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+
+  .chat__speech--visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* --- Panel --- */
@@ -395,6 +452,11 @@ const base = import.meta.env.BASE_URL;
     .chat__trigger {
       width: 120px;
       height: 120px;
+    }
+
+    .chat__speech {
+      left: 100px;
+      font-size: 0.7rem;
     }
 
     .chat__panel {
