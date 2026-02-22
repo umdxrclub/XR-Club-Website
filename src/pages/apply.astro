@@ -197,6 +197,23 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
+        <!-- Project Preferences -->
+        <div class="apply-section" id="project-prefs-section">
+          <h2 class="apply-section__title">Project Preferences <span class="apply-req">*</span></h2>
+          <p class="psel__subtitle">Select up to 3 projects in order of preference. Click a card to select it as your next choice. You only need to answer the project-specific question for your top choice.</p>
+          <div id="psel-counter" class="psel__counter" style="display:none;">
+            <span class="psel__counter-dot" id="psel-dot-1"></span>
+            <span class="psel__counter-dot" id="psel-dot-2"></span>
+            <span class="psel__counter-dot" id="psel-dot-3"></span>
+            <span id="psel-counter-text">0 / 3 selected</span>
+          </div>
+          <div id="psel-loading" style="text-align:center;padding:1rem;">
+            <span style="color:rgba(255,255,255,0.35);font-family:Inter,sans-serif;font-size:0.85rem;">Loading projects…</span>
+          </div>
+          <div class="psel__grid" id="psel-grid" style="display:none;"></div>
+          <div class="psel__chosen" id="psel-chosen" style="display:none;"></div>
+        </div>
+
         <!-- Optional -->
         <div class="apply-section">
           <h2 class="apply-section__title">Optional</h2>
@@ -232,9 +249,7 @@ const base = import.meta.env.BASE_URL;
         <div id="apply-msg" style="display:none;"></div>
 
         <!-- Actions -->
-        <div class="apply-warning">
-          <p class="apply-warning__text">Once you submit, you will not be able to edit your application. Please review all your answers before submitting.</p>
-        </div>
+        <p class="apply-edit-note">You can edit your application after submitting.</p>
         <div class="apply-actions">
           <button type="submit" class="apply-btn apply-btn--submit" id="submit-btn">Submit Application</button>
         </div>
@@ -250,6 +265,19 @@ const base = import.meta.env.BASE_URL;
       </div>
       <div class="apply-submitted">
         <p>Your application has been submitted. We'll review it and get back to you soon! Join our <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;">Discord</a> for updates!</p>
+      </div>
+    </div>
+
+    <!-- Submit confirmation modal -->
+    <div id="submit-confirm-modal" class="confirm-modal" style="display:none;">
+      <div class="confirm-modal__backdrop"></div>
+      <div class="confirm-modal__dialog">
+        <h3 class="confirm-modal__title">Submit Application?</h3>
+        <p class="confirm-modal__text">Are you sure you want to submit your application? You can still edit it after submitting.</p>
+        <div class="confirm-modal__actions">
+          <button type="button" class="confirm-modal__btn confirm-modal__btn--cancel" id="confirm-cancel">Go Back</button>
+          <button type="button" class="confirm-modal__btn confirm-modal__btn--submit" id="confirm-submit">Yes, Submit</button>
+        </div>
       </div>
     </div>
   </div>
@@ -454,10 +482,16 @@ const base = import.meta.env.BASE_URL;
     }
 
     .apply-validate-tip {
+      display: block;
       font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
       color: #f87171;
-      margin-top: 0.3rem;
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.15);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+      margin-top: 0.4rem;
       opacity: 0;
       transform: translateY(-4px);
       transition: opacity 200ms ease, transform 200ms ease;
@@ -490,10 +524,632 @@ const base = import.meta.env.BASE_URL;
     .apply-autosave--error {
       color: rgba(248, 113, 113, 0.6);
     }
+
+    .apply-edit-note {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.35);
+      text-align: center;
+      margin-top: 1.5rem;
+      margin-bottom: 0;
+    }
+
+    /* Submit confirmation modal */
+    .confirm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirm-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    .confirm-modal__dialog {
+      position: relative;
+      background: rgba(15, 15, 25, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      animation: confirmFadeIn 200ms ease;
+    }
+
+    @keyframes confirmFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .confirm-modal__title {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 0.6rem;
+    }
+
+    .confirm-modal__text {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.5;
+      margin: 0 0 1.5rem;
+    }
+
+    .confirm-modal__text strong {
+      color: #f87171;
+      font-weight: 600;
+    }
+
+    .confirm-modal__actions {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+    }
+
+    .confirm-modal__btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .confirm-modal__btn--cancel {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .confirm-modal__btn--cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .confirm-modal__btn--submit {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .confirm-modal__btn--submit:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+  </style>
+
+  <!-- Global styles for dynamically-generated project cards -->
+  <style is:global>
+    .psel__subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1.7;
+      margin-bottom: 0.8rem;
+    }
+
+    .psel__counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 1.2rem;
+      padding: 0.35rem 0.8rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 980px;
+      transition: all 400ms ease;
+    }
+
+    .psel__counter--full {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.25);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .psel__counter-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      transition: all 400ms ease;
+    }
+
+    .psel__counter-dot--filled {
+      background: #34d399;
+    }
+
+    .psel__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Break project preferences section out of narrow form column */
+    #project-prefs-section {
+      width: 100vw;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-left: 2rem;
+      padding-right: 2rem;
+      box-sizing: border-box;
+      max-width: 1200px;
+    }
+
+    .psel__card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+      opacity: 0;
+      animation: pselFadeIn 350ms ease forwards;
+      position: relative;
+    }
+
+    .psel__card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.045);
+      transform: translateY(-1px);
+    }
+
+    .psel__card:nth-child(1) { animation-delay: 0ms; }
+    .psel__card:nth-child(2) { animation-delay: 40ms; }
+    .psel__card:nth-child(3) { animation-delay: 80ms; }
+    .psel__card:nth-child(4) { animation-delay: 120ms; }
+    .psel__card:nth-child(5) { animation-delay: 160ms; }
+    .psel__card:nth-child(6) { animation-delay: 200ms; }
+    .psel__card:nth-child(7) { animation-delay: 240ms; }
+    .psel__card:nth-child(8) { animation-delay: 280ms; }
+    .psel__card:nth-child(9) { animation-delay: 320ms; }
+
+    @keyframes pselFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .psel__card--selected {
+      border-color: rgba(52, 211, 153, 0.35) !important;
+      background: rgba(52, 211, 153, 0.04) !important;
+    }
+
+    .psel__card--selected:hover {
+      border-color: rgba(52, 211, 153, 0.5) !important;
+      background: rgba(52, 211, 153, 0.06) !important;
+    }
+
+    .psel__card--dimmed {
+      opacity: 0.3 !important;
+      pointer-events: none;
+    }
+
+    .psel__card-rank {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #34d399;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+    }
+
+    .psel__card-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1.3;
+      margin: 0 0 0.55rem 0;
+    }
+
+    .psel__card-blurb {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.38);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin: 0 0 0.3rem 0;
+      flex: 1;
+      transition: all 300ms ease;
+    }
+
+    .psel__card-expand-btn {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: all 200ms ease;
+      z-index: 2;
+    }
+
+    .psel__card-expand-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Full-page project detail overlay */
+    .psel__overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 4rem 2rem 2rem;
+      overflow-y: auto;
+      opacity: 0;
+      transition: opacity 250ms ease;
+    }
+
+    .psel__overlay--visible {
+      opacity: 1;
+    }
+
+    .psel__overlay-content {
+      background: rgba(18, 18, 22, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 720px;
+      padding: 2.5rem;
+      position: relative;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 300ms ease;
+    }
+
+    .psel__overlay--visible .psel__overlay-content {
+      transform: translateY(0) scale(1);
+    }
+
+    .psel__overlay-close {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.2rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 200ms ease;
+    }
+
+    .psel__overlay-close:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .psel__overlay-tier {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      margin-bottom: 0.8rem;
+    }
+
+    .psel__overlay-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1.3;
+      margin: 0 0 1rem 0;
+      padding-right: 3rem;
+    }
+
+    .psel__overlay-blurb {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.75;
+      margin: 0 0 1.5rem 0;
+    }
+
+    .psel__overlay-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .psel__overlay-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+    }
+
+    .psel__overlay-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      min-width: 110px;
+      flex-shrink: 0;
+    }
+
+    .psel__overlay-value {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .psel__overlay-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .psel__overlay-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .psel__overlay { padding: 2rem 1rem; }
+      .psel__overlay-content { padding: 1.5rem; }
+      .psel__overlay-name { font-size: 1.3rem; }
+    }
+
+    .psel__card-bottom {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      padding-top: 0.7rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: auto;
+    }
+
+    .psel__card-tier {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .psel__card-tier--gateway { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+    .psel__card-tier--intermediate { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+    .psel__card-tier--advanced { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+    .psel__card-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .psel__card-label--new {
+      color: #818cf8;
+      background: rgba(129, 140, 248, 0.1);
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .psel__card-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: rgba(96, 165, 250, 0.6);
+      text-decoration: none;
+      transition: color 200ms ease;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .psel__card-link:hover {
+      color: rgba(96, 165, 250, 1);
+      text-decoration: underline;
+    }
+
+    .psel__card-detail {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .psel__card-sep {
+      font-size: 0.5rem;
+      color: rgba(255, 255, 255, 0.12);
+    }
+
+    .psel__section-divider {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.8rem 0 0.2rem;
+    }
+
+    .psel__section-divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .psel__section-divider-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(129, 140, 248, 0.6);
+      white-space: nowrap;
+    }
+
+    .psel__section-divider-sub {
+      grid-column: 1 / -1;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.35);
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .psel__chosen-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .psel__answer-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 1.2rem 1.3rem;
+      margin-bottom: 0.8rem;
+      transition: border-color 200ms ease;
+      animation: pselFadeIn 300ms ease forwards;
+      opacity: 0;
+    }
+
+    .psel__answer-card:nth-child(2) { animation-delay: 40ms; }
+    .psel__answer-card:nth-child(3) { animation-delay: 80ms; }
+    .psel__answer-card:nth-child(4) { animation-delay: 120ms; }
+
+    .psel__answer-card--invalid {
+      border-color: rgba(248, 113, 113, 0.5);
+    }
+
+    .psel__answer-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .psel__answer-rank {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #34d399;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    .psel__answer-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.025em;
+    }
+
+    .psel__answer-remove {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.2);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0;
+      transition: color 200ms ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .psel__answer-remove:hover {
+      color: #f87171;
+    }
+
+    .psel__answer-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+      display: block;
+      margin-bottom: 0.5rem;
+      line-height: 1.55;
+    }
+
+    .psel__answer-textarea {
+      min-height: 100px;
+    }
+
+    @media (max-width: 640px) {
+      .psel__grid { grid-template-columns: 1fr; }
+      .psel__card { padding: 1.1rem 0.5rem; }
+      .psel__card-name { font-size: 1.05rem; }
+    }
   </style>
 
   <script>
     import { supabase } from '../lib/supabase';
+    import type { Project } from '../lib/types';
     import { navigate } from 'astro:transitions/client';
 
     document.addEventListener('astro:page-load', () => {
@@ -526,6 +1182,325 @@ const base = import.meta.env.BASE_URL;
       const allFields = [...textFields, ...selectFields];
 
       let appId: string | null = null;
+
+      // ── Project selection state ──
+      interface SelectedProject {
+        project_id: string;
+        rank: number;
+        prompt_answer: string;
+        project_name: string;
+        prompt_question: string;
+      }
+      let allProjects: Project[] = [];
+      let selectedProjects: SelectedProject[] = [];
+      const pselGrid = document.getElementById('psel-grid') as HTMLElement;
+      const pselChosen = document.getElementById('psel-chosen') as HTMLElement;
+      const pselLoading = document.getElementById('psel-loading') as HTMLElement;
+
+      function escHtml(s: string) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function updateCounter() {
+        const counter = document.getElementById('psel-counter');
+        const text = document.getElementById('psel-counter-text');
+        if (!counter || !text) return;
+        const n = selectedProjects.length;
+        text.textContent = `${n} / 3 selected`;
+        counter.classList.toggle('psel__counter--full', n >= 3);
+        for (let i = 1; i <= 3; i++) {
+          const dot = document.getElementById(`psel-dot-${i}`);
+          if (dot) dot.classList.toggle('psel__counter-dot--filled', i <= n);
+        }
+      }
+
+      function renderProjectGrid() {
+        if (!pselGrid) return;
+        const maxed = selectedProjects.length >= 3;
+        const ordinals = ['1st choice', '2nd choice', '3rd choice'];
+
+        const existingProjects = allProjects.filter(p => !p.labels.includes('New Project'));
+        const newProjects = allProjects.filter(p => p.labels.includes('New Project'));
+
+        function renderCard(p: Project) {
+          const sel = selectedProjects.find(sp => sp.project_id === p.id);
+          const isSelected = !!sel;
+          const isDimmed = maxed && !isSelected;
+          const tierClass = p.tier.toLowerCase();
+          const isNew = p.labels.includes('New Project');
+          // Filter out "New Project" from card labels since the section divider already indicates it
+          const displayLabels = isNew ? p.labels.filter(l => l !== 'New Project') : p.labels;
+          const labels = displayLabels.map(l => `<span class="psel__card-label">${escHtml(l)}</span>`).join('');
+          const teamCount = p.people?.length || 0;
+
+          let classes = 'psel__card';
+          if (isSelected) classes += ' psel__card--selected';
+          if (isDimmed) classes += ' psel__card--dimmed';
+
+          const details: string[] = [];
+          if (teamCount > 0) details.push(`${teamCount} members`);
+          if (p.equipment) details.push(escHtml(p.equipment));
+          const detailsHtml = details.map(d => `<span class="psel__card-detail">${d}</span>`).join('<span class="psel__card-sep">&middot;</span>');
+
+          // Website link for the card footer
+          const websiteLink = p.website ? `<a href="${escHtml(p.website)}" target="_blank" rel="noopener" class="psel__card-link" onclick="event.stopPropagation()">${escHtml(p.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : '';
+
+          return `
+            <div class="${classes}" data-project-id="${p.id}">
+              <button type="button" class="psel__card-expand-btn" data-expand-id="${p.id}" title="View details"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+              ${isSelected ? `<span class="psel__card-rank">${ordinals[sel!.rank - 1]}</span>` : ''}
+              <h4 class="psel__card-name">${escHtml(p.name)}</h4>
+              <p class="psel__card-blurb">${escHtml(p.blurb)}</p>
+              <div class="psel__card-bottom">
+                <span class="psel__card-tier psel__card-tier--${tierClass}">${escHtml(p.tier)}</span>
+                ${labels}
+                ${detailsHtml ? `<span class="psel__card-sep">&middot;</span>${detailsHtml}` : ''}
+                ${websiteLink ? `<span class="psel__card-sep">&middot;</span>${websiteLink}` : ''}
+              </div>
+            </div>`;
+        }
+
+        let html = existingProjects.map(renderCard).join('');
+
+        if (newProjects.length > 0) {
+          html += `
+            <div class="psel__section-divider">
+              <span class="psel__section-divider-line"></span>
+              <span class="psel__section-divider-text">New Projects</span>
+              <span class="psel__section-divider-line"></span>
+            </div>
+            <p class="psel__section-divider-sub">These are newly announced projects with established partnerships. They don't have teams, scope, or timelines yet. Read about each partner below.</p>
+          `;
+          html += newProjects.map(renderCard).join('');
+        }
+
+        pselGrid.innerHTML = html;
+
+        const counter = document.getElementById('psel-counter');
+        if (counter) counter.style.display = allProjects.length > 0 ? 'inline-flex' : 'none';
+        updateCounter();
+
+        // Expand button → full-page overlay
+        pselGrid.querySelectorAll('.psel__card-expand-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const pid = (btn as HTMLElement).dataset.expandId!;
+            const project = allProjects.find(p => p.id === pid);
+            if (project) openProjectOverlay(project);
+          });
+        });
+
+        pselGrid.querySelectorAll('.psel__card').forEach(card => {
+          card.addEventListener('click', () => {
+            const pid = (card as HTMLElement).dataset.projectId!;
+            toggleProjectSelection(pid);
+          });
+        });
+      }
+
+      function openProjectOverlay(project: Project) {
+        // Remove any existing overlay
+        document.querySelector('.psel__overlay')?.remove();
+
+        const tierColors: Record<string, string> = {
+          Gateway: 'color:#34d399;background:rgba(52,211,153,0.1);',
+          Intermediate: 'color:#fbbf24;background:rgba(251,191,36,0.1);',
+          Advanced: 'color:#f87171;background:rgba(248,113,113,0.1);',
+        };
+        const teamCount = project.people?.length || 0;
+        const labelsHtml = project.labels.map(l => `<span class="psel__overlay-tag">${escHtml(l)}</span>`).join('');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'psel__overlay';
+        overlay.innerHTML = `
+          <div class="psel__overlay-content">
+            <button type="button" class="psel__overlay-close">&times;</button>
+            <span class="psel__overlay-tier" style="${tierColors[project.tier] || ''}">${escHtml(project.tier)}</span>
+            <h2 class="psel__overlay-name">${escHtml(project.name)}</h2>
+            <p class="psel__overlay-blurb">${escHtml(project.blurb)}</p>
+            <div class="psel__overlay-meta">
+              <div class="psel__overlay-row">
+                <span class="psel__overlay-label">Labels</span>
+                <div class="psel__overlay-tags">${labelsHtml}</div>
+              </div>
+              <div class="psel__overlay-row">
+                <span class="psel__overlay-label">Team</span>
+                <span class="psel__overlay-value">${teamCount} member${teamCount !== 1 ? 's' : ''}${project.people?.length ? ' — ' + project.people.map(p => escHtml(p)).join(', ') : ''}</span>
+              </div>
+              <div class="psel__overlay-row">
+                <span class="psel__overlay-label">Equipment</span>
+                <span class="psel__overlay-value">${escHtml(project.equipment)}</span>
+              </div>
+              <div class="psel__overlay-row">
+                <span class="psel__overlay-label">Timeline</span>
+                <span class="psel__overlay-value">${escHtml(project.estimated_completion)}</span>
+              </div>
+              <div class="psel__overlay-row">
+                <span class="psel__overlay-label">Contact</span>
+                <span class="psel__overlay-value">${escHtml(project.contact_name)} (${escHtml(project.contact_email)})</span>
+              </div>
+              ${project.open_positions ? `<div class="psel__overlay-row">
+                <span class="psel__overlay-label">Open Roles</span>
+                <span class="psel__overlay-value">${escHtml(project.open_positions)}</span>
+              </div>` : ''}
+              ${project.website ? `<div class="psel__overlay-row">
+                <span class="psel__overlay-label">Website</span>
+                <span class="psel__overlay-value"><a href="${escHtml(project.website)}" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;">${escHtml(project.website)}</a></span>
+              </div>` : ''}
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Animate in
+        requestAnimationFrame(() => overlay.classList.add('psel__overlay--visible'));
+
+        // Close handlers
+        const closeOverlay = () => {
+          overlay.classList.remove('psel__overlay--visible');
+          setTimeout(() => overlay.remove(), 250);
+        };
+        overlay.querySelector('.psel__overlay-close')!.addEventListener('click', closeOverlay);
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) closeOverlay();
+        });
+        document.addEventListener('keydown', function esc(e) {
+          if (e.key === 'Escape') {
+            closeOverlay();
+            document.removeEventListener('keydown', esc);
+          }
+        });
+      }
+
+      function toggleProjectSelection(projectId: string) {
+        const idx = selectedProjects.findIndex(sp => sp.project_id === projectId);
+        if (idx >= 0) {
+          // Deselect
+          selectedProjects.splice(idx, 1);
+          // Re-number ranks
+          selectedProjects.forEach((sp, i) => sp.rank = i + 1);
+        } else {
+          if (selectedProjects.length >= 3) return; // Max 3
+          const project = allProjects.find(p => p.id === projectId);
+          if (!project) return;
+          selectedProjects.push({
+            project_id: projectId,
+            rank: selectedProjects.length + 1,
+            prompt_answer: '',
+            project_name: project.name,
+            prompt_question: project.prompt_question,
+          });
+        }
+        renderProjectGrid();
+        renderChosenProjects();
+        scheduleAutoSave();
+      }
+
+      function renderChosenProjects() {
+        if (!pselChosen) return;
+        if (selectedProjects.length === 0) {
+          pselChosen.style.display = 'none';
+          return;
+        }
+        pselChosen.style.display = 'block';
+        const ordinals = ['1st Choice', '2nd Choice', '3rd Choice'];
+        pselChosen.innerHTML = `<h3 class="psel__chosen-title">Your Selections</h3>` +
+          selectedProjects.map(sp => `
+            <div class="psel__answer-card" data-project-id="${sp.project_id}">
+              <div class="psel__answer-header">
+                <span class="psel__answer-rank">${ordinals[sp.rank - 1]}</span>
+                <span class="psel__answer-name">${escHtml(sp.project_name)}</span>
+                <button type="button" class="psel__answer-remove" data-project-id="${sp.project_id}">remove</button>
+              </div>
+              ${sp.rank === 1 ? `
+                <label class="psel__answer-label">${escHtml(sp.prompt_question)}</label>
+                <textarea class="apply-input psel__answer-textarea" name="prompt_answer_${sp.project_id}" placeholder="Your answer...">${escHtml(sp.prompt_answer)}</textarea>
+              ` : ''}
+            </div>
+          `).join('');
+
+        // Bind remove buttons
+        pselChosen.querySelectorAll('.psel__answer-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleProjectSelection((btn as HTMLElement).dataset.projectId!);
+          });
+        });
+
+        // Bind textarea input to update state + auto-save
+        pselChosen.querySelectorAll('.psel__answer-textarea').forEach(ta => {
+          ta.addEventListener('input', () => {
+            const pid = (ta as HTMLTextAreaElement).name.replace('prompt_answer_', '');
+            const sp = selectedProjects.find(s => s.project_id === pid);
+            if (sp) sp.prompt_answer = (ta as HTMLTextAreaElement).value;
+            scheduleAutoSave();
+          });
+        });
+      }
+
+      async function loadProjects() {
+        const { data } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+        const tierOrder: Record<string, number> = { Gateway: 0, Intermediate: 1, Advanced: 2 };
+        allProjects = ((data || []) as Project[]).sort((a, b) =>
+          (tierOrder[a.tier] ?? 9) - (tierOrder[b.tier] ?? 9) || a.display_order - b.display_order
+        );
+        if (pselLoading) pselLoading.style.display = 'none';
+        if (pselGrid) {
+          pselGrid.style.display = allProjects.length > 0 ? 'grid' : 'none';
+        }
+        if (allProjects.length === 0) {
+          const section = document.getElementById('project-prefs-section');
+          if (section) {
+            const noProjects = document.createElement('p');
+            noProjects.style.cssText = 'color:rgba(255,255,255,0.35);font-family:Inter,sans-serif;font-size:0.85rem;text-align:center;padding:1rem;';
+            noProjects.textContent = 'No projects are currently available.';
+            section.appendChild(noProjects);
+          }
+        }
+        renderProjectGrid();
+      }
+
+      async function loadProjectSelections() {
+        if (!appId) return;
+        const { data } = await supabase
+          .from('project_selections')
+          .select('*, projects(name, prompt_question)')
+          .eq('application_id', appId)
+          .order('rank');
+        if (data && data.length > 0) {
+          selectedProjects = (data as any[]).map(s => ({
+            project_id: s.project_id,
+            rank: s.rank,
+            prompt_answer: s.prompt_answer || '',
+            project_name: s.projects?.name || '',
+            prompt_question: s.projects?.prompt_question || '',
+          }));
+          renderProjectGrid();
+          renderChosenProjects();
+        }
+      }
+
+      async function saveProjectSelections() {
+        if (!appId) return;
+        // Delete existing and reinsert
+        await supabase.from('project_selections').delete().eq('application_id', appId);
+        if (selectedProjects.length > 0) {
+          const rows = selectedProjects.map(sp => ({
+            application_id: appId!,
+            project_id: sp.project_id,
+            rank: sp.rank,
+            prompt_answer: sp.prompt_answer,
+          }));
+          await supabase.from('project_selections').insert(rows);
+        }
+      }
 
       // UMD Majors & Minors
       const UMD_MAJORS = [
@@ -817,6 +1792,9 @@ const base = import.meta.env.BASE_URL;
           if (res.data) appId = res.data.id;
         }
 
+        // Save project selections alongside the application
+        if (!error) await saveProjectSelections();
+
         return error;
       }
 
@@ -910,6 +1888,36 @@ const base = import.meta.env.BASE_URL;
           }
         }
 
+        // Validate project selections (only if projects exist)
+        if (allProjects.length > 0 && selectedProjects.length === 0) {
+          showMsg('Please select at least 1 project preference.', 'error');
+          const section = document.getElementById('project-prefs-section');
+          if (section && !firstInvalid) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+          }
+        }
+
+        // Only the 1st choice requires a prompt answer
+        const topChoice = selectedProjects.find(sp => sp.rank === 1);
+        if (topChoice && !topChoice.prompt_answer.trim()) {
+          const ta = form!.querySelector(`[name="prompt_answer_${topChoice.project_id}"]`) as HTMLElement;
+          if (ta) {
+            const wrapper = ta.closest('.psel__answer-card');
+            if (wrapper) {
+              wrapper.classList.add('psel__answer-card--invalid');
+              if (!wrapper.querySelector('.apply-validate-tip')) {
+                const tip = document.createElement('span');
+                tip.className = 'apply-validate-tip';
+                tip.textContent = 'Please answer the project-specific question for your top choice';
+                wrapper.appendChild(tip);
+                requestAnimationFrame(() => tip.classList.add('apply-validate-tip--visible'));
+              }
+            }
+            if (!firstInvalid) firstInvalid = ta;
+          }
+        }
+
         if (firstInvalid) {
           firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
           (firstInvalid as HTMLElement).focus?.();
@@ -945,11 +1953,30 @@ const base = import.meta.env.BASE_URL;
       });
 
       // Submit
+      // Submit confirmation modal
+      const confirmModal = document.getElementById('submit-confirm-modal')!;
+      const confirmCancel = document.getElementById('confirm-cancel')!;
+      const confirmSubmit = document.getElementById('confirm-submit')!;
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
         if (!validateForm()) return;
 
+        // Show confirmation modal
+        confirmModal.style.display = 'flex';
+      });
+
+      confirmCancel.addEventListener('click', () => {
+        confirmModal.style.display = 'none';
+      });
+
+      confirmModal.querySelector('.confirm-modal__backdrop')!.addEventListener('click', () => {
+        confirmModal.style.display = 'none';
+      });
+
+      confirmSubmit.addEventListener('click', async () => {
+        confirmModal.style.display = 'none';
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
         const error = await saveApplication('submitted');
@@ -959,8 +1986,8 @@ const base = import.meta.env.BASE_URL;
         if (error) {
           showMsg('Failed to submit. ' + error.message, 'error');
         } else {
-          formWrap!.style.display = 'none';
-          submittedView!.style.display = 'block';
+          showMsg('Application submitted successfully! You can still edit your answers anytime.', 'success');
+          submitBtn.textContent = 'Update Application';
         }
       });
 
@@ -1002,15 +2029,17 @@ const base = import.meta.env.BASE_URL;
           .limit(1)
           .single();
 
-        if (app && app.status === 'submitted') {
-          submittedView!.style.display = 'block';
-          return;
-        }
+        // Load projects for the preference section
+        await loadProjects();
 
-        // Returning draft — skip intro, go straight to form
+        // Returning user (draft or submitted) — skip intro, go straight to form
         if (app) {
           appId = app.id;
           populateForm(app);
+          await loadProjectSelections();
+          if (app.status === 'submitted') {
+            submitBtn.textContent = 'Update Application';
+          }
           formWrap!.style.display = 'block';
         } else if (localStorage.getItem('xr-apply-intro-seen')) {
           // Already seen intro this session

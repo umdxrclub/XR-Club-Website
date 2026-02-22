@@ -20,6 +20,7 @@ const base = import.meta.env.BASE_URL;
 
       <nav class="dash__nav">
         <div class="dash__nav-link dash__nav-link--active" data-tab="applications">Applications</div>
+        <div class="dash__nav-link" data-tab="projects">Projects</div>
         <div class="dash__nav-link" data-tab="activity">Activity Log</div>
         <a href={base} class="dash__nav-link">Back to Site</a>
       </nav>
@@ -81,43 +82,131 @@ const base = import.meta.env.BASE_URL;
         <div id="activity-list"></div>
         <div class="dash__empty" id="activity-empty" style="display:none;">No activity yet.</div>
       </div>
+
+      <div id="projects-view" class="dash__projects-view">
+        <h1 class="dash__title">Projects</h1>
+        <div class="dash__toolbar">
+          <button class="dash__export-btn" id="add-project-btn">+ Add Project</button>
+        </div>
+        <div class="dash__projects-grid" id="dash-projects-grid"></div>
+        <div class="dash__empty" id="projects-empty" style="display:none;">No projects yet.</div>
+      </div>
     </main>
 
     <div class="dash__detail" id="detail-panel">
-      <button class="dash__detail-close" id="detail-close">← Back</button>
-      <div id="detail-content"></div>
+      <div class="dash__detail-inner">
+        <button class="dash__detail-close" id="detail-close">&times;</button>
+        <div id="detail-content"></div>
 
-      <div class="dash__detail-field">
-        <div class="dash__detail-label">Status</div>
-        <select class="dash__detail-status" id="detail-status">
-          <option value="accepted">Accepted</option>
-          <option value="rejected">Rejected</option>
-          <option value="waitlisted">Waitlisted</option>
-        </select>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Status</div>
+          <select class="dash__detail-status" id="detail-status">
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="waitlisted">Waitlisted</option>
+          </select>
+        </div>
+
+        <div class="dash__notes">
+          <div class="dash__notes-title">Notes</div>
+          <div id="notes-list"></div>
+          <textarea class="dash__note-input" id="note-input" placeholder="Add a note…"></textarea>
+          <button class="dash__note-btn" id="add-note-btn">Add Note</button>
+        </div>
+
+        <div class="dash__danger-zone">
+          <button class="dash__delete-btn" id="delete-app-btn">Delete Application</button>
+        </div>
       </div>
+    </div>
 
-      <div class="dash__notes">
-        <div class="dash__notes-title">Notes</div>
-        <div id="notes-list"></div>
-        <textarea class="dash__note-input" id="note-input" placeholder="Add a note…"></textarea>
-        <button class="dash__note-btn" id="add-note-btn">Add Note</button>
-      </div>
+    <div class="dash__detail" id="project-edit-panel">
+      <div class="dash__detail-inner">
+        <button class="dash__detail-close" id="project-edit-close">&times;</button>
+        <div class="dash__detail-name" id="project-edit-title">New Project</div>
 
-      <div class="dash__danger-zone">
-        <button class="dash__delete-btn" id="delete-app-btn">Delete Application</button>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Name</div>
+          <input class="dash__search" id="pe-name" placeholder="Project name" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Blurb</div>
+          <textarea class="dash__note-input" id="pe-blurb" style="min-height:100px;" placeholder="Project description..."></textarea>
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Tier</div>
+          <select class="dash__detail-status" id="pe-tier">
+            <option value="Gateway">Gateway</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Labels (comma-separated)</div>
+          <input class="dash__search" id="pe-labels" placeholder="No-Code, Partnership" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Equipment</div>
+          <input class="dash__search" id="pe-equipment" placeholder="Quest 3" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Estimated Completion</div>
+          <input class="dash__search" id="pe-completion" placeholder="May 2026" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Contact Name</div>
+          <input class="dash__search" id="pe-contact-name" placeholder="Name" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Contact Email</div>
+          <input class="dash__search" id="pe-contact-email" type="email" placeholder="email@umd.edu" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Team Members (comma-separated)</div>
+          <input class="dash__search" id="pe-people" placeholder="Name 1, Name 2" style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Open Positions</div>
+          <textarea class="dash__note-input" id="pe-positions" placeholder="Description of open roles..."></textarea>
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Prompt Question (for applicants)</div>
+          <textarea class="dash__note-input" id="pe-prompt" placeholder="Custom question..."></textarea>
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Website</div>
+          <input class="dash__search" id="pe-website" type="url" placeholder="https://..." style="width:100%;" />
+        </div>
+        <div class="dash__detail-field">
+          <div class="dash__detail-label">Display Order</div>
+          <input class="dash__search" id="pe-order" type="number" value="0" style="width:80px;" />
+        </div>
+
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+          <button class="dash__note-btn" id="pe-save-btn">Save Project</button>
+          <button class="dash__note-btn" id="pe-toggle-btn">Hide</button>
+        </div>
+
+        <div class="dash__danger-zone">
+          <button class="dash__delete-btn" id="pe-delete-btn">Delete Project</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <img src={`${base}Images/ado wong.webp`} alt="Ado Wong" class="dash__ado-wong" />
+
   <script>
     import { supabase } from '../lib/supabase';
-    import type { Application, Profile } from '../lib/types';
+    import type { Application, Profile, Project } from '../lib/types';
 
     const base = import.meta.env.BASE_URL;
     let currentUser: Profile | null = null;
     let applications: (Application & { profiles?: { full_name: string; email: string } })[] = [];
     let selectedIds = new Set<string>();
     let openAppId: string | null = null;
+    let dashProjects: Project[] = [];
+    let editingProjectId: string | null = null;
 
     // DOM refs — refreshed on every page load
     let loadingState: HTMLElement;
@@ -281,6 +370,38 @@ const base = import.meta.env.BASE_URL;
         });
       }
 
+      // Load project selections for this applicant
+      const { data: selections } = await supabase
+        .from('project_selections')
+        .select('*, projects(name, tier)')
+        .eq('application_id', appId)
+        .order('rank');
+
+      if (selections && selections.length > 0) {
+        const tierStyle: Record<string, string> = {
+          Gateway: 'color:#34d399;background:rgba(52,211,153,0.1);',
+          Intermediate: 'color:#fbbf24;background:rgba(251,191,36,0.1);',
+          Advanced: 'color:#f87171;background:rgba(248,113,113,0.1);',
+        };
+        let projectHtml = '<div class="dash__detail-field"><div class="dash__detail-label">Project Preferences</div>';
+        (selections as any[]).forEach(s => {
+          const ordinal = s.rank === 1 ? '1st' : s.rank === 2 ? '2nd' : '3rd';
+          const tier = s.projects?.tier || '';
+          const tStyle = tierStyle[tier] || 'color:rgba(255,255,255,0.5);';
+          projectHtml += `
+            <div style="margin-bottom:0.7rem;padding:0.8rem 1rem;background:rgba(255,255,255,0.025);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.35rem;">
+                <span style="font-size:0.6rem;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.06em;">${ordinal} Choice</span>
+                ${tier ? `<span style="font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.1rem 0.4rem;border-radius:3px;${tStyle}">${esc(tier)}</span>` : ''}
+              </div>
+              <div style="font-size:1rem;font-weight:700;color:#fff;letter-spacing:-0.02em;">${esc(s.projects?.name || 'Unknown')}</div>
+              ${s.prompt_answer ? `<div style="font-size:0.82rem;color:rgba(255,255,255,0.45);margin-top:0.5rem;line-height:1.6;white-space:pre-wrap;">${esc(s.prompt_answer)}</div>` : ''}
+            </div>`;
+        });
+        projectHtml += '</div>';
+        content.innerHTML += projectHtml;
+      }
+
       await loadNotes(appId);
 
       detailPanel.classList.add('dash__detail--open');
@@ -333,6 +454,137 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
       `).join('');
+    }
+
+    // ── Project Management ──
+    async function loadDashProjects() {
+      const grid = document.getElementById('dash-projects-grid')!;
+      const emptyEl = document.getElementById('projects-empty')!;
+
+      const { data } = await supabase
+        .from('projects')
+        .select('*')
+        .order('display_order');
+
+      dashProjects = (data || []) as Project[];
+
+      if (dashProjects.length === 0) {
+        grid.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      grid.innerHTML = dashProjects.map(p => {
+        const tierColors: Record<string, string> = { Gateway: '#34d399', Intermediate: '#fbbf24', Advanced: '#f87171' };
+        const color = tierColors[p.tier] || '#fff';
+        const activeLabel = p.is_active ? '' : '<span style="color:#f87171;font-size:0.7rem;font-weight:600;margin-left:0.5rem;">HIDDEN</span>';
+        return `
+          <div class="dash__project-card" data-project-id="${p.id}" style="cursor:pointer;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+              <div style="font-size:0.9rem;font-weight:600;color:#fff;">${esc(p.name)}${activeLabel}</div>
+              <span style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:${color};border:1px solid ${color}33;padding:0.15rem 0.5rem;border-radius:980px;">${esc(p.tier)}</span>
+            </div>
+            <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:0.3rem;">${esc(p.contact_name)} · ${esc(p.equipment)}</div>
+          </div>`;
+      }).join('');
+
+      grid.querySelectorAll('.dash__project-card').forEach(card => {
+        card.addEventListener('click', () => {
+          openProjectEditor((card as HTMLElement).dataset.projectId!);
+        });
+      });
+    }
+
+    function openProjectEditor(projectId: string | null) {
+      const panel = document.getElementById('project-edit-panel')!;
+      editingProjectId = projectId;
+
+      const project = projectId ? dashProjects.find(p => p.id === projectId) : null;
+      const title = document.getElementById('project-edit-title')!;
+      title.textContent = project ? 'Edit Project' : 'New Project';
+
+      (document.getElementById('pe-name') as HTMLInputElement).value = project?.name || '';
+      (document.getElementById('pe-blurb') as HTMLTextAreaElement).value = project?.blurb || '';
+      (document.getElementById('pe-tier') as HTMLSelectElement).value = project?.tier || 'Gateway';
+      (document.getElementById('pe-labels') as HTMLInputElement).value = project?.labels?.join(', ') || '';
+      (document.getElementById('pe-equipment') as HTMLInputElement).value = project?.equipment || '';
+      (document.getElementById('pe-completion') as HTMLInputElement).value = project?.estimated_completion || '';
+      (document.getElementById('pe-contact-name') as HTMLInputElement).value = project?.contact_name || '';
+      (document.getElementById('pe-contact-email') as HTMLInputElement).value = project?.contact_email || '';
+      (document.getElementById('pe-people') as HTMLInputElement).value = project?.people?.join(', ') || '';
+      (document.getElementById('pe-positions') as HTMLTextAreaElement).value = project?.open_positions || '';
+      (document.getElementById('pe-prompt') as HTMLTextAreaElement).value = project?.prompt_question || 'Why do you want to join this project and what would you contribute?';
+      (document.getElementById('pe-website') as HTMLInputElement).value = project?.website || '';
+      (document.getElementById('pe-order') as HTMLInputElement).value = String(project?.display_order ?? 0);
+
+      const toggleBtn = document.getElementById('pe-toggle-btn')!;
+      toggleBtn.textContent = project?.is_active === false ? 'Unhide' : 'Hide';
+
+      const deleteBtn = document.getElementById('pe-delete-btn')!;
+      deleteBtn.style.display = project ? 'block' : 'none';
+
+      panel.classList.add('dash__detail--open');
+    }
+
+    async function saveProject() {
+      const name = (document.getElementById('pe-name') as HTMLInputElement).value.trim();
+      if (!name) { alert('Project name is required.'); return; }
+
+      const payload = {
+        name,
+        blurb: (document.getElementById('pe-blurb') as HTMLTextAreaElement).value.trim(),
+        tier: (document.getElementById('pe-tier') as HTMLSelectElement).value,
+        labels: (document.getElementById('pe-labels') as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean),
+        equipment: (document.getElementById('pe-equipment') as HTMLInputElement).value.trim(),
+        estimated_completion: (document.getElementById('pe-completion') as HTMLInputElement).value.trim(),
+        contact_name: (document.getElementById('pe-contact-name') as HTMLInputElement).value.trim(),
+        contact_email: (document.getElementById('pe-contact-email') as HTMLInputElement).value.trim(),
+        people: (document.getElementById('pe-people') as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean),
+        open_positions: (document.getElementById('pe-positions') as HTMLTextAreaElement).value.trim() || null,
+        prompt_question: (document.getElementById('pe-prompt') as HTMLTextAreaElement).value.trim(),
+        website: (document.getElementById('pe-website') as HTMLInputElement).value.trim() || null,
+        display_order: parseInt((document.getElementById('pe-order') as HTMLInputElement).value) || 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingProjectId) {
+        await supabase.from('projects').update(payload).eq('id', editingProjectId);
+      } else {
+        await supabase.from('projects').insert(payload);
+      }
+
+      document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+      editingProjectId = null;
+      await loadDashProjects();
+    }
+
+    async function toggleProjectActive() {
+      if (!editingProjectId) return;
+      const project = dashProjects.find(p => p.id === editingProjectId);
+      if (!project) return;
+
+      await supabase.from('projects').update({
+        is_active: !project.is_active,
+        updated_at: new Date().toISOString(),
+      }).eq('id', editingProjectId);
+
+      document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+      editingProjectId = null;
+      await loadDashProjects();
+    }
+
+    async function deleteProject() {
+      if (!editingProjectId) return;
+      const project = dashProjects.find(p => p.id === editingProjectId);
+      if (!confirm(`Delete "${project?.name}"? This cannot be undone.`)) return;
+
+      await supabase.from('project_selections').delete().eq('project_id', editingProjectId);
+      await supabase.from('projects').delete().eq('id', editingProjectId);
+
+      document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+      editingProjectId = null;
+      await loadDashProjects();
     }
 
     // ── Bind all DOM refs + event listeners on every navigation ──
@@ -464,6 +716,14 @@ const base = import.meta.env.BASE_URL;
         openAppId = null;
       });
 
+      // Close on backdrop click
+      detailPanel.addEventListener('click', (e) => {
+        if (e.target === detailPanel) {
+          detailPanel.classList.remove('dash__detail--open');
+          openAppId = null;
+        }
+      });
+
       document.getElementById('detail-status')!.addEventListener('change', async (e) => {
         if (!openAppId) return;
         const newStatus = (e.target as HTMLSelectElement).value;
@@ -535,6 +795,24 @@ const base = import.meta.env.BASE_URL;
         await loadStats();
       });
 
+      // Project editor buttons
+      document.getElementById('add-project-btn')!.addEventListener('click', () => openProjectEditor(null));
+      document.getElementById('project-edit-close')!.addEventListener('click', () => {
+        document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+        editingProjectId = null;
+      });
+
+      // Close project editor on backdrop click
+      document.getElementById('project-edit-panel')!.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('project-edit-panel')) {
+          document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+          editingProjectId = null;
+        }
+      });
+      document.getElementById('pe-save-btn')!.addEventListener('click', saveProject);
+      document.getElementById('pe-toggle-btn')!.addEventListener('click', toggleProjectActive);
+      document.getElementById('pe-delete-btn')!.addEventListener('click', deleteProject);
+
       document.querySelectorAll('[data-tab]').forEach(tab => {
         tab.addEventListener('click', async () => {
           document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('dash__nav-link--active'));
@@ -543,14 +821,21 @@ const base = import.meta.env.BASE_URL;
           const target = (tab as HTMLElement).dataset.tab;
           const appView = document.getElementById('applications-view')!;
           const actView = document.getElementById('activity-view')!;
+          const projView = document.getElementById('projects-view')!;
+
+          // Hide all views
+          appView.style.display = 'none';
+          actView.classList.remove('dash__activity--visible');
+          projView.classList.remove('dash__projects-view--visible');
 
           if (target === 'applications') {
             appView.style.display = 'block';
-            actView.classList.remove('dash__activity--visible');
           } else if (target === 'activity') {
-            appView.style.display = 'none';
             actView.classList.add('dash__activity--visible');
             await loadActivityLog();
+          } else if (target === 'projects') {
+            projView.classList.add('dash__projects-view--visible');
+            await loadDashProjects();
           }
         });
       });

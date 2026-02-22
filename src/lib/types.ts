@@ -54,6 +54,36 @@ export interface ActivityLogEntry {
   created_at: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  blurb: string;
+  website: string | null;
+  labels: string[];
+  contact_name: string;
+  contact_email: string;
+  tier: 'Gateway' | 'Intermediate' | 'Advanced';
+  equipment: string;
+  estimated_completion: string;
+  people: string[];
+  demo_videos: string[] | null;
+  open_positions: string | null;
+  prompt_question: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectSelection {
+  id: string;
+  application_id: string;
+  project_id: string;
+  rank: number;
+  prompt_answer: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -76,6 +106,16 @@ export interface Database {
         Row: ActivityLogEntry;
         Insert: Omit<ActivityLogEntry, 'id' | 'created_at' | 'actor_name'>;
         Update: never;
+      };
+      projects: {
+        Row: Project;
+        Insert: Partial<Project> & { name: string };
+        Update: Partial<Project>;
+      };
+      project_selections: {
+        Row: ProjectSelection;
+        Insert: Omit<ProjectSelection, 'id' | 'created_at'>;
+        Update: Partial<ProjectSelection>;
       };
     };
   };

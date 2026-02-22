@@ -358,8 +358,8 @@ select.apply-input option {
 }
 
 .apply-warning {
-  background: rgba(250, 204, 21, 0.08);
-  border: 1px solid rgba(250, 204, 21, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
   padding: 0.8rem 1rem;
   margin-top: 1.5rem;
@@ -369,7 +369,7 @@ select.apply-input option {
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(250, 204, 21, 0.8);
+  color: rgba(239, 68, 68, 0.9);
   line-height: 1.5;
   margin: 0;
 }
@@ -802,37 +802,63 @@ select.apply-input option {
 
 .dash__detail {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 500px;
-  height: 100vh;
-  background: rgba(10, 10, 10, 0.95);
-  backdrop-filter: blur(30px);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 2rem;
-  overflow-y: auto;
+  inset: 0;
   z-index: 100;
-  transform: translateX(100%);
-  transition: transform 300ms ease;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4rem 2rem 2rem;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
 }
 
 .dash__detail--open {
-  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dash__detail-inner {
+  background: rgba(18, 18, 22, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 720px;
+  padding: 2.5rem;
+  position: relative;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 300ms ease;
+}
+
+.dash__detail--open .dash__detail-inner {
+  transform: translateY(0) scale(1);
 }
 
 .dash__detail-close {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  background: none;
-  border: none;
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0.3rem;
-  margin-bottom: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: all 150ms ease;
 }
 
 .dash__detail-close:hover {
   color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .dash__detail-name {
@@ -1050,7 +1076,11 @@ select.apply-input option {
   }
 
   .dash__detail {
-    width: 100%;
+    padding: 2rem 1rem;
+  }
+
+  .dash__detail-inner {
+    padding: 1.5rem;
   }
 }
 
@@ -1087,4 +1117,46 @@ select.apply-input option {
   .dash__toolbar {
     flex-wrap: wrap;
   }
+
+}
+
+.dash__ado-wong {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  width: clamp(120px, 25vw, 350px);
+  height: auto;
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Dashboard Projects View */
+.dash__projects-view {
+  display: none;
+}
+
+.dash__projects-view--visible {
+  display: block;
+}
+
+.dash__projects-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dash__project-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 250ms ease, background 250ms ease;
+}
+
+.dash__project-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
 }

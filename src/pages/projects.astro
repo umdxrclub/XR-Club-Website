@@ -1,79 +1,640 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-
+import AppLayout from '../layouts/AppLayout.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
-<BaseLayout title="Projects — XR Club">
-  <Header />
-
-  <section class="proj-closed">
-    <div class="proj-closed__card">
-      <h1 class="proj-closed__title">Project Listings</h1>
-      <p class="proj-closed__desc">Project listings will be available once applications open. Check back soon.</p>
-      <a href={base} class="proj-closed__btn">Back to Home</a>
+<AppLayout title="Projects — XR Club" hideChatBot>
+  <div class="plist" id="projects-root">
+    <div class="plist__loading" id="projects-loading">
+      <span class="auth-spinner"></span>
+      <p style="margin-top:1rem; font-family:'Inter',sans-serif; font-size:0.9rem; color:rgba(255,255,255,0.4);">Loading projects…</p>
     </div>
-  </section>
 
-  <Footer />
-</BaseLayout>
+    <div class="plist__content" id="projects-content" style="display:none;">
+      <div class="plist__header">
+        <h1 class="plist__title">Project Listings</h1>
+        <p class="plist__desc">Browse current projects and find where you fit. Select your top choices when you apply.</p>
+        <div class="plist__filters">
+          <button class="plist__filter plist__filter--active" data-tier="all">All</button>
+          <button class="plist__filter" data-tier="Gateway">Gateway</button>
+          <button class="plist__filter" data-tier="Intermediate">Intermediate</button>
+          <button class="plist__filter" data-tier="Advanced">Advanced</button>
+        </div>
+      </div>
+      <div class="plist__grid" id="projects-grid"></div>
+      <div class="plist__empty" id="projects-empty" style="display:none;">No projects found.</div>
+      <div class="plist__cta">
+        <a href={`${base}apply`} class="plist__apply-btn">Apply Now</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+    import type { Project } from '../lib/types';
+
+    const base = import.meta.env.BASE_URL;
+
+    function esc(s: string) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    document.addEventListener('astro:page-load', () => {
+      if (!document.getElementById('projects-root')) return;
+
+      const loading = document.getElementById('projects-loading')!;
+      const content = document.getElementById('projects-content')!;
+      const grid = document.getElementById('projects-grid')!;
+      const emptyMsg = document.getElementById('projects-empty')!;
+      let projects: Project[] = [];
+
+      (async () => {
+        const { data } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+
+        projects = (data || []) as Project[];
+        loading.style.display = 'none';
+        content.style.display = 'block';
+        renderProjects('all');
+      })();
+
+      function renderProjects(tier: string) {
+        const filtered = tier === 'all' ? projects : projects.filter(p => p.tier === tier);
+
+        if (filtered.length === 0) {
+          grid.innerHTML = '';
+          emptyMsg.style.display = 'block';
+          return;
+        }
+
+        emptyMsg.style.display = 'none';
+        grid.innerHTML = filtered.map(p => {
+          const labels = p.labels.map(l => `<span class="pcard__label">${esc(l)}</span>`).join('');
+          const people = p.people.map(n => esc(n)).join(', ');
+          const tierClass = p.tier.toLowerCase();
+          const blurbShort = p.blurb.length > 250 ? p.blurb.slice(0, 250) + '…' : p.blurb;
+          const hasMore = p.blurb.length > 250;
+
+          let positionsHtml = '';
+          if (p.open_positions) {
+            positionsHtml = `
+              <div class="pcard__section">
+                <span class="pcard__meta-label">Open Positions</span>
+                <span class="pcard__meta-value pcard__positions">${esc(p.open_positions)}</span>
+              </div>`;
+          }
+
+          let websiteHtml = '';
+          if (p.website) {
+            websiteHtml = `<a href="${esc(p.website)}" target="_blank" rel="noopener" class="pcard__website">Visit Website →</a>`;
+          }
+
+          const teamCount = p.people?.length || 0;
+          const details: string[] = [];
+          if (teamCount > 0) details.push(`${teamCount} members`);
+          if (p.equipment) details.push(esc(p.equipment));
+          const detailsHtml = details.map(d => `<span class="pcard__detail">${d}</span>`).join('<span class="pcard__sep">&middot;</span>');
+
+          return `
+            <div class="pcard" data-project-id="${p.id}">
+              <button type="button" class="pcard__expand-btn" data-expand-id="${p.id}" title="View details"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+              <div class="pcard__top">
+                <h3 class="pcard__name">${esc(p.name)}</h3>
+                <span class="pcard__tier pcard__tier--${tierClass}">${esc(p.tier)}</span>
+              </div>
+              <div class="pcard__labels">${labels}</div>
+              <p class="pcard__blurb">${esc(blurbShort)}</p>
+              <div class="pcard__bottom">
+                ${detailsHtml}
+                ${p.website ? `<span class="pcard__sep">&middot;</span><a href="${esc(p.website)}" target="_blank" rel="noopener" class="pcard__link" onclick="event.stopPropagation()">${esc(p.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}
+              </div>
+              <div class="pcard__footer"></div>
+            </div>`;
+        }).join('');
+
+        // Expand buttons → overlay
+        grid.querySelectorAll('.pcard__expand-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = (btn as HTMLElement).dataset.expandId;
+            const project = projects.find(p => p.id === id);
+            if (project) openProjectOverlay(project);
+          });
+        });
+      }
+
+      const tierColors: Record<string, string> = {
+        Gateway: 'color:#34d399;border-color:rgba(52,211,153,0.3);',
+        Intermediate: 'color:#fbbf24;border-color:rgba(251,191,36,0.3);',
+        Advanced: 'color:#f87171;border-color:rgba(248,113,113,0.3);',
+      };
+
+      function openProjectOverlay(project: Project) {
+        document.querySelector('.plist-overlay')?.remove();
+
+        const teamCount = project.people?.length || 0;
+        const labelsHtml = project.labels.map(l => `<span class="plist-overlay__tag">${esc(l)}</span>`).join('');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'plist-overlay';
+        overlay.innerHTML = `
+          <div class="plist-overlay__content">
+            <button type="button" class="plist-overlay__close">&times;</button>
+            <span class="plist-overlay__tier" style="${tierColors[project.tier] || ''}">${esc(project.tier)}</span>
+            <h2 class="plist-overlay__name">${esc(project.name)}</h2>
+            <p class="plist-overlay__blurb">${esc(project.blurb)}</p>
+            <div class="plist-overlay__meta">
+              <div class="plist-overlay__row">
+                <span class="plist-overlay__label">Labels</span>
+                <div class="plist-overlay__tags">${labelsHtml}</div>
+              </div>
+              ${teamCount > 0 ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Team</span>
+                <span class="plist-overlay__value">${teamCount} member${teamCount !== 1 ? 's' : ''}${project.people?.length ? ' — ' + project.people.map(n => esc(n)).join(', ') : ''}</span>
+              </div>` : ''}
+              ${project.equipment ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Equipment</span>
+                <span class="plist-overlay__value">${esc(project.equipment)}</span>
+              </div>` : ''}
+              ${project.estimated_completion ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Timeline</span>
+                <span class="plist-overlay__value">${esc(project.estimated_completion)}</span>
+              </div>` : ''}
+              ${project.contact_name ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Contact</span>
+                <span class="plist-overlay__value">${esc(project.contact_name)}${project.contact_email ? ' (' + esc(project.contact_email) + ')' : ''}</span>
+              </div>` : ''}
+              ${project.open_positions ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Open Roles</span>
+                <span class="plist-overlay__value">${esc(project.open_positions)}</span>
+              </div>` : ''}
+              ${project.website ? `<div class="plist-overlay__row">
+                <span class="plist-overlay__label">Website</span>
+                <span class="plist-overlay__value"><a href="${esc(project.website)}" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;">${esc(project.website)}</a></span>
+              </div>` : ''}
+            </div>
+          </div>`;
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.classList.add('plist-overlay--visible'));
+
+        function closeOverlay() {
+          overlay.classList.remove('plist-overlay--visible');
+          setTimeout(() => overlay.remove(), 250);
+        }
+
+        overlay.querySelector('.plist-overlay__close')!.addEventListener('click', closeOverlay);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+        document.addEventListener('keydown', function handler(e) {
+          if (e.key === 'Escape') { closeOverlay(); document.removeEventListener('keydown', handler); }
+        });
+      }
+
+      // Filter buttons
+      document.querySelectorAll('.plist__filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.plist__filter').forEach(b => b.classList.remove('plist__filter--active'));
+          btn.classList.add('plist__filter--active');
+          renderProjects((btn as HTMLElement).dataset.tier!);
+        });
+      });
+    });
+  </script>
+</AppLayout>
 
 <style>
-  .proj-closed {
+  .plist {
     min-height: 100vh;
+    background: #000;
+    padding: 7rem 2rem 4rem;
+  }
+
+  .plist__loading {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    background: #000;
+    min-height: 60vh;
   }
 
-  .proj-closed__card {
+  .plist__content {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .plist__header {
     text-align: center;
-    max-width: 480px;
-    padding: 3rem 2.5rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    backdrop-filter: blur(12px);
+    margin-bottom: 2.5rem;
   }
 
-  .proj-closed__title {
+  .plist__title {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(1.8rem, 3vw, 2.4rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
     color: #fff;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
 
-  .proj-closed__desc {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.5);
-    line-height: 1.7;
-    margin-bottom: 2rem;
-  }
-
-  .proj-closed__btn {
-    display: inline-block;
+  .plist__desc {
     font-family: 'Inter', sans-serif;
     font-size: 1rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .plist__filters {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .plist__filter {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.45rem 1.2rem;
+    border-radius: 980px;
+    cursor: pointer;
+    transition: all 200ms ease;
+  }
+
+  .plist__filter:hover {
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .plist__filter--active {
     color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 0.7rem 2rem;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .plist__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .plist__empty {
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 3rem;
+  }
+
+  .plist__cta {
+    text-align: center;
+    margin-top: 3rem;
+  }
+
+  .plist__apply-btn {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.8rem 3rem;
     border-radius: 980px;
     text-decoration: none;
     transition: all 200ms ease;
   }
 
-  .proj-closed__btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+  .plist__apply-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    .plist { padding: 5rem 1rem 3rem; }
+    .plist__grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- Global styles for dynamically-generated cards and overlay -->
+<style is:global>
+  /* Project Card */
+  .pcard {
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.2rem 1.2rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    cursor: default;
+    transition: border-color 250ms ease;
+  }
+
+  .pcard:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .pcard__expand-btn {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease;
+    z-index: 2;
+  }
+
+  .pcard__expand-btn:hover {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .pcard__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding-right: 2rem;
+  }
+
+  .pcard__name {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+
+  .pcard__tier {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 980px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .pcard__tier--gateway { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+  .pcard__tier--intermediate { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+  .pcard__tier--advanced { color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+
+  .pcard__labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .pcard__label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.07);
+    padding: 0.2rem 0.55rem;
+    border-radius: 980px;
+  }
+
+  .pcard__blurb {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .pcard__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  .pcard__detail {
+    font-weight: 400;
+  }
+
+  .pcard__sep {
+    color: rgba(255, 255, 255, 0.15);
+    margin: 0 0.1rem;
+  }
+
+  .pcard__link {
+    color: rgba(96, 165, 250, 0.6);
+    text-decoration: none;
+    font-weight: 400;
+    transition: color 150ms ease;
+  }
+
+  .pcard__link:hover {
+    color: rgba(96, 165, 250, 0.9);
+  }
+
+  .pcard__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 0.3rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .pcard__apply {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.4rem 1.2rem;
+    border-radius: 980px;
+    text-decoration: none;
+    transition: all 200ms ease;
+  }
+
+  .pcard__apply:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  .plist-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4rem 2rem 2rem;
+    overflow-y: auto;
+    opacity: 0;
+    transition: opacity 250ms ease;
+  }
+
+  .plist-overlay--visible {
+    opacity: 1;
+  }
+
+  .plist-overlay__content {
+    background: rgba(18, 18, 22, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    padding: 2.5rem;
+    position: relative;
+    transform: translateY(20px) scale(0.97);
+    transition: transform 300ms ease;
+  }
+
+  .plist-overlay--visible .plist-overlay__content {
+    transform: translateY(0) scale(1);
+  }
+
+  .plist-overlay__close {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: all 150ms ease;
+  }
+
+  .plist-overlay__close:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .plist-overlay__tier {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0.7rem;
+    border-radius: 980px;
+    border: 1px solid;
+    display: inline-block;
+    margin-bottom: 0.8rem;
+  }
+
+  .plist-overlay__name {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+    padding-right: 2.5rem;
+  }
+
+  .plist-overlay__blurb {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .plist-overlay__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 1.2rem;
+  }
+
+  .plist-overlay__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .plist-overlay__label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.3);
+    min-width: 90px;
+    padding-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .plist-overlay__value {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+  }
+
+  .plist-overlay__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .plist-overlay__tag {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.07);
+    padding: 0.2rem 0.55rem;
+    border-radius: 980px;
+  }
+
+  @media (max-width: 768px) {
+    .plist-overlay { padding: 2rem 1rem; }
+    .plist-overlay__content { padding: 1.5rem; }
+    .plist-overlay__name { font-size: 1.3rem; }
   }
 </style>
