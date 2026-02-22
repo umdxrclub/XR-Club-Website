@@ -19,11 +19,11 @@ const base = import.meta.env.BASE_URL;
         <p class="apply-intro-text">You're about to begin the application. Please put in genuine effort and answer honestly. We care about the quality and thoughtfulness of your responses, not the length.</p>
         <p class="apply-intro-text">Once you're accepted into a project, you won't need to complete this full application again. We'll keep your information on file, and you'll only need to apply for specific projects in the future.</p>
         <p class="apply-intro-text">If we feel your application does not reflect your best effort, we may waitlist you and ask you to revise it before making a final decision. While we aim to accept as many students as possible, we have limited space in our projects. Depending on demand, we may have to decline some applications, but you are always welcome to apply again next cycle.</p>
-        <p class="apply-intro-text">You can save your application at the bottom of the form if you'd like to come back and work on it later.</p>
+        <p class="apply-intro-text">Your application auto-saves as you go, so you can come back and finish it later.</p>
         <p class="apply-intro-text apply-intro-text--hint">(If you were planning to have ChatGPT reword or generate your responses, just use the chatbot helper, it's connected to their API.)</p>
         <label class="apply-intro-agree">
           <input type="checkbox" id="intro-agree-check" />
-          <span>I understand</span>
+          <span>I understand and have read the agreement</span>
         </label>
         <button type="button" class="apply-btn apply-btn--submit apply-intro-btn" id="intro-continue-btn" disabled>Continue to Application</button>
       </div>
@@ -233,7 +233,6 @@ const base = import.meta.env.BASE_URL;
 
         <!-- Actions -->
         <div class="apply-actions">
-          <button type="button" class="apply-btn apply-btn--draft" id="save-draft-btn">Save Draft</button>
           <button type="submit" class="apply-btn apply-btn--submit" id="submit-btn">Submit Application</button>
         </div>
         <p class="apply-autosave" id="autosave-status"></p>
@@ -505,7 +504,6 @@ const base = import.meta.env.BASE_URL;
       const form = document.getElementById('apply-form') as HTMLFormElement | null;
       const msg = document.getElementById('apply-msg') as HTMLElement;
       const autosaveStatus = document.getElementById('autosave-status') as HTMLElement;
-      const draftBtn = document.getElementById('save-draft-btn') as HTMLButtonElement;
       const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
       const resumeDrop = document.getElementById('resume-drop') as HTMLElement;
       const resumeFile = document.getElementById('resume-file') as HTMLInputElement;
@@ -941,22 +939,6 @@ const base = import.meta.env.BASE_URL;
       const uidField = document.getElementById('uid') as HTMLInputElement;
       uidField?.addEventListener('input', () => {
         uidField.value = uidField.value.replace(/\D/g, '');
-      });
-
-      // Save draft
-      draftBtn?.addEventListener('click', async () => {
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        draftBtn.disabled = true;
-        setAutosaveStatus('Saving...', 'saving');
-        const error = await saveApplication('draft');
-        draftBtn.disabled = false;
-        if (error) {
-          showMsg('Failed to save draft. ' + error.message, 'error');
-          setAutosaveStatus('', '');
-        } else {
-          setAutosaveStatus('Draft saved', 'saved');
-          setTimeout(() => setAutosaveStatus('', ''), 3000);
-        }
       });
 
       // Submit

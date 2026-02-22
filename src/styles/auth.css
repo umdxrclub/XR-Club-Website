@@ -374,17 +374,6 @@ select.apply-input option {
   transition: all 250ms ease;
 }
 
-.apply-btn--draft {
-  color: rgba(255, 255, 255, 0.6);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.apply-btn--draft:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-}
-
 .apply-btn--submit {
   color: #fff;
   background: rgba(255, 255, 255, 0.12);
