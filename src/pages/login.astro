@@ -22,7 +22,7 @@ const base = import.meta.env.BASE_URL;
         Sign in with TerpMail
       </button>
 
-      <p class="auth-card__hint">Only @terpmail.umd.edu accounts are accepted.</p>
+      <p class="auth-card__hint">Only @terpmail.umd.edu and @umd.edu accounts are accepted.</p>
     </div>
   </div>
 
@@ -117,9 +117,9 @@ const base = import.meta.env.BASE_URL;
 
       // Verify email domain
       const email = user.email || '';
-      if (!email.endsWith('@terpmail.umd.edu')) {
+      if (!email.endsWith('@terpmail.umd.edu') && !email.endsWith('@umd.edu')) {
         await supabase.auth.signOut();
-        errorMsg.textContent = 'Only @terpmail.umd.edu accounts are accepted.';
+        errorMsg.textContent = 'Only @terpmail.umd.edu and @umd.edu accounts are accepted.';
         errorMsg.style.display = 'block';
         return;
       }
