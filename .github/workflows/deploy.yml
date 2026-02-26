@@ -20,8 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        env:
-          GIT_LFS_SKIP_SMUDGE: '1'
+        with:
+          lfs: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
