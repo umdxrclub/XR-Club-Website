@@ -138,7 +138,6 @@
     trigger?.addEventListener('click', openRender);
     closeBtn?.addEventListener('click', closeRender);
 
-    // Clean up previous document-level listener
     escController?.abort();
     escController = new AbortController();
     document.addEventListener('keydown', (e) => {

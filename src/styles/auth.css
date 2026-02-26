@@ -1132,7 +1132,6 @@ select.apply-input option {
   z-index: 10;
 }
 
-/* Dashboard Projects View */
 .dash__projects-view {
   display: none;
 }

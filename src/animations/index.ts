@@ -31,13 +31,11 @@ function skipIntro() {
 
 export async function init() {
   if (introPlayed) {
-    // On subsequent visits, skip intro immediately
     skipIntro();
     return;
   }
   introPlayed = true;
 
-  // Lock scroll during intro
   document.documentElement.style.overflow = 'hidden';
   document.body.style.overflow = 'hidden';
 

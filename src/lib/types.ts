@@ -71,6 +71,7 @@ export interface Project {
   prompt_question: string;
   display_order: number;
   is_active: boolean;
+  hide_from_applications: boolean;
   created_at: string;
   updated_at: string;
 }

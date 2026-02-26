@@ -30,7 +30,7 @@ export function initRenderCanvas(canvas: HTMLCanvasElement, frameTriggers: Frame
   }
 
   function getFrameSrc(i: number): string {
-    return `${RENDER_PATH}${String(i).padStart(5, '0')}.jpg`;
+    return `${RENDER_PATH}${String(i).padStart(5, '0')}.webp`;
   }
 
   function drawFrame(idx: number) {

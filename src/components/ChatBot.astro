@@ -42,7 +42,6 @@ const base = import.meta.env.BASE_URL;
   import { supabase } from '../lib/supabase';
   import { navigate } from 'astro:transitions/client';
 
-  // ── Module-level state (survives across navigations) ──
   let isOpen = false;
   const history: { role: string; content: string }[] = [];
   let ac: AbortController | null = null;
@@ -59,9 +58,7 @@ const base = import.meta.env.BASE_URL;
     return s;
   }
 
-  // ── Bind / rebind all DOM references + handlers ──
   function bindChat() {
-    // Tear down previous listeners
     ac?.abort();
     ac = new AbortController();
     const { signal } = ac;
@@ -74,7 +71,6 @@ const base = import.meta.env.BASE_URL;
     const titleEl = document.querySelector('[data-chat-title]') as HTMLElement;
     if (!chatEl || !panel || !feed || !form || !input) return;
 
-    // ── Visibility ──
     const introEl = document.querySelector('[data-intro]');
     if (introEl) {
       const obs = new MutationObserver(() => {
@@ -88,7 +84,6 @@ const base = import.meta.env.BASE_URL;
       chatEl.classList.remove('chat--hidden');
     }
 
-    // ── Page mode ──
     const isIdeatePage = !!document.querySelector('[data-ideate-page]');
     const isApplyPage = window.location.pathname.includes('/apply');
     const mode = isIdeatePage ? 'ideate' : isApplyPage ? 'apply' : 'chat';
@@ -102,7 +97,6 @@ const base = import.meta.env.BASE_URL;
       titleEl.textContent = 'Application Helper';
     }
 
-    // ── Speech bubble (apply page only) ──
     const speechBubble = document.querySelector('[data-chat-speech]') as HTMLElement;
     if (speechBubble) {
       if (isApplyPage && !isOpen) {
@@ -112,7 +106,6 @@ const base = import.meta.env.BASE_URL;
       }
     }
 
-    // ── Welcome message (only if feed is empty) ──
     if (feed.children.length === 0 && history.length === 0) {
       let welcomeMsg: string;
       if (isIdeatePage) {
@@ -125,7 +118,6 @@ const base = import.meta.env.BASE_URL;
       addMsg(feed, welcomeMsg, 'bot');
     }
 
-    // ── Restore open state ──
     if (isOpen) {
       panel.classList.add('chat__panel--open');
     }
@@ -143,7 +135,6 @@ const base = import.meta.env.BASE_URL;
       if (isApplyPage) speechBubble?.classList.add('chat__speech--visible');
     }
 
-    // ── Toggle / close ──
     document.querySelectorAll('[data-chat-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {
         if (isOpen) closeChat(); else openChat();
@@ -152,7 +143,6 @@ const base = import.meta.env.BASE_URL;
 
     document.querySelector('[data-chat-close]')?.addEventListener('click', () => closeChat(), { signal });
 
-    // ── Handle navigation from chat ──
     function handleNavigate(target: string) {
       const base = import.meta.env.BASE_URL;
       if (target.startsWith('/')) {
@@ -167,7 +157,6 @@ const base = import.meta.env.BASE_URL;
       }
     }
 
-    // ── Form submit ──
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = input.value.trim();
@@ -201,7 +190,6 @@ const base = import.meta.env.BASE_URL;
           }));
         }
 
-        // Handle fill-field commands from apply mode
         if (data?.fillFields && typeof data.fillFields === 'object') {
           window.dispatchEvent(new CustomEvent('apply-fill-fields', {
             detail: data.fillFields,
@@ -223,9 +211,7 @@ const base = import.meta.env.BASE_URL;
     return el;
   }
 
-  // ── Run on every page load (initial + navigations) ──
   document.addEventListener('astro:page-load', () => {
-    // Small delay lets intro-skip run first on home page
     setTimeout(() => bindChat(), 100);
   });
 </script>
@@ -243,7 +229,6 @@ const base = import.meta.env.BASE_URL;
     display: none !important;
   }
 
-  /* --- 3D Model trigger --- */
   .chat__trigger {
     position: relative;
     width: 180px;
@@ -258,7 +243,6 @@ const base = import.meta.env.BASE_URL;
     background: transparent;
   }
 
-  /* --- Speech bubble --- */
   .chat__speech {
     position: absolute;
     top: -8px;
@@ -284,7 +268,6 @@ const base = import.meta.env.BASE_URL;
     transform: translateY(0);
   }
 
-  /* --- Panel --- */
   .chat__panel {
     position: absolute;
     bottom: 180px;
@@ -311,7 +294,6 @@ const base = import.meta.env.BASE_URL;
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  /* --- Top bar --- */
   .chat__panel-top {
     display: flex;
     align-items: center;
@@ -343,7 +325,6 @@ const base = import.meta.env.BASE_URL;
     color: rgba(255, 255, 255, 0.7);
   }
 
-  /* --- Messages --- */
   .chat__feed {
     flex: 1;
     overflow-y: auto;
@@ -392,7 +373,6 @@ const base = import.meta.env.BASE_URL;
     border-bottom-left-radius: 3px;
   }
 
-  /* --- Input row --- */
   .chat__input-row {
     display: flex;
     padding: 0.5rem;
@@ -437,7 +417,6 @@ const base = import.meta.env.BASE_URL;
     color: #fff;
   }
 
-  /* --- Links --- */
   .chat__a {
     color: rgba(255, 255, 255, 0.85);
     text-decoration: underline;
@@ -447,7 +426,6 @@ const base = import.meta.env.BASE_URL;
 
   .chat__a:hover { color: #fff; }
 
-  /* --- Mobile --- */
   @media (max-width: 480px) {
     .chat__trigger {
       width: 120px;

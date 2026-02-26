@@ -117,7 +117,6 @@ const base = import.meta.env.BASE_URL;
             </div>`;
         }).join('');
 
-        // Expand buttons → overlay
         grid.querySelectorAll('.pcard__expand-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -195,7 +194,6 @@ const base = import.meta.env.BASE_URL;
         });
       }
 
-      // Filter buttons
       document.querySelectorAll('.plist__filter').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.plist__filter').forEach(b => b.classList.remove('plist__filter--active'));
@@ -325,9 +323,7 @@ const base = import.meta.env.BASE_URL;
   }
 </style>
 
-<!-- Global styles for dynamically-generated cards and overlay -->
 <style is:global>
-  /* Project Card */
   .pcard {
     background: rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(20px);

@@ -182,9 +182,10 @@ const base = import.meta.env.BASE_URL;
           <input class="dash__search" id="pe-order" type="number" value="0" style="width:80px;" />
         </div>
 
-        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap;">
           <button class="dash__note-btn" id="pe-save-btn">Save Project</button>
           <button class="dash__note-btn" id="pe-toggle-btn">Hide</button>
+          <button class="dash__note-btn" id="pe-toggle-app-btn" style="font-size:0.75rem;">Hide from Applications</button>
         </div>
 
         <div class="dash__danger-zone">
@@ -208,7 +209,6 @@ const base = import.meta.env.BASE_URL;
     let dashProjects: Project[] = [];
     let editingProjectId: string | null = null;
 
-    // DOM refs — refreshed on every page load
     let loadingState: HTMLElement;
     let dash: HTMLElement;
     let tbody: HTMLElement;
@@ -370,7 +370,6 @@ const base = import.meta.env.BASE_URL;
         });
       }
 
-      // Load project selections for this applicant
       const { data: selections } = await supabase
         .from('project_selections')
         .select('*, projects(name, tier)')
@@ -456,7 +455,6 @@ const base = import.meta.env.BASE_URL;
       `).join('');
     }
 
-    // ── Project Management ──
     async function loadDashProjects() {
       const grid = document.getElementById('dash-projects-grid')!;
       const emptyEl = document.getElementById('projects-empty')!;
@@ -479,10 +477,11 @@ const base = import.meta.env.BASE_URL;
         const tierColors: Record<string, string> = { Gateway: '#34d399', Intermediate: '#fbbf24', Advanced: '#f87171' };
         const color = tierColors[p.tier] || '#fff';
         const activeLabel = p.is_active ? '' : '<span style="color:#f87171;font-size:0.7rem;font-weight:600;margin-left:0.5rem;">HIDDEN</span>';
+        const appLabel = p.hide_from_applications ? '<span style="color:#fbbf24;font-size:0.7rem;font-weight:600;margin-left:0.5rem;">NO APPS</span>' : '';
         return `
           <div class="dash__project-card" data-project-id="${p.id}" style="cursor:pointer;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-              <div style="font-size:0.9rem;font-weight:600;color:#fff;">${esc(p.name)}${activeLabel}</div>
+              <div style="font-size:0.9rem;font-weight:600;color:#fff;">${esc(p.name)}${activeLabel}${appLabel}</div>
               <span style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:${color};border:1px solid ${color}33;padding:0.15rem 0.5rem;border-radius:980px;">${esc(p.tier)}</span>
             </div>
             <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:0.3rem;">${esc(p.contact_name)} · ${esc(p.equipment)}</div>
@@ -520,6 +519,9 @@ const base = import.meta.env.BASE_URL;
 
       const toggleBtn = document.getElementById('pe-toggle-btn')!;
       toggleBtn.textContent = project?.is_active === false ? 'Unhide' : 'Hide';
+
+      const toggleAppBtn = document.getElementById('pe-toggle-app-btn')!;
+      toggleAppBtn.textContent = project?.hide_from_applications ? 'Show in Applications' : 'Hide from Applications';
 
       const deleteBtn = document.getElementById('pe-delete-btn')!;
       deleteBtn.style.display = project ? 'block' : 'none';
@@ -574,6 +576,21 @@ const base = import.meta.env.BASE_URL;
       await loadDashProjects();
     }
 
+    async function toggleHideFromApplications() {
+      if (!editingProjectId) return;
+      const project = dashProjects.find(p => p.id === editingProjectId);
+      if (!project) return;
+
+      await supabase.from('projects').update({
+        hide_from_applications: !project.hide_from_applications,
+        updated_at: new Date().toISOString(),
+      }).eq('id', editingProjectId);
+
+      document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
+      editingProjectId = null;
+      await loadDashProjects();
+    }
+
     async function deleteProject() {
       if (!editingProjectId) return;
       const project = dashProjects.find(p => p.id === editingProjectId);
@@ -587,9 +604,7 @@ const base = import.meta.env.BASE_URL;
       await loadDashProjects();
     }
 
-    // ── Bind all DOM refs + event listeners on every navigation ──
     document.addEventListener('astro:page-load', () => {
-      // Only run on dashboard page
       if (!document.getElementById('dash')) return;
 
       loadingState = document.getElementById('loading-state')!;
@@ -604,11 +619,9 @@ const base = import.meta.env.BASE_URL;
       bulkCount = document.getElementById('bulk-count')!;
       detailPanel = document.getElementById('detail-panel')!;
 
-      // Reset state
       selectedIds = new Set();
       openAppId = null;
 
-      // ── Init: auth check + load data ──
       (async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { window.location.href = `${base}login`; return; }
@@ -636,7 +649,6 @@ const base = import.meta.env.BASE_URL;
         await loadStats();
       })();
 
-      // ── Event listeners ──
       searchInput.addEventListener('input', renderTable);
       filterStatus.addEventListener('change', renderTable);
 
@@ -716,7 +728,6 @@ const base = import.meta.env.BASE_URL;
         openAppId = null;
       });
 
-      // Close on backdrop click
       detailPanel.addEventListener('click', (e) => {
         if (e.target === detailPanel) {
           detailPanel.classList.remove('dash__detail--open');
@@ -795,14 +806,12 @@ const base = import.meta.env.BASE_URL;
         await loadStats();
       });
 
-      // Project editor buttons
       document.getElementById('add-project-btn')!.addEventListener('click', () => openProjectEditor(null));
       document.getElementById('project-edit-close')!.addEventListener('click', () => {
         document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
         editingProjectId = null;
       });
 
-      // Close project editor on backdrop click
       document.getElementById('project-edit-panel')!.addEventListener('click', (e) => {
         if (e.target === document.getElementById('project-edit-panel')) {
           document.getElementById('project-edit-panel')!.classList.remove('dash__detail--open');
@@ -811,6 +820,7 @@ const base = import.meta.env.BASE_URL;
       });
       document.getElementById('pe-save-btn')!.addEventListener('click', saveProject);
       document.getElementById('pe-toggle-btn')!.addEventListener('click', toggleProjectActive);
+      document.getElementById('pe-toggle-app-btn')!.addEventListener('click', toggleHideFromApplications);
       document.getElementById('pe-delete-btn')!.addEventListener('click', deleteProject);
 
       document.querySelectorAll('[data-tab]').forEach(tab => {
@@ -823,7 +833,6 @@ const base = import.meta.env.BASE_URL;
           const actView = document.getElementById('activity-view')!;
           const projView = document.getElementById('projects-view')!;
 
-          // Hide all views
           appView.style.display = 'none';
           actView.classList.remove('dash__activity--visible');
           projView.classList.remove('dash__projects-view--visible');

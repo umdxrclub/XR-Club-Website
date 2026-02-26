@@ -4,12 +4,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 export function initScrollAnimations() {
-  // Kill previous ScrollTrigger instances to avoid stale references after navigation
   ScrollTrigger.getAll().forEach(t => t.kill());
-  // Shared defaults
   const ease = 'power2.out';
 
-  // --- ABOUT SECTION ---
   const about = document.querySelector('[data-about]');
   if (about) {
     gsap.from('[data-about-header]', {
@@ -24,7 +21,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- PROJECTS SECTION ---
   const projects = document.querySelector('[data-projects]');
   if (projects) {
     gsap.from('.proj__left', {
@@ -39,7 +35,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- LAB SECTION ---
   const lab = document.querySelector('[data-lab]');
   if (lab) {
     gsap.from('.lab__title-wrap', {
@@ -59,7 +54,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- EVENTS SECTION ---
   const events = document.querySelector('[data-events]');
   if (events) {
     gsap.from('.events__title-wrap', {
@@ -79,7 +73,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- RECOGNITION SECTION ---
   const recognition = document.querySelector('[data-recognition]');
   if (recognition) {
     gsap.from('.recog__title-wrap', {
@@ -104,7 +97,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- BOARD SECTION ---
   const board = document.querySelector('[data-board]');
   if (board) {
     gsap.from('.board__title-wrap', {
@@ -124,7 +116,6 @@ export function initScrollAnimations() {
     });
   }
 
-  // --- RESOURCE SECTION ---
   const resources = document.querySelector('[data-resources]');
   if (resources) {
     gsap.from('.res__title-wrap', {

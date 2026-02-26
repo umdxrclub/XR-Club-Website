@@ -5,12 +5,10 @@ const base = import.meta.env.BASE_URL;
 
 <AppLayout title="Project Application — XR Club">
   <div class="apply-page" id="apply-root">
-    <!-- Loading state -->
     <div id="apply-loading" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
       <p style="color:rgba(255,255,255,0.4);font-family:Inter,sans-serif;">Loading...</p>
     </div>
 
-    <!-- Intro screen (shown once before form) -->
     <div id="apply-intro" style="display:none;">
       <div class="apply-header">
         <h1 class="apply-title">Project Application</h1>
@@ -29,7 +27,6 @@ const base = import.meta.env.BASE_URL;
       </div>
     </div>
 
-    <!-- Project Application form (hidden by default) -->
     <div id="apply-form-wrap" style="display:none;">
       <div class="apply-header">
         <h1 class="apply-title">Project Application</h1>
@@ -37,7 +34,6 @@ const base = import.meta.env.BASE_URL;
       </div>
 
       <form id="apply-form" autocomplete="off" novalidate>
-        <!-- Basic Info -->
         <div class="apply-section">
           <h2 class="apply-section__title">Basic Information</h2>
           <div class="apply-grid">
@@ -125,7 +121,6 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
-        <!-- Experience & Background -->
         <div class="apply-section">
           <h2 class="apply-section__title">Experience & Background</h2>
           <div class="apply-grid">
@@ -140,7 +135,6 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
-        <!-- About You -->
         <div class="apply-section">
           <h2 class="apply-section__title">About You</h2>
           <div class="apply-grid">
@@ -175,7 +169,6 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
-        <!-- Club Involvement -->
         <div class="apply-section">
           <h2 class="apply-section__title">Club Involvement</h2>
           <div class="apply-grid">
@@ -198,7 +191,6 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
-        <!-- Project Preferences -->
         <div class="apply-section" id="project-prefs-section">
           <h2 class="apply-section__title">Project Preferences <span class="apply-req">*</span></h2>
           <p class="psel__subtitle">Select up to 3 projects in order of preference. Click a card to select it as your next choice. You only need to answer the project-specific question for your top choice.</p>
@@ -215,7 +207,6 @@ const base = import.meta.env.BASE_URL;
           <div class="psel__chosen" id="psel-chosen" style="display:none;"></div>
         </div>
 
-        <!-- Optional -->
         <div class="apply-section">
           <h2 class="apply-section__title">Optional</h2>
           <div class="apply-grid">
@@ -246,10 +237,8 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
 
-        <!-- Error / Success messages -->
         <div id="apply-msg" style="display:none;"></div>
 
-        <!-- Actions -->
         <div class="apply-actions" id="apply-actions-edit" style="display:none;flex-direction:column;align-items:center;">
           <p class="apply-edit-note">Your application has been submitted. Click below to make changes.</p>
           <button type="button" class="apply-btn apply-btn--edit" id="edit-app-btn">Edit Application</button>
@@ -261,7 +250,6 @@ const base = import.meta.env.BASE_URL;
       </form>
     </div>
 
-    <!-- Submit confirmation modal -->
     <div id="submit-confirm-modal" class="confirm-modal" style="display:none;">
       <div class="confirm-modal__backdrop"></div>
       <div class="confirm-modal__dialog">
@@ -468,7 +456,6 @@ const base = import.meta.env.BASE_URL;
       border: 1px solid rgba(52, 211, 153, 0.2);
     }
 
-    /* Custom validation tooltip */
     .apply-field--invalid .apply-input,
     .apply-field--invalid .search-select__input {
       border-color: rgba(248, 113, 113, 0.5);
@@ -495,7 +482,6 @@ const base = import.meta.env.BASE_URL;
       transform: translateY(0);
     }
 
-    /* Auto-save indicator */
     .apply-autosave {
       font-family: 'Inter', sans-serif;
       font-size: 0.75rem;
@@ -552,7 +538,6 @@ const base = import.meta.env.BASE_URL;
       opacity: 0.6;
     }
 
-    /* Submit confirmation modal */
     .confirm-modal {
       position: fixed;
       inset: 0;
@@ -647,7 +632,6 @@ const base = import.meta.env.BASE_URL;
 
   </style>
 
-  <!-- Global styles for dynamically-generated project cards -->
   <style is:global>
     .psel__subtitle {
       font-family: 'Inter', sans-serif;
@@ -699,7 +683,6 @@ const base = import.meta.env.BASE_URL;
       margin-bottom: 1.5rem;
     }
 
-    /* Break project preferences section out of narrow form column */
     #project-prefs-section {
       width: 100vw;
       position: relative;
@@ -822,7 +805,6 @@ const base = import.meta.env.BASE_URL;
       color: rgba(255, 255, 255, 0.7);
     }
 
-    /* Full-page project detail overlay */
     .psel__overlay {
       position: fixed;
       inset: 0;
@@ -1199,7 +1181,6 @@ const base = import.meta.env.BASE_URL;
 
       let appId: string | null = null;
 
-      // ── Project selection state ──
       interface SelectedProject {
         project_id: string;
         rank: number;
@@ -1246,7 +1227,6 @@ const base = import.meta.env.BASE_URL;
           const isDimmed = maxed && !isSelected;
           const tierClass = p.tier.toLowerCase();
           const isNew = p.labels.includes('New Project');
-          // Filter out "New Project" from card labels since the section divider already indicates it
           const displayLabels = isNew ? p.labels.filter(l => l !== 'New Project') : p.labels;
           const labels = displayLabels.map(l => `<span class="psel__card-label">${escHtml(l)}</span>`).join('');
           const teamCount = p.people?.length || 0;
@@ -1260,7 +1240,6 @@ const base = import.meta.env.BASE_URL;
           if (p.equipment) details.push(escHtml(p.equipment));
           const detailsHtml = details.map(d => `<span class="psel__card-detail">${d}</span>`).join('<span class="psel__card-sep">&middot;</span>');
 
-          // Website link for the card footer
           const websiteLink = p.website ? `<a href="${escHtml(p.website)}" target="_blank" rel="noopener" class="psel__card-link" onclick="event.stopPropagation()">${escHtml(p.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : '';
 
           return `
@@ -1298,7 +1277,6 @@ const base = import.meta.env.BASE_URL;
         if (counter) counter.style.display = allProjects.length > 0 ? 'inline-flex' : 'none';
         updateCounter();
 
-        // Expand button → full-page overlay
         pselGrid.querySelectorAll('.psel__card-expand-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1317,7 +1295,6 @@ const base = import.meta.env.BASE_URL;
       }
 
       function openProjectOverlay(project: Project) {
-        // Remove any existing overlay
         document.querySelector('.psel__overlay')?.remove();
 
         const tierColors: Record<string, string> = {
@@ -1371,10 +1348,8 @@ const base = import.meta.env.BASE_URL;
 
         document.body.appendChild(overlay);
 
-        // Animate in
         requestAnimationFrame(() => overlay.classList.add('psel__overlay--visible'));
 
-        // Close handlers
         const closeOverlay = () => {
           overlay.classList.remove('psel__overlay--visible');
           setTimeout(() => overlay.remove(), 250);
@@ -1395,12 +1370,10 @@ const base = import.meta.env.BASE_URL;
         if ((window as any).__pselReadonly) return;
         const idx = selectedProjects.findIndex(sp => sp.project_id === projectId);
         if (idx >= 0) {
-          // Deselect
           selectedProjects.splice(idx, 1);
-          // Re-number ranks
           selectedProjects.forEach((sp, i) => sp.rank = i + 1);
         } else {
-          if (selectedProjects.length >= 3) return; // Max 3
+          if (selectedProjects.length >= 3) return;
           const project = allProjects.find(p => p.id === projectId);
           if (!project) return;
           selectedProjects.push({
@@ -1439,7 +1412,6 @@ const base = import.meta.env.BASE_URL;
             </div>
           `).join('');
 
-        // Bind remove buttons
         pselChosen.querySelectorAll('.psel__answer-remove').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1447,7 +1419,6 @@ const base = import.meta.env.BASE_URL;
           });
         });
 
-        // Bind textarea input to update state + auto-save
         pselChosen.querySelectorAll('.psel__answer-textarea').forEach(ta => {
           ta.addEventListener('input', () => {
             const pid = (ta as HTMLTextAreaElement).name.replace('prompt_answer_', '');
@@ -1463,6 +1434,7 @@ const base = import.meta.env.BASE_URL;
           .from('projects')
           .select('*')
           .eq('is_active', true)
+          .neq('hide_from_applications', true)
           .order('display_order');
         const tierOrder: Record<string, number> = { Gateway: 0, Intermediate: 1, Advanced: 2 };
         allProjects = ((data || []) as Project[]).sort((a, b) =>
@@ -1506,7 +1478,6 @@ const base = import.meta.env.BASE_URL;
 
       async function saveProjectSelections() {
         if (!appId) return;
-        // Delete existing and reinsert
         await supabase.from('project_selections').delete().eq('application_id', appId);
         if (selectedProjects.length > 0) {
           const rows = selectedProjects.map(sp => ({
@@ -1519,7 +1490,6 @@ const base = import.meta.env.BASE_URL;
         }
       }
 
-      // UMD Majors & Minors
       const UMD_MAJORS = [
         'Accounting','Aerospace Engineering','African American Studies','Agricultural and Resource Economics','Agricultural and Resource Economics: Agribusiness','Agricultural and Resource Economics: Environmental and Resource Economics','Agricultural Science and Technology: Agricultural and Extension Education','Agricultural Science and Technology: Agronomy','Agricultural Science and Technology: Environmental Horticulture','American Studies','Animal Sciences: Animal Care and Management','Animal Sciences: Combined Ag/Veterinary Medicine','Animal Sciences: Science/Pre-Professional','Anthropology','Arabic Studies','Architecture','Art Education','Art History and Archaeology','Astronomy','Atmospheric and Oceanic Science','Biochemistry','Biocomputational Engineering','Bioengineering','Biological Sciences: Cell Biology and Genetics','Biological Sciences: Ecology and Evolution','Biological Sciences: General Biology','Biological Sciences: Microbiology','Biological Sciences: Physiology and Neurobiology','Chemical and Biomolecular Engineering','Chemistry','Chinese','Cinema & Media Studies','Civil and Environmental Engineering','Classics','Communication','Community Health','Computer Engineering','Computer Science','Computer Science: Cybersecurity','Computer Science: Data Science','Computer Science: Machine Learning','Computer Science: Quantum Information','Criminology and Criminal Justice','Dance','Early Childhood and Early Childhood Special Education','Economics','Electrical Engineering','Elementary Education','Elementary/Middle Special Education','Embedded Systems and Internet of Things','English','Environmental Science and Policy','Environmental Science and Technology: Ecological Technology Design','Environmental Science and Technology: Environmental Health','Environmental Science and Technology: Natural Resources Management','Environmental Science and Technology: Soil and Watershed Science','Family Science','Fermentation Science','Finance','Fire Protection Engineering','French Language & Literature','Geographical Sciences','Geology','German Studies','Government and Politics','Government and Politics: International Relations','Hearing and Speech Sciences','History','Human Development','Immersive Media Design: Computing','Immersive Media Design: Creative','Individual Studies Program','Information Science','Information Systems','International Business','Italian Studies','Japanese','Journalism','Kinesiology','Landscape Architecture','Letters and Sciences (Undecided/Undeclared)','Linguistics','Management','Marketing','Materials Science and Engineering','Mathematics','Mathematics: Applied Math','Mathematics: Education','Mathematics: Statistics','Mechanical Engineering','Middle School Math and Science Education','Music: Education','Music: Liberal Arts Program','Music: Professional Program','Neuroscience','Nutrition and Food Science: Dietetics','Nutrition and Food Science: Food Science','Nutrition and Food Sciences: Nutritional Science','Operations Management and Business Analytics','Persian Studies','Philosophy','Philosophy, Politics and Economics','Physics','Plant Sciences: Plant Biology','Plant Sciences: Turf and Golf Course Management','Plant Sciences: Urban Forestry','Psychology','Public Health Science','Public Policy','Real Estate and the Built Environment','Religions of the Ancient Middle East','Romance Languages','Russian Language and Literature','Secondary Education: English Area of Concentration','Secondary Education: Mathematics (Terrapin Teachers) Area of Concentration','Secondary Education: Science (Terrapin Teachers) Area of Concentration','Secondary Education: Social Studies Area of Concentration','Secondary Education: World Languages Area of Concentration','Social Data Science','Sociology','Spanish Language, Literature and Cultures','Studio Art','Supply Chain Management','Technology and Information Design','Theatre','Women, Gender, and Sexuality Studies'
       ];
@@ -1528,7 +1498,6 @@ const base = import.meta.env.BASE_URL;
         'Actuarial Mathematics','Advanced Cybersecurity Experience','African Studies','Agricultural Science and Technology','Arabic','Archaeology','Army Leadership Studies','Art History','Arts Leadership','Asian American Studies','Atmospheric Chemistry','Atmospheric Sciences','Black Women\'s Studies','Business Analytics','Chinese Language','Classical Mythology','Computer Engineering','Computer Science','Construction Project Management','Creative Writing','Demography','Disability Studies','Earth History','Earth Materials Properties','Entomology','French Studies','General Business','Geochemistry','Geographic Information Sciences','Geophysics','German Studies','Global Engineering Leadership','Global Poverty','Global Terrorism Studies','Greek Language and Culture','Hearing and Speech Sciences','Hebrew Studies','History','Human Development','Humanities, Health and Medicine','Hydrology','Innovation and Entrepreneurship','International Development and Conflict Management','Israel Studies','Italian Language and Culture','Japanese','Jewish Studies','Korean Studies','Landscape Management','Latin American Studies','Latin Language and Literature','Law and Society','Leadership Studies','LGBTQ Studies','Linguistics','Mathematics','Meteorology','Middle East Studies','Music and Culture','Music Performance','Nanoscale Science and Technology','Neuroscience','Nonprofit Leadership and Social Innovation','Nuclear Engineering','Paleobiology','Persian Studies','Philosophy','Physics','Planetary Sciences','Portuguese Languages, Literatures and Cultures','Professional Writing','Project Management','Public Leadership','Real Estate Development','Religious Studies','Remote Sensing of Environmental Change','Rhetoric','Robotics and Autonomous Systems','Russian Studies','Science, Technology, Ethics and Policy','Second Language Education','Secondary Education','Social Data Science','Sociology','Soil Science','Spanish','Statistics','Surficial Geology','Survey Methodology','Sustainability','Technology Entrepreneurship','U.S. Latina/o Studies'
       ];
 
-      // Searchable dropdown logic
       function initSearchSelect(container: HTMLElement, options: string[]) {
         const input = container.querySelector('.search-select__input') as HTMLInputElement;
         const hidden = container.querySelector('input[type="hidden"]') as HTMLInputElement;
@@ -1570,13 +1539,11 @@ const base = import.meta.env.BASE_URL;
         input.addEventListener('input', () => {
           render(input.value);
           dropdown.classList.add('open');
-          // Also set hidden value to typed value (for custom entries)
           hidden.value = input.value.trim();
         });
 
         input.addEventListener('blur', () => {
           dropdown.classList.remove('open');
-          // Keep typed value as custom entry
           if (input.value.trim()) hidden.value = input.value.trim();
         });
 
@@ -1606,7 +1573,6 @@ const base = import.meta.env.BASE_URL;
         });
       }
 
-      // Init all search selects
       const major1Container = form.querySelector('[data-search-select="major1"]') as HTMLElement;
       const major2Container = form.querySelector('[data-search-select="major2"]') as HTMLElement;
       const minor1Container = form.querySelector('[data-search-select="minor1"]') as HTMLElement;
@@ -1614,7 +1580,6 @@ const base = import.meta.env.BASE_URL;
       if (major2Container) initSearchSelect(major2Container, UMD_MAJORS);
       if (minor1Container) initSearchSelect(minor1Container, UMD_MINORS);
 
-      // Add second major button
       const addMajor2Btn = document.getElementById('add-major2-btn');
       const major2Field = document.getElementById('major2-field');
       const removeMajor2Btn = document.getElementById('remove-major2-btn');
@@ -1644,7 +1609,6 @@ const base = import.meta.env.BASE_URL;
           const el = form!.querySelector(`[name="${f}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
           data[f] = el?.value?.trim() || null;
         }
-        // Combine major/minor fields into major_minor
         const m1 = (form!.querySelector('[name="major1"]') as HTMLInputElement)?.value?.trim() || '';
         const m2 = (form!.querySelector('[name="major2"]') as HTMLInputElement)?.value?.trim() || '';
         const mi = (form!.querySelector('[name="minor1"]') as HTMLInputElement)?.value?.trim() || '';
@@ -1661,7 +1625,6 @@ const base = import.meta.env.BASE_URL;
           const el = form!.querySelector(`[name="${f}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
           if (el && app[f]) el.value = String(app[f]);
         }
-        // Parse major_minor back into separate fields
         if (app.major_minor) {
           const mm = String(app.major_minor);
           const [majorPart, minorPart] = mm.split(' / ');
@@ -1694,7 +1657,6 @@ const base = import.meta.env.BASE_URL;
         }
       }
 
-      // Resume upload
       resumeDrop?.addEventListener('click', () => resumeFile?.click());
       resumeDrop?.addEventListener('dragover', (e) => { e.preventDefault(); resumeDrop.classList.add('apply-upload--active'); });
       resumeDrop?.addEventListener('dragleave', () => { resumeDrop.classList.remove('apply-upload--active'); });
@@ -1728,24 +1690,20 @@ const base = import.meta.env.BASE_URL;
         resumeDrop.classList.remove('apply-upload--active');
       });
 
-      // Listen for chatbot fill-field commands
       window.addEventListener('apply-fill-fields', ((e: CustomEvent) => {
         const fields = e.detail;
         if (!fields || typeof fields !== 'object') return;
 
-        // Map of special fields that need search-select handling
         const searchSelectMap: Record<string, string> = {
-          major_minor: 'major1', // simplified — fills primary major
+          major_minor: 'major1',
         };
 
         for (const [key, val] of Object.entries(fields)) {
           if (!val || typeof val !== 'string') continue;
 
-          // Handle select dropdowns
           if (selectFields.includes(key)) {
             const sel = form!.querySelector(`[name="${key}"]`) as HTMLSelectElement;
             if (sel) {
-              // Try to match an option
               const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === val.toLowerCase());
               if (opt) { sel.value = opt.value; }
               else { sel.value = val; }
@@ -1753,7 +1711,6 @@ const base = import.meta.env.BASE_URL;
             continue;
           }
 
-          // Handle search-select fields
           if (searchSelectMap[key]) {
             const name = searchSelectMap[key];
             const visInput = form!.querySelector(`[data-search-select="${name}"] .search-select__input`) as HTMLInputElement;
@@ -1763,11 +1720,9 @@ const base = import.meta.env.BASE_URL;
             continue;
           }
 
-          // Handle regular text/textarea fields
           const el = form!.querySelector(`[name="${key}"]`) as HTMLInputElement | HTMLTextAreaElement;
           if (el) {
             el.value = val;
-            // Auto-resize textareas
             if (el.tagName === 'TEXTAREA') {
               el.style.height = 'auto';
               el.style.height = el.scrollHeight + 'px';
@@ -1791,7 +1746,6 @@ const base = import.meta.env.BASE_URL;
         if (!user) return;
 
         const formData = getFormData();
-        // Only upload resume on explicit save/submit, not on autosave
         if (status === 'submitted' || resumeFile?.files?.[0]) {
           const resumePath = await uploadResume(user.id);
           if (resumePath) formData.resume_path = resumePath;
@@ -1809,13 +1763,11 @@ const base = import.meta.env.BASE_URL;
           if (res.data) appId = res.data.id;
         }
 
-        // Save project selections alongside the application
         if (!error) await saveProjectSelections();
 
         return error;
       }
 
-      // ── Auto-save (debounced) ──
       let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
       let isSaving = false;
 
@@ -1845,18 +1797,15 @@ const base = import.meta.env.BASE_URL;
         autoSaveTimer = setTimeout(() => autoSave(), 2000);
       }
 
-      // Attach auto-save listeners to all form fields
       form.querySelectorAll('input, textarea, select').forEach(el => {
         el.addEventListener('input', scheduleAutoSave);
         el.addEventListener('change', scheduleAutoSave);
       });
-      // Also catch search-select hidden input changes
       form.querySelectorAll('input[type="hidden"]').forEach(el => {
         const obs = new MutationObserver(scheduleAutoSave);
         obs.observe(el, { attributes: true, attributeFilter: ['value'] });
       });
 
-      // ── Custom validation ──
       function clearValidation() {
         form!.querySelectorAll('.apply-field--invalid').forEach(f => f.classList.remove('apply-field--invalid'));
         form!.querySelectorAll('.apply-validate-tip').forEach(t => t.remove());
@@ -1880,7 +1829,6 @@ const base = import.meta.env.BASE_URL;
         clearValidation();
         let firstInvalid: HTMLElement | null = null;
 
-        // Check required text/textarea fields
         form!.querySelectorAll('[required]').forEach(el => {
           const input = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
           if (!input.value || !input.value.trim()) {
@@ -1889,14 +1837,12 @@ const base = import.meta.env.BASE_URL;
           }
         });
 
-        // Check UID is exactly 9 digits
         const uidInput = form!.querySelector('#uid') as HTMLInputElement;
         if (uidInput && uidInput.value.trim() && !/^\d{9}$/.test(uidInput.value.trim())) {
           showFieldError(uidInput, 'UID must be exactly 9 digits');
           if (!firstInvalid) firstInvalid = uidInput;
         }
 
-        // Check required search-select (hidden inputs)
         const major1Hidden = form!.querySelector('[name="major1"]') as HTMLInputElement;
         if (major1Hidden && !major1Hidden.value.trim()) {
           const visInput = form!.querySelector('[data-search-select="major1"] .search-select__input') as HTMLElement;
@@ -1906,7 +1852,6 @@ const base = import.meta.env.BASE_URL;
           }
         }
 
-        // Validate project selections (only if projects exist)
         if (allProjects.length > 0 && selectedProjects.length === 0) {
           showMsg('Please select at least 1 project preference.', 'error');
           const section = document.getElementById('project-prefs-section');
@@ -1916,7 +1861,6 @@ const base = import.meta.env.BASE_URL;
           }
         }
 
-        // Only the 1st choice requires a prompt answer
         const topChoice = selectedProjects.find(sp => sp.rank === 1);
         if (topChoice && !topChoice.prompt_answer.trim()) {
           const ta = form!.querySelector(`[name="prompt_answer_${topChoice.project_id}"]`) as HTMLElement;
@@ -1944,7 +1888,6 @@ const base = import.meta.env.BASE_URL;
         return true;
       }
 
-      // Clear individual field errors on input
       form.addEventListener('input', (e) => {
         const target = e.target as HTMLElement;
         const wrapper = target.closest('.apply-field');
@@ -1964,14 +1907,11 @@ const base = import.meta.env.BASE_URL;
         }
       });
 
-      // UID: only allow digits
       const uidField = document.getElementById('uid') as HTMLInputElement;
       uidField?.addEventListener('input', () => {
         uidField.value = uidField.value.replace(/\D/g, '');
       });
 
-      // Submit
-      // Submit confirmation modal
       const confirmModal = document.getElementById('submit-confirm-modal')!;
       const confirmCancel = document.getElementById('confirm-cancel')!;
       const confirmSubmit = document.getElementById('confirm-submit')!;
@@ -1981,7 +1921,6 @@ const base = import.meta.env.BASE_URL;
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
         if (!validateForm()) return;
 
-        // Show confirmation modal
         confirmModal.style.display = 'flex';
       });
 
@@ -2009,7 +1948,6 @@ const base = import.meta.env.BASE_URL;
           badge.textContent = 'Pending Review';
           badge.className = 'status-badge status-badge--submitted';
           badge.style.display = '';
-          // Lock form
           form!.classList.add('apply-form--readonly');
           document.getElementById('apply-actions-submit')!.style.display = 'none';
           document.getElementById('apply-actions-edit')!.style.display = '';
@@ -2017,23 +1955,19 @@ const base = import.meta.env.BASE_URL;
         }
       });
 
-      // Edit Application button — unlocks form and changes status to draft
       document.getElementById('edit-app-btn')!.addEventListener('click', async () => {
         if (!appId) return;
 
-        // Update status to draft in DB
         await supabase.from('applications').update({
           status: 'draft',
           submitted_at: null,
         }).eq('id', appId);
 
-        // Unlock form
         form!.classList.remove('apply-form--readonly');
         document.getElementById('apply-actions-edit')!.style.display = 'none';
         document.getElementById('apply-actions-submit')!.style.display = '';
         (window as any).__pselReadonly = false;
 
-        // Update badge
         const badge = document.getElementById('apply-status-badge')!;
         badge.textContent = 'Draft';
         badge.className = 'status-badge status-badge--draft';
@@ -2041,7 +1975,6 @@ const base = import.meta.env.BASE_URL;
         showMsg('Application unlocked for editing. Remember to submit when you\'re done.', 'success');
       });
 
-      // Intro screen logic
       const introAgree = document.getElementById('intro-agree-check') as HTMLInputElement;
       const introContinueBtn = document.getElementById('intro-continue-btn') as HTMLButtonElement;
 
@@ -2059,7 +1992,6 @@ const base = import.meta.env.BASE_URL;
         showForm();
       });
 
-      // Init
       (async () => {
         const { data: { user } } = await supabase.auth.getUser();
         loading!.style.display = 'none';
@@ -2070,7 +2002,6 @@ const base = import.meta.env.BASE_URL;
           return;
         }
 
-        // Check for existing application
         const { data: app } = await supabase
           .from('applications')
           .select('*')
@@ -2079,16 +2010,13 @@ const base = import.meta.env.BASE_URL;
           .limit(1)
           .single();
 
-        // Load projects for the preference section
         await loadProjects();
 
-        // Returning user (draft or submitted) — skip intro, go straight to form
         if (app) {
           appId = app.id;
           populateForm(app);
           await loadProjectSelections();
 
-          // Show status badge
           const statusBadge = document.getElementById('apply-status-badge')!;
           const statusLabels: Record<string, string> = {
             draft: 'Draft',
@@ -2102,25 +2030,20 @@ const base = import.meta.env.BASE_URL;
           statusBadge.className = `status-badge status-badge--${app.status}`;
           statusBadge.style.display = '';
 
-          // If already submitted, lock the form
           const isSubmitted = app.status !== 'draft';
           if (isSubmitted) {
             form!.classList.add('apply-form--readonly');
             document.getElementById('apply-actions-submit')!.style.display = 'none';
             document.getElementById('apply-actions-edit')!.style.display = '';
-            // Disable project card clicks
             (window as any).__pselReadonly = true;
           }
           formWrap!.style.display = 'block';
         } else if (localStorage.getItem('xr-apply-intro-seen')) {
-          // Already seen intro this session
           formWrap!.style.display = 'block';
         } else {
-          // New applicant — show intro
           introView!.style.display = 'block';
         }
 
-        // Pre-fill name from profile
         if (!app?.full_name) {
           const { data: profile } = await supabase
             .from('profiles')

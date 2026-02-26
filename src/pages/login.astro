@@ -6,7 +6,7 @@ const base = import.meta.env.BASE_URL;
 <AppLayout title="Log In — XR Club">
   <div class="auth-page">
     <div class="auth-card">
-      <img src={`${base}Images/XR logo.png`} alt="XR Club" class="auth-card__logo" />
+      <img src={`${base}Images/XR logo.webp`} alt="XR Club" class="auth-card__logo" />
       <h1 class="auth-card__title">Welcome</h1>
       <p class="auth-card__subtitle">Sign in with your TerpMail account</p>
 
@@ -79,7 +79,6 @@ const base = import.meta.env.BASE_URL;
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect') || `${base}apply`;
 
-    // Handle Google sign-in
     googleBtn.addEventListener('click', async () => {
       googleBtn.disabled = true;
       googleBtn.textContent = 'Redirecting...';
@@ -109,12 +108,10 @@ const base = import.meta.env.BASE_URL;
       }
     });
 
-    // Check if already logged in (handles OAuth callback too)
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Verify email domain
       const email = user.email || '';
       if (!email.endsWith('@terpmail.umd.edu') && !email.endsWith('@umd.edu')) {
         await supabase.auth.signOut();
@@ -123,7 +120,6 @@ const base = import.meta.env.BASE_URL;
         return;
       }
 
-      // Ensure profile exists
       const { data: profile } = await supabase
         .from('profiles')
         .select('id, role')

@@ -17,7 +17,7 @@ import RecognitionSection from '../components/RecognitionSection.astro';
 
 <BaseLayout title="XR Club">
   <div class="loader" data-loader>
-    <img src={`${import.meta.env.BASE_URL}Images/XR logo.png`} alt="XR Club" class="loader__logo" />
+    <img src={`${import.meta.env.BASE_URL}Images/XR logo.webp`} alt="XR Club" class="loader__logo" />
   </div>
   <IntroSequence />
   <Header />
@@ -25,7 +25,7 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   <section class="hero-section" data-hero-wrapper>
     <SplitHero />
     <div class="hero-title" data-hero-title>
-      <img class="hero-ring" src={`${import.meta.env.BASE_URL}Images/ring.png`} alt="" />
+      <img class="hero-ring" src={`${import.meta.env.BASE_URL}Images/ring.webp`} alt="" />
       <p class="hero-title__tagline">Design, Engineer, Create</p>
       <h1 class="hero-title__heading">XR Club</h1>
     </div>
@@ -177,13 +177,11 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   import { initScrollAnimations } from '../animations/scrollAnimations';
 
   document.addEventListener('astro:page-load', () => {
-    // Only run on home page
     if (!document.querySelector('[data-hero-wrapper]')) return;
 
     initAnimations();
     initScrollAnimations();
 
-    // Handle hash navigation from other pages
     if (window.location.hash) {
       const target = window.location.hash.slice(1);
       if (target === 'home') {
@@ -200,10 +198,9 @@ import RecognitionSection from '../components/RecognitionSection.astro';
       }
     }
 
-    // Add watermark if not already present
     if (!document.querySelector('.watermark')) {
       const wm = document.createElement('img');
-      wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.png`;
+      wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.webp`;
       wm.alt = '';
       wm.className = 'watermark';
       document.body.appendChild(wm);

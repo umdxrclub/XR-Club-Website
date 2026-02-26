@@ -254,7 +254,6 @@ const studentOrgs = [
       el.style.setProperty('--track-set-width', `-${setWidth}px`);
     }
 
-    // Wait for all sponsor images to load before measuring widths
     const images = Array.from(document.querySelectorAll<HTMLImageElement>('.sp__logo'));
     const allLoaded = images.map(img => img.complete ? Promise.resolve() : new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); }));
 

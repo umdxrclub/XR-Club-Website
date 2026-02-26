@@ -39,7 +39,7 @@ export function initIntro(onComplete: () => void) {
   const preloadHero = new Image();
   preloadHero.src = `${base}Images/photo4.webp`;
   const preloadLogo = new Image();
-  preloadLogo.src = `${base}Images/XR logo.png`;
+  preloadLogo.src = `${base}Images/XR logo.webp`;
   const criticalReady = Promise.all([
     preloadHero.decode().catch(() => {}),
     preloadLogo.decode().catch(() => {}),
@@ -48,7 +48,7 @@ export function initIntro(onComplete: () => void) {
   function loadFrame(i: number) {
     if (frames[i]) return;
     const img = new Image();
-    img.src = `${base}background/${String(i).padStart(4, '0')}.png`;
+    img.src = `${base}background/${String(i).padStart(4, '0')}.webp`;
     frames[i] = img;
   }
 
