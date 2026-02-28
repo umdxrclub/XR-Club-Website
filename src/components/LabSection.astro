@@ -50,9 +50,12 @@ const base = import.meta.env.BASE_URL;
 </section>
 
 <script>
-  const counter = document.querySelector('[data-count-target]') as HTMLElement;
-  if (counter) {
+  document.addEventListener('astro:page-load', () => {
+    const counter = document.querySelector('[data-count-target]') as HTMLElement;
+    if (!counter) return;
+
     const target = parseInt(counter.dataset.countTarget || '0', 10);
+    counter.textContent = '0';
     let started = false;
 
     const observer = new IntersectionObserver((entries) => {
@@ -73,7 +76,7 @@ const base = import.meta.env.BASE_URL;
     }, { threshold: 0.3 });
 
     observer.observe(counter.closest('.lab__counter')!);
-  }
+  });
 </script>
 
 <style>
