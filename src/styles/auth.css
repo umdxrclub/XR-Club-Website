@@ -622,8 +622,30 @@ select.apply-input option {
 .dash__toolbar {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.5rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.dash__filter-input {
+  flex: 1;
+  min-width: 80px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+
+.dash__filter-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.dash__filter-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .dash__search {

@@ -48,7 +48,17 @@ const base = import.meta.env.BASE_URL;
         </div>
 
         <div class="dash__toolbar">
-          <input class="dash__search" type="text" id="search-input" placeholder="Search by name, email, or major…" />
+          <input class="dash__filter-input" type="text" id="filter-name" placeholder="Name" />
+          <input class="dash__filter-input" type="text" id="filter-email" placeholder="Email" />
+          <input class="dash__filter-input" type="text" id="filter-major" placeholder="Major" />
+          <select class="dash__filter" id="filter-year">
+            <option value="">All Years</option>
+            <option value="Freshman">Freshman</option>
+            <option value="Sophomore">Sophomore</option>
+            <option value="Junior">Junior</option>
+            <option value="Senior">Senior</option>
+            <option value="Graduate">Graduate</option>
+          </select>
           <select class="dash__filter" id="filter-status">
             <option value="">All Statuses</option>
             <option value="accepted">Accepted</option>
@@ -212,7 +222,10 @@ const base = import.meta.env.BASE_URL;
     let loadingState: HTMLElement;
     let dash: HTMLElement;
     let tbody: HTMLElement;
-    let searchInput: HTMLInputElement;
+    let filterName: HTMLInputElement;
+    let filterEmail: HTMLInputElement;
+    let filterMajor: HTMLInputElement;
+    let filterYear: HTMLSelectElement;
     let filterStatus: HTMLSelectElement;
     let statsGrid: HTMLElement;
     let emptyMsg: HTMLElement;
@@ -253,17 +266,21 @@ const base = import.meta.env.BASE_URL;
     }
 
     function renderTable() {
-      const query = searchInput.value.toLowerCase().trim();
+      const nameQ = filterName.value.toLowerCase().trim();
+      const emailQ = filterEmail.value.toLowerCase().trim();
+      const majorQ = filterMajor.value.toLowerCase().trim();
+      const yearVal = filterYear.value;
       const statusVal = filterStatus.value;
 
       const filtered = applications.filter(app => {
         if (statusVal && app.status !== statusVal) return false;
-        if (query) {
-          const name = (app.full_name || app.profiles?.full_name || '').toLowerCase();
-          const email = (app.profiles?.email || '').toLowerCase();
-          const major = (app.major_minor || '').toLowerCase();
-          if (!name.includes(query) && !email.includes(query) && !major.includes(query)) return false;
-        }
+        if (yearVal && (app.current_year || '') !== yearVal) return false;
+        const name = (app.full_name || app.profiles?.full_name || '').toLowerCase();
+        if (nameQ && !name.includes(nameQ)) return false;
+        const email = (app.profiles?.email || '').toLowerCase();
+        if (emailQ && !email.includes(emailQ)) return false;
+        const major = (app.major_minor || '').toLowerCase();
+        if (majorQ && !major.includes(majorQ)) return false;
         return true;
       });
 
@@ -610,7 +627,10 @@ const base = import.meta.env.BASE_URL;
       loadingState = document.getElementById('loading-state')!;
       dash = document.getElementById('dash')!;
       tbody = document.getElementById('app-tbody')!;
-      searchInput = document.getElementById('search-input') as HTMLInputElement;
+      filterName = document.getElementById('filter-name') as HTMLInputElement;
+      filterEmail = document.getElementById('filter-email') as HTMLInputElement;
+      filterMajor = document.getElementById('filter-major') as HTMLInputElement;
+      filterYear = document.getElementById('filter-year') as HTMLSelectElement;
       filterStatus = document.getElementById('filter-status') as HTMLSelectElement;
       statsGrid = document.getElementById('stats-grid')!;
       emptyMsg = document.getElementById('empty-msg')!;
@@ -649,7 +669,10 @@ const base = import.meta.env.BASE_URL;
         await loadStats();
       })();
 
-      searchInput.addEventListener('input', renderTable);
+      filterName.addEventListener('input', renderTable);
+      filterEmail.addEventListener('input', renderTable);
+      filterMajor.addEventListener('input', renderTable);
+      filterYear.addEventListener('change', renderTable);
       filterStatus.addEventListener('change', renderTable);
 
       selectAll.addEventListener('change', () => {
