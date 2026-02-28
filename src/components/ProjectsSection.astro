@@ -1,5 +1,6 @@
 ---
 const base = import.meta.env.BASE_URL;
+const storageBase = `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/public/videos`;
 ---
 <section class="proj" data-projects>
   <img class="proj__bg" src={`${base}Images/XR CLUB.webp`} alt="" decoding="async" />
@@ -23,7 +24,7 @@ const base = import.meta.env.BASE_URL;
       <div class="proj__right">
         <div class="proj__card">
           <div class="proj__vid-wrap">
-            <video class="proj__vid" src={`${base}demo.mp4`} preload="metadata" playsinline data-proj-video></video>
+            <video class="proj__vid" src={`${storageBase}/demo.mp4`} preload="metadata" playsinline data-proj-video></video>
             <button class="proj__play" data-play-btn aria-label="Play/Pause">
               <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><polygon points="5,3 19,12 5,21"></polygon></svg>
               <svg class="proj__icon-pause" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="display:none"><rect x="5" y="3" width="4" height="18"></rect><rect x="15" y="3" width="4" height="18"></rect></svg>
@@ -37,7 +38,7 @@ const base = import.meta.env.BASE_URL;
 
         <div class="proj__card">
           <div class="proj__vid-wrap">
-            <video class="proj__vid" src={`${base}testimony.MOV`} preload="metadata" playsinline data-proj-video></video>
+            <video class="proj__vid" src={`${storageBase}/testimony.MOV`} preload="metadata" playsinline data-proj-video></video>
             <button class="proj__play" data-play-btn aria-label="Play/Pause">
               <svg class="proj__icon-play" viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><polygon points="5,3 19,12 5,21"></polygon></svg>
               <svg class="proj__icon-pause" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="display:none"><rect x="5" y="3" width="4" height="18"></rect><rect x="15" y="3" width="4" height="18"></rect></svg>

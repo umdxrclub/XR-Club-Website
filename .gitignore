@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 .astro/
+public/demo.mp4
+public/testimony.MOV
