@@ -17,6 +17,7 @@ const base = import.meta.env.BASE_URL;
         <p class="apply-intro-text">You're about to begin the application. Please put in genuine effort and answer honestly. We care about the quality and thoughtfulness of your responses, not the length.</p>
         <p class="apply-intro-text">Once you're accepted into a project, you won't need to complete this full application again. We'll keep your information on file, and you'll only need to apply for specific projects in the future.</p>
         <p class="apply-intro-text">If we feel your application does not reflect your best effort, we may waitlist you and ask you to revise it before making a final decision. While we aim to accept as many students as possible, we have limited space in our projects. Depending on demand, we may have to decline some applications, but you are always welcome to apply again next cycle.</p>
+        <p class="apply-intro-text"><strong style="color:#f87171;">Applications close Sunday, March 1st at 11:59 PM EST.</strong></p>
         <p class="apply-intro-text">Your application auto-saves as you go, so you can come back and finish it later.</p>
         <p class="apply-intro-text apply-intro-text--hint">(If you were planning to have ChatGPT reword or generate your responses, just use the chatbot helper, it's connected to their API.)</p>
         <label class="apply-intro-agree">
@@ -31,6 +32,7 @@ const base = import.meta.env.BASE_URL;
       <div class="apply-header">
         <h1 class="apply-title">Project Application</h1>
         <span class="status-badge" id="apply-status-badge" style="display:none;"></span>
+        <p class="apply-deadline" id="apply-deadline">Applications close Sunday, March 1st at 11:59 PM EST</p>
       </div>
 
       <form id="apply-form" autocomplete="off" novalidate>
@@ -264,6 +266,14 @@ const base = import.meta.env.BASE_URL;
   </div>
 
   <style>
+    .apply-deadline {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #fbbf24;
+      margin-top: 0.3rem;
+    }
+
     .apply-intro-card {
       background: rgba(0, 0, 0, 0.35);
       backdrop-filter: blur(20px);
@@ -1151,6 +1161,12 @@ const base = import.meta.env.BASE_URL;
     import type { Project } from '../lib/types';
     import { navigate } from 'astro:transitions/client';
 
+    const APPLICATION_DEADLINE = new Date('2026-03-02T04:59:00Z');
+
+    function isPastDeadline() {
+      return new Date() > APPLICATION_DEADLINE;
+    }
+
     document.addEventListener('astro:page-load', () => {
       const root = document.getElementById('apply-root');
       if (!root) return;
@@ -1918,6 +1934,10 @@ const base = import.meta.env.BASE_URL;
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (isPastDeadline()) {
+          showMsg('Applications are now closed. The deadline was Sunday, March 1st at 11:59 PM EST.', 'error');
+          return;
+        }
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
         if (!validateForm()) return;
 
@@ -2042,6 +2062,19 @@ const base = import.meta.env.BASE_URL;
           formWrap!.style.display = 'block';
         } else {
           introView!.style.display = 'block';
+        }
+
+        if (isPastDeadline()) {
+          const dl = document.getElementById('apply-deadline');
+          if (dl) {
+            dl.textContent = 'Applications are closed.';
+            dl.style.color = '#f87171';
+          }
+          const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement | null;
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Applications Closed';
+          }
         }
 
         if (!app?.full_name) {
