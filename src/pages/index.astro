@@ -203,7 +203,17 @@ import RecognitionSection from '../components/RecognitionSection.astro';
       wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.webp`;
       wm.alt = '';
       wm.className = 'watermark';
+      wm.style.display = 'none';
       document.body.appendChild(wm);
+
+      function showWatermark() {
+        if (!document.querySelector('[data-intro]') && !document.querySelector('[data-loader]')) {
+          wm.style.display = '';
+        } else {
+          setTimeout(showWatermark, 500);
+        }
+      }
+      showWatermark();
     }
   });
 </script>
