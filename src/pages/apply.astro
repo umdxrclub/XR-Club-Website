@@ -17,7 +17,7 @@ const base = import.meta.env.BASE_URL;
         <p class="apply-intro-text">You're about to begin the application. Please put in genuine effort and answer honestly. We care about the quality and thoughtfulness of your responses, not the length.</p>
         <p class="apply-intro-text">Once you're accepted into a project, you won't need to complete this full application again. We'll keep your information on file, and you'll only need to apply for specific projects in the future.</p>
         <p class="apply-intro-text">If we feel your application does not reflect your best effort, we may waitlist you and ask you to revise it before making a final decision. While we aim to accept as many students as possible, we have limited space in our projects. Depending on demand, we may have to decline some applications, but you are always welcome to apply again next cycle.</p>
-        <p class="apply-intro-text"><strong style="color:#f87171;">Applications close Sunday, March 1st at 11:59 PM EST.</strong></p>
+        <p class="apply-intro-text"><strong style="color:#f87171;">Applications close Tuesday, March 24th at 11:59 PM EDT.</strong></p>
         <p class="apply-intro-text">Your application auto-saves as you go, so you can come back and finish it later.</p>
         <p class="apply-intro-text apply-intro-text--hint">(If you were planning to have ChatGPT reword or generate your responses, just use the chatbot helper, it's connected to their API.)</p>
         <label class="apply-intro-agree">
@@ -32,7 +32,7 @@ const base = import.meta.env.BASE_URL;
       <div class="apply-header">
         <h1 class="apply-title">Project Application</h1>
         <span class="status-badge" id="apply-status-badge" style="display:none;"></span>
-        <p class="apply-deadline" id="apply-deadline">Applications close Sunday, March 1st at 11:59 PM EST</p>
+        <p class="apply-deadline" id="apply-deadline">Applications close Tuesday, March 24th at 11:59 PM EDT</p>
       </div>
 
       <form id="apply-form" autocomplete="off" novalidate>
@@ -1161,7 +1161,7 @@ const base = import.meta.env.BASE_URL;
     import type { Project } from '../lib/types';
     import { navigate } from 'astro:transitions/client';
 
-    const APPLICATION_DEADLINE = new Date('2026-03-02T04:59:00Z');
+    const APPLICATION_DEADLINE = new Date('2026-03-25T03:59:00Z'); // March 24, 2026 at 11:59 PM EDT
 
     function isPastDeadline() {
       return new Date() > APPLICATION_DEADLINE;
@@ -1935,7 +1935,7 @@ const base = import.meta.env.BASE_URL;
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (isPastDeadline()) {
-          showMsg('Applications are now closed. The deadline was Sunday, March 1st at 11:59 PM EST.', 'error');
+          showMsg('Applications are now closed. The deadline was Tuesday, March 24th at 11:59 PM EDT.', 'error');
           return;
         }
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -2050,8 +2050,10 @@ const base = import.meta.env.BASE_URL;
           statusBadge.className = `status-badge status-badge--${app.status}`;
           statusBadge.style.display = '';
 
-          const isSubmitted = app.status !== 'draft';
-          if (isSubmitted) {
+          // Only lock the form for applications currently in review; accepted/rejected/waitlisted
+          // users should be able to edit their info and re-apply for the new cycle.
+          const isLocked = app.status === 'submitted' || app.status === 'under_review';
+          if (isLocked) {
             form!.classList.add('apply-form--readonly');
             document.getElementById('apply-actions-submit')!.style.display = 'none';
             document.getElementById('apply-actions-edit')!.style.display = '';
