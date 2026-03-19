@@ -2035,7 +2035,13 @@ const base = import.meta.env.BASE_URL;
         if (app) {
           appId = app.id;
           populateForm(app);
-          await loadProjectSelections();
+
+          if (app.status === 'draft') {
+            // In-progress draft: restore their project selections too
+            await loadProjectSelections();
+          }
+          // For any previously submitted/reviewed/accepted/rejected/waitlisted application,
+          // project selections are intentionally left empty so the user picks fresh ones.
 
           const statusBadge = document.getElementById('apply-status-badge')!;
           const statusLabels: Record<string, string> = {
@@ -2050,15 +2056,6 @@ const base = import.meta.env.BASE_URL;
           statusBadge.className = `status-badge status-badge--${app.status}`;
           statusBadge.style.display = '';
 
-          // Only lock the form for applications currently in review; accepted/rejected/waitlisted
-          // users should be able to edit their info and re-apply for the new cycle.
-          const isLocked = app.status === 'submitted' || app.status === 'under_review';
-          if (isLocked) {
-            form!.classList.add('apply-form--readonly');
-            document.getElementById('apply-actions-submit')!.style.display = 'none';
-            document.getElementById('apply-actions-edit')!.style.display = '';
-            (window as any).__pselReadonly = true;
-          }
           formWrap!.style.display = 'block';
         } else if (localStorage.getItem('xr-apply-intro-seen')) {
           formWrap!.style.display = 'block';
