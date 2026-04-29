@@ -21,10 +21,7 @@ import '../../styles/demoday.css';
       <p class="dd-sub" style="margin-bottom:8px;">Scan every booth. Order does not matter. First to scan all 18 wins.</p>
       <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
 
-      <div class="dd-reveal">
-        <canvas class="dd-reveal-canvas" id="dd-reveal-canvas"></canvas>
-        <p class="dd-reveal-hint">Drag to rotate.</p>
-      </div>
+      <div class="dd-reveal" id="dd-reveal"></div>
 
       <p class="dd-msg" id="dd-msg" style="margin-top:24px;"></p>
 
@@ -38,26 +35,41 @@ import '../../styles/demoday.css';
   <style>
     .dd-reveal {
       margin-top: 36px;
-      aspect-ratio: 1;
       width: 100%;
-      border: 1px solid var(--dd-line);
-      border-radius: 14px;
-      background: var(--dd-bg-card);
-      position: relative;
-      overflow: hidden;
-      touch-action: none;
+      perspective: 1600px;
+      perspective-origin: 60% 40%;
     }
-    .dd-reveal-canvas { width: 100%; height: 100%; display: block; cursor: grab; }
-    .dd-reveal-canvas:active { cursor: grabbing; }
-    .dd-reveal-hint {
+    .dd-puzzle-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+    .dd-puzzle-stage {
       position: absolute;
-      bottom: 12px; left: 0; right: 0;
-      text-align: center;
-      font-size: 11px;
-      color: var(--dd-mute);
-      margin: 0;
-      pointer-events: none;
-      letter-spacing: 0.04em;
+      inset: 0;
+      transform-style: preserve-3d;
+      transform: rotateY(-14deg) rotateX(3deg);
+      transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .dd-puzzle-wrap:hover .dd-puzzle-stage {
+      transform: rotateY(-9deg) rotateX(2deg);
+    }
+    .dd-piece {
+      position: absolute;
+      inset: 0;
+      background-image: var(--dd-puzzle-img);
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transform: translateZ(var(--dd-piece-depth, -30px)) scale(1.04);
+      transform-origin: var(--dd-piece-cx, 50%) var(--dd-piece-cy, 50%);
+      transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: opacity, transform;
+    }
+    .dd-piece.is-revealed {
+      opacity: 1;
+      transform: translateZ(0) scale(1);
     }
     .dd-presence {
       font-size: 12px;
@@ -123,7 +135,7 @@ import '../../styles/demoday.css';
     import { supabase } from '../../lib/supabase';
     import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
     import { playScanChime, playWrongTone, playSoftTap, primeAudio } from '../../lib/demoday-sound';
-    import { RevealScene } from '../../lib/demoday-reveal';
+    import { PuzzleReveal } from '../../lib/demoday-puzzle';
     const sb = supabase as any;
 
     function escapeHTML(s: string): string {
@@ -208,8 +220,13 @@ import '../../styles/demoday.css';
       stepNum.textContent = String(step);
       barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
 
-      const canvas = document.getElementById('dd-reveal-canvas') as HTMLCanvasElement;
-      const reveal = new RevealScene(canvas, { totalGroups: TOTAL_STATIONS, initialRevealed: step });
+      const revealEl = document.getElementById('dd-reveal') as HTMLDivElement;
+      const reveal = new PuzzleReveal(revealEl, {
+        imageUrl: '/Images/puzzleboy.png',
+        totalPieces: TOTAL_STATIONS,
+        initialRevealed: step,
+        seedKey: playerId,
+      });
       document.addEventListener('astro:before-preparation', () => reveal.dispose(), { once: true });
 
       const params = new URLSearchParams(window.location.search);

@@ -10,10 +10,7 @@ import '../../styles/demoday.css';
       <h1 class="dd-title" id="dd-finish-title">Done.</h1>
       <p class="dd-sub" id="dd-finish-sub">All eighteen. Show this screen at the info booth to claim your prize.</p>
 
-      <div class="dd-reveal">
-        <canvas class="dd-reveal-canvas" id="dd-reveal-canvas"></canvas>
-        <p class="dd-reveal-hint">Drag to rotate.</p>
-      </div>
+      <div class="dd-reveal" id="dd-reveal"></div>
 
       <div class="dd-card" style="margin-top:44px;">
         <p class="dd-clue-label">Your time</p>
@@ -28,26 +25,30 @@ import '../../styles/demoday.css';
   <style>
     .dd-reveal {
       margin-top: 8px;
-      aspect-ratio: 1;
       width: 100%;
-      border: 1px solid var(--dd-line);
-      border-radius: 14px;
-      background: var(--dd-bg-card);
-      position: relative;
-      overflow: hidden;
-      touch-action: none;
+      perspective: 1600px;
+      perspective-origin: 60% 40%;
     }
-    .dd-reveal-canvas { width: 100%; height: 100%; display: block; cursor: grab; }
-    .dd-reveal-canvas:active { cursor: grabbing; }
-    .dd-reveal-hint {
+    .dd-puzzle-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+    .dd-puzzle-stage {
       position: absolute;
-      bottom: 12px; left: 0; right: 0;
-      text-align: center;
-      font-size: 11px;
-      color: var(--dd-mute);
-      margin: 0;
-      pointer-events: none;
-      letter-spacing: 0.04em;
+      inset: 0;
+      transform-style: preserve-3d;
+      transform: rotateY(-12deg) rotateX(2deg);
+    }
+    .dd-piece {
+      position: absolute;
+      inset: 0;
+      background-image: var(--dd-puzzle-img);
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      opacity: 1;
+      transform: translateZ(0);
     }
   </style>
 
@@ -55,7 +56,7 @@ import '../../styles/demoday.css';
     import { supabase } from '../../lib/supabase';
     import { TOTAL_STATIONS } from '../../lib/demoday';
     import { playFinishChord, primeAudio } from '../../lib/demoday-sound';
-    import { RevealScene } from '../../lib/demoday-reveal';
+    import { PuzzleReveal } from '../../lib/demoday-puzzle';
     const sb = supabase as any;
 
     document.addEventListener('astro:page-load', async () => {
@@ -68,15 +69,15 @@ import '../../styles/demoday.css';
       document.addEventListener('touchstart', onFirstTouch);
       setTimeout(() => playFinishChord(), 400);
 
-      const canvas = document.getElementById('dd-reveal-canvas') as HTMLCanvasElement;
-      const reveal = new RevealScene(canvas, {
-        totalGroups: TOTAL_STATIONS,
+      const playerId = localStorage.getItem('dd_player_id');
+      const revealEl = document.getElementById('dd-reveal') as HTMLDivElement;
+      const reveal = new PuzzleReveal(revealEl, {
+        imageUrl: '/Images/puzzleboy.png',
+        totalPieces: TOTAL_STATIONS,
         initialRevealed: TOTAL_STATIONS,
-        autoRotateSpeed: 0.25,
+        seedKey: playerId ?? 'finish',
       });
       document.addEventListener('astro:before-preparation', () => reveal.dispose(), { once: true });
-
-      const playerId = localStorage.getItem('dd_player_id');
       const timeEl = document.getElementById('dd-finish-time') as HTMLParagraphElement;
       if (!playerId) {
         window.location.href = '/demoday/';
