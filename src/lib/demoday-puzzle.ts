@@ -1,6 +1,9 @@
 interface Rect { x: number; y: number; w: number; h: number }
 interface Piece { points: Array<[number, number]> }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
 function hashStr(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
@@ -74,9 +77,6 @@ function rectToTriangles(r: Rect, dir: boolean): [Piece, Piece] {
 
 function generatePieces(seed: number, total: number): Piece[] {
   const rng = mulberry32(seed);
-  // We want a mix of rectangles and triangles. Triangulating a rect gives 2.
-  // BSP to base = total - triCount, then triangulate triCount of those.
-  // base + 2 * triCount = total  =>  triCount up to floor(total / 2).
   const triCount = Math.max(2, Math.floor(total / 3));
   const baseCount = total - triCount;
   const baseRects = bspSplit(rng, baseCount);
@@ -93,20 +93,13 @@ function generatePieces(seed: number, total: number): Piece[] {
       pieces.push(rectToPiece(r));
     }
   });
-  // If math drifted, trim or pad.
   while (pieces.length > total) pieces.pop();
   while (pieces.length < total) pieces.push(rectToPiece({ x: 0, y: 0, w: 1, h: 1 }));
   return pieces;
 }
 
-function pieceToClip(p: Piece): string {
-  return 'polygon(' + p.points.map(([x, y]) => `${(x * 100).toFixed(3)}% ${(y * 100).toFixed(3)}%`).join(',') + ')';
-}
-
-function pieceCenter(p: Piece): [number, number] {
-  let cx = 0, cy = 0;
-  for (const [x, y] of p.points) { cx += x; cy += y; }
-  return [cx / p.points.length, cy / p.points.length];
+function pointsAttr(p: Piece): string {
+  return p.points.map(([x, y]) => `${(x * 100).toFixed(3)},${(y * 100).toFixed(3)}`).join(' ');
 }
 
 export interface PuzzleOptions {
@@ -114,79 +107,86 @@ export interface PuzzleOptions {
   totalPieces: number;
   initialRevealed: number;
   seedKey: string;
-  imageAspect?: number;
 }
+
+let instanceCounter = 0;
 
 export class PuzzleReveal {
   private wrap: HTMLElement;
-  private stage: HTMLDivElement;
-  private pieces: HTMLDivElement[] = [];
+  private svg: SVGSVGElement;
+  private polygons: SVGPolygonElement[] = [];
   private revealOrder: number[] = [];
   private currentRevealed = 0;
   private destroyed = false;
 
   constructor(wrap: HTMLElement, opts: PuzzleOptions) {
     this.wrap = wrap;
-    this.wrap.classList.add('dd-puzzle-wrap');
-
-    if (opts.imageAspect) {
-      this.wrap.style.aspectRatio = String(opts.imageAspect);
-    }
-
-    this.stage = document.createElement('div');
-    this.stage.className = 'dd-puzzle-stage';
-    this.wrap.appendChild(this.stage);
 
     const seed = hashStr(opts.seedKey);
     const rng = mulberry32(seed ^ 0xa1f3c9);
     const pieces = generatePieces(seed, opts.totalPieces);
     this.revealOrder = shuffle(rng, pieces.map((_, i) => i));
 
-    pieces.forEach((p, i) => {
-      const [cx, cy] = pieceCenter(p);
-      const div = document.createElement('div');
-      div.className = 'dd-piece';
-      div.style.clipPath = pieceToClip(p);
-      div.style.backgroundImage = `url("${opts.imageUrl}")`;
-      div.style.setProperty('--dd-piece-cx', `${(cx * 100).toFixed(2)}%`);
-      div.style.setProperty('--dd-piece-cy', `${(cy * 100).toFixed(2)}%`);
-      div.style.setProperty('--dd-piece-depth', `${(rng() * 60 - 30).toFixed(1)}px`);
-      this.stage.appendChild(div);
-      this.pieces.push(div);
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.classList.add('dd-puzzle-svg');
+
+    const defs = document.createElementNS(SVG_NS, 'defs');
+    const patternId = `dd-pattern-${++instanceCounter}`;
+    const pattern = document.createElementNS(SVG_NS, 'pattern');
+    pattern.setAttribute('id', patternId);
+    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    pattern.setAttribute('x', '0');
+    pattern.setAttribute('y', '0');
+    pattern.setAttribute('width', '100');
+    pattern.setAttribute('height', '100');
+
+    const image = document.createElementNS(SVG_NS, 'image');
+    image.setAttribute('href', opts.imageUrl);
+    image.setAttributeNS(XLINK_NS, 'xlink:href', opts.imageUrl);
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', '100');
+    image.setAttribute('height', '100');
+    image.setAttribute('preserveAspectRatio', 'none');
+
+    pattern.appendChild(image);
+    defs.appendChild(pattern);
+    svg.appendChild(defs);
+
+    pieces.forEach((p) => {
+      const poly = document.createElementNS(SVG_NS, 'polygon');
+      poly.setAttribute('points', pointsAttr(p));
+      poly.setAttribute('fill', `url(#${patternId})`);
+      poly.setAttribute('class', 'dd-piece');
+      poly.setAttribute('opacity', '0');
+      svg.appendChild(poly);
+      this.polygons.push(poly);
     });
 
-    this.detectAspectIfNeeded(opts);
+    this.svg = svg;
+    this.wrap.appendChild(svg);
+
     this.setRevealed(opts.initialRevealed);
   }
 
-  private detectAspectIfNeeded(opts: PuzzleOptions): void {
-    if (opts.imageAspect) return;
-    const img = new Image();
-    img.onload = () => {
-      if (this.destroyed) return;
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        this.wrap.style.aspectRatio = (img.naturalWidth / img.naturalHeight).toFixed(4);
-      }
-    };
-    img.src = opts.imageUrl;
-  }
-
   setRevealed(count: number): void {
-    const target = Math.max(0, Math.min(count, this.pieces.length));
+    const target = Math.max(0, Math.min(count, this.polygons.length));
     if (target === this.currentRevealed) return;
     const visible = new Set(this.revealOrder.slice(0, target));
-    this.pieces.forEach((p, i) => {
-      if (visible.has(i)) p.classList.add('is-revealed');
-      else p.classList.remove('is-revealed');
+    this.polygons.forEach((p, i) => {
+      p.setAttribute('opacity', visible.has(i) ? '1' : '0');
     });
     this.currentRevealed = target;
   }
 
   dispose(): void {
     this.destroyed = true;
-    this.pieces.forEach((p) => p.remove());
-    this.pieces.length = 0;
-    this.stage.remove();
-    this.wrap.classList.remove('dd-puzzle-wrap');
+    this.polygons.forEach((p) => p.remove());
+    this.polygons.length = 0;
+    this.svg.remove();
   }
 }
