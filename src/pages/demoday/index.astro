@@ -3,12 +3,12 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/demoday.css';
 ---
 
-<AppLayout title="Demo Day — XR Club" hideHeader={true} hideChatBot={true} noindex={true}>
+<AppLayout title="Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
   <main class="dd-page">
     <div class="dd-shell dd-stagger">
-      <p class="dd-eyebrow">XR Club Demo Day</p>
-      <h1 class="dd-title">A scavenger hunt across sixteen worlds.</h1>
-      <p class="dd-sub">Each booth holds a fragment. Scan in the right order and you reveal the whole. The first to finish takes the prize. Begin at the info booth.</p>
+      <p class="dd-eyebrow">Demo Day</p>
+      <h1 class="dd-title">Scavenger hunt.</h1>
+      <p class="dd-sub">Visit sixteen booths. Scan the QR at each one in the right order. First to finish wins.</p>
 
       <div class="dd-card">
         <form id="dd-register-form" novalidate>
@@ -20,19 +20,67 @@ import '../../styles/demoday.css';
             <span class="dd-label">Email</span>
             <input class="dd-input" id="dd-email" type="email" autocomplete="email" placeholder="you@umd.edu" required />
           </label>
-          <button class="dd-btn" type="submit" id="dd-start-btn">Begin</button>
+          <button class="dd-btn" type="submit" id="dd-start-btn">Start</button>
           <p class="dd-msg" id="dd-msg"></p>
         </form>
       </div>
 
+      <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
+
       <div class="dd-section-rule"></div>
-      <p class="dd-eyebrow" style="margin-bottom:12px;">In progress</p>
-      <p class="dd-sub" style="margin-bottom:0;">Already started? <a class="dd-link" href="/demoday/play">Resume</a> or check the <a class="dd-link" href="/demoday/leaderboard">leaderboard</a>.</p>
+      <p class="dd-sub" style="margin-bottom:0;">Already playing? <a class="dd-link" href="/demoday/play">Pick up where you left off</a>. Or see the <a class="dd-link" href="/demoday/leaderboard">leaderboard</a>.</p>
     </div>
   </main>
 
+  <style>
+    .dd-presence {
+      font-size: 12px;
+      color: var(--dd-mute);
+      margin: 24px 0 0;
+      opacity: 0;
+      transition: opacity 700ms ease;
+    }
+    .dd-presence.is-ready { opacity: 1; }
+    .dd-presence-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #c8e3c4;
+      margin-right: 8px;
+      vertical-align: 1px;
+      animation: dd-pulse 1800ms ease-in-out infinite;
+    }
+    @keyframes dd-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+  </style>
+
   <script>
     import { supabase } from '../../lib/supabase';
+    const sb = supabase as any;
+
+    async function refreshPresence(presenceEl: HTMLElement): Promise<void> {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const since = startOfToday.toISOString();
+      const [hRes, fRes] = await Promise.all([
+        sb.from('demoday_players')
+          .select('id', { count: 'exact', head: true })
+          .gte('started_at', since)
+          .is('completed_at', null),
+        sb.from('demoday_players')
+          .select('id', { count: 'exact', head: true })
+          .not('completed_at', 'is', null)
+          .gte('started_at', since),
+      ]);
+      const hunting = hRes.count ?? 0;
+      const finished = fRes.count ?? 0;
+      const huntWord = hunting === 1 ? 'person' : 'people';
+      presenceEl.innerHTML = `<span class="dd-presence-dot"></span>${hunting} ${huntWord} hunting · ${finished} finished today`;
+      presenceEl.classList.add('is-ready');
+    }
 
     document.addEventListener('astro:page-load', () => {
       const form = document.getElementById('dd-register-form') as HTMLFormElement | null;
@@ -42,12 +90,17 @@ import '../../styles/demoday.css';
       const emailInput = document.getElementById('dd-email') as HTMLInputElement;
       const btn = document.getElementById('dd-start-btn') as HTMLButtonElement;
       const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
+      const presenceEl = document.getElementById('dd-presence') as HTMLParagraphElement;
+
+      void refreshPresence(presenceEl);
+      const presenceTimer = window.setInterval(() => void refreshPresence(presenceEl), 20000);
+      document.addEventListener('astro:before-preparation', () => clearInterval(presenceTimer), { once: true });
 
       const existing = localStorage.getItem('dd_player_id');
       if (existing) {
-        msg.textContent = 'Welcome back. Resuming…';
+        msg.textContent = 'Picking up where you left off.';
         msg.className = 'dd-msg';
-        setTimeout(() => { window.location.href = '/demoday/play'; }, 600);
+        setTimeout(() => { window.location.href = '/demoday/play'; }, 500);
       }
 
       form.addEventListener('submit', async (e) => {
@@ -55,39 +108,41 @@ import '../../styles/demoday.css';
         const name = nameInput.value.trim();
         const email = emailInput.value.trim().toLowerCase();
         if (!name || !email || !email.includes('@')) {
-          msg.textContent = 'Add your name and a valid email.';
+          msg.textContent = 'Need your name and a real email.';
           msg.className = 'dd-msg dd-msg--err';
           return;
         }
 
         btn.disabled = true;
-        msg.textContent = 'Starting…';
+        msg.textContent = '';
         msg.className = 'dd-msg';
 
-        const { data: existingPlayer } = await supabase
+        const existingResp = await sb
           .from('demoday_players')
           .select('id')
           .eq('email', email)
           .maybeSingle();
+        const existingPlayer = existingResp.data as { id: string } | null;
 
-        let playerId = existingPlayer?.id;
+        let playerId: string | undefined = existingPlayer?.id;
 
         if (!playerId) {
-          const { data, error } = await supabase
+          const insertResp = await sb
             .from('demoday_players')
             .insert({ name, email })
             .select('id')
             .single();
-          if (error || !data) {
-            msg.textContent = 'Could not start. Try again.';
+          const inserted = insertResp.data as { id: string } | null;
+          if (insertResp.error || !inserted) {
+            msg.textContent = 'Something went wrong. Try again.';
             msg.className = 'dd-msg dd-msg--err';
             btn.disabled = false;
             return;
           }
-          playerId = data.id;
+          playerId = inserted.id;
         }
 
-        localStorage.setItem('dd_player_id', playerId as string);
+        localStorage.setItem('dd_player_id', playerId);
         window.location.href = '/demoday/play';
       });
     });

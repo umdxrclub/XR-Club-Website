@@ -3,20 +3,21 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/demoday.css';
 ---
 
-<AppLayout title="Scan — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+<AppLayout title="Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
   <main class="dd-page">
     <div class="dd-shell dd-fade-in">
       <p class="dd-eyebrow">Demo Day</p>
-      <h1 class="dd-title" id="dd-scan-title">Reading station…</h1>
-      <p class="dd-sub" id="dd-scan-sub">One moment.</p>
+      <h1 class="dd-title" id="dd-scan-title">Reading.</h1>
+      <p class="dd-sub" id="dd-scan-sub">One sec.</p>
       <p class="dd-msg" id="dd-scan-msg"></p>
-      <a class="dd-btn dd-btn--ghost" href="/demoday/play" style="margin-top:24px;display:inline-block;text-align:center;text-decoration:none;width:auto;padding-left:32px;padding-right:32px;">Back to your game</a>
+      <a class="dd-btn dd-btn--ghost" href="/demoday/play" style="margin-top:24px;display:inline-block;text-align:center;text-decoration:none;width:auto;padding-left:32px;padding-right:32px;">Back to the hunt</a>
     </div>
   </main>
 
   <script>
     import { supabase } from '../../lib/supabase';
     import { stationByToken } from '../../lib/demoday';
+    const sb = supabase as any;
 
     document.addEventListener('astro:page-load', async () => {
       const titleEl = document.getElementById('dd-scan-title') as HTMLHeadingElement;
@@ -28,33 +29,33 @@ import '../../styles/demoday.css';
       const playerId = localStorage.getItem('dd_player_id');
 
       if (!token) {
-        titleEl.textContent = 'No station code.';
-        subEl.textContent = 'This QR is not a Demo Day station.';
+        titleEl.textContent = 'No code.';
+        subEl.textContent = 'This QR is not part of the hunt.';
         return;
       }
 
       const found = stationByToken(token);
       if (!found) {
-        titleEl.textContent = 'Unknown station.';
-        subEl.textContent = 'This code does not match any booth.';
+        titleEl.textContent = 'Not a booth.';
+        subEl.textContent = 'This code does not match any of the sixteen.';
         return;
       }
 
       if (!playerId) {
-        titleEl.textContent = 'Start at the info booth.';
-        subEl.textContent = 'Register first, then come back to this booth.';
-        setTimeout(() => { window.location.href = '/demoday/'; }, 1800);
+        titleEl.textContent = 'Sign up first.';
+        subEl.textContent = 'Drop by the info booth to register, then come back.';
+        setTimeout(() => { window.location.href = '/demoday/'; }, 1500);
         return;
       }
 
-      const { data, error } = await supabase.rpc('demoday_record_scan', {
+      const { data, error } = await sb.rpc('demoday_record_scan', {
         p_player_id: playerId,
         p_station_slug: found.station.slug,
       });
 
       if (error) {
         titleEl.textContent = 'Something went wrong.';
-        subEl.textContent = 'Try the QR again, or ask a club member.';
+        subEl.textContent = 'Scan again, or grab a club member.';
         msgEl.textContent = error.message;
         msgEl.className = 'dd-msg dd-msg--err';
         return;
@@ -63,7 +64,7 @@ import '../../styles/demoday.css';
       const result = data as { ok: boolean; reason: string; new_step: number; finished: boolean } | null;
       if (!result) {
         titleEl.textContent = 'No response.';
-        subEl.textContent = 'Try again.';
+        subEl.textContent = 'Try once more.';
         return;
       }
 
@@ -83,7 +84,7 @@ import '../../styles/demoday.css';
         window.location.href = '/demoday/play?after=wrong';
         return;
       }
-      titleEl.textContent = 'Could not record.';
+      titleEl.textContent = 'Could not save that scan.';
       subEl.textContent = result.reason;
     });
   </script>

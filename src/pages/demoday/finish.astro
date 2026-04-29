@@ -4,12 +4,12 @@ import { TOTAL_STATIONS } from '../../lib/demoday';
 import '../../styles/demoday.css';
 ---
 
-<AppLayout title="Finished — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+<AppLayout title="Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
   <main class="dd-page">
     <div class="dd-shell dd-stagger">
       <p class="dd-eyebrow">Demo Day</p>
-      <h1 class="dd-title" id="dd-finish-title">All sixteen. Complete.</h1>
-      <p class="dd-sub" id="dd-finish-sub">The fragments are whole. Bring this screen to the info booth to claim your place.</p>
+      <h1 class="dd-title" id="dd-finish-title">Done.</h1>
+      <p class="dd-sub" id="dd-finish-sub">All sixteen. Show this screen at the info booth to claim your prize.</p>
 
       <div class="dd-fragments" id="dd-fragments">
         {Array.from({ length: TOTAL_STATIONS }).map((_, i) => (
@@ -17,13 +17,13 @@ import '../../styles/demoday.css';
         ))}
       </div>
 
-      <div class="dd-card" style="margin-top:48px;">
+      <div class="dd-card" style="margin-top:44px;">
         <p class="dd-clue-label">Your time</p>
-        <p class="dd-clue" id="dd-finish-time" style="margin:0;">—</p>
+        <p class="dd-clue" id="dd-finish-time" style="margin:0;">·</p>
       </div>
 
       <div class="dd-section-rule"></div>
-      <a class="dd-link" href="/demoday/leaderboard">See where you placed</a>
+      <a class="dd-link" href="/demoday/leaderboard">See where you ranked</a>
     </div>
   </main>
 
@@ -49,19 +49,31 @@ import '../../styles/demoday.css';
 
   <script>
     import { supabase } from '../../lib/supabase';
+    import { playFinishChord, primeAudio } from '../../lib/demoday-sound';
+    const sb = supabase as any;
 
     document.addEventListener('astro:page-load', async () => {
+      const onFirstTouch = () => {
+        primeAudio();
+        document.removeEventListener('click', onFirstTouch);
+        document.removeEventListener('touchstart', onFirstTouch);
+      };
+      document.addEventListener('click', onFirstTouch);
+      document.addEventListener('touchstart', onFirstTouch);
+      setTimeout(() => playFinishChord(), 400);
+
       const playerId = localStorage.getItem('dd_player_id');
       const timeEl = document.getElementById('dd-finish-time') as HTMLParagraphElement;
       if (!playerId) {
         window.location.href = '/demoday/';
         return;
       }
-      const { data } = await supabase
+      const resp = await sb
         .from('demoday_players')
         .select('started_at, completed_at')
         .eq('id', playerId)
         .maybeSingle();
+      const data = resp.data as { started_at: string | null; completed_at: string | null } | null;
       if (data?.started_at && data?.completed_at) {
         const ms = new Date(data.completed_at).getTime() - new Date(data.started_at).getTime();
         const totalSec = Math.floor(ms / 1000);

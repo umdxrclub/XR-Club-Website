@@ -145,5 +145,11 @@ export interface Database {
         Update: never;
       };
     };
+    Functions: {
+      demoday_record_scan: {
+        Args: { p_player_id: string; p_station_slug: string };
+        Returns: { ok: boolean; reason: string; new_step: number; finished: boolean };
+      };
+    };
   };
 }

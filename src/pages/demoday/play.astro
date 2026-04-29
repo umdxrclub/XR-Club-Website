@@ -4,7 +4,7 @@ import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
 import '../../styles/demoday.css';
 ---
 
-<AppLayout title="Play — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+<AppLayout title="Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
   <main class="dd-page">
     <div class="dd-shell dd-stagger">
       <p class="dd-eyebrow">Demo Day</p>
@@ -18,9 +18,11 @@ import '../../styles/demoday.css';
       </div>
       <div class="dd-bar"><div class="dd-bar-fill" id="dd-bar-fill"></div></div>
 
-      <p class="dd-clue-label">Your clue</p>
-      <p class="dd-clue" id="dd-clue">Loading…</p>
+      <p class="dd-clue-label">Next up</p>
+      <p class="dd-clue" id="dd-clue"><span class="dd-typed" id="dd-clue-typed"></span><span class="dd-caret" aria-hidden="true"></span></p>
       <p class="dd-hint" id="dd-hint"></p>
+
+      <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
 
       <div class="dd-fragments" id="dd-fragments">
         {Array.from({ length: TOTAL_STATIONS }).map((_, i) => (
@@ -31,12 +33,48 @@ import '../../styles/demoday.css';
       <p class="dd-msg" id="dd-msg" style="margin-top:32px;"></p>
 
       <div class="dd-section-rule"></div>
-      <button class="dd-btn dd-btn--ghost" id="dd-reset">Forget me</button>
+      <button class="dd-btn dd-btn--ghost" id="dd-reset">Sign out of this device</button>
     </div>
   </main>
 
   <style>
     .dd-fragments { --dd-frag-img: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #f5f5f5 50%, #2a2a2a 75%, #1a1a1a 100%); }
+    .dd-caret {
+      display: inline-block;
+      width: 0.06em;
+      height: 1em;
+      background: var(--dd-fg);
+      vertical-align: -0.12em;
+      margin-left: 0.06em;
+      animation: dd-blink 900ms steps(2) infinite;
+    }
+    .dd-caret.is-done { opacity: 0; }
+    @keyframes dd-blink {
+      0%, 50% { opacity: 1; }
+      50.01%, 100% { opacity: 0; }
+    }
+    .dd-presence {
+      font-size: 12px;
+      color: var(--dd-mute);
+      margin: 18px 0 0;
+      opacity: 0;
+      transition: opacity 700ms ease;
+    }
+    .dd-presence.is-ready { opacity: 1; }
+    .dd-presence-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #c8e3c4;
+      margin-right: 8px;
+      vertical-align: 1px;
+      animation: dd-pulse 1800ms ease-in-out infinite;
+    }
+    @keyframes dd-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
   </style>
 
   <script is:inline define:vars={{ STATIONS, TOTAL_STATIONS }}>
@@ -59,14 +97,64 @@ import '../../styles/demoday.css';
   <script>
     import { supabase } from '../../lib/supabase';
     import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
+    import { playScanChime, playWrongTone, playSoftTap, primeAudio } from '../../lib/demoday-sound';
+    const sb = supabase as any;
+
+    function typeInto(el: HTMLElement, caret: HTMLElement | null, text: string, speed = 26): void {
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      caret?.classList.remove('is-done');
+      if (reduced) {
+        el.textContent = text;
+        caret?.classList.add('is-done');
+        return;
+      }
+      el.textContent = '';
+      let i = 0;
+      const tick = () => {
+        if (i >= text.length) {
+          caret?.classList.add('is-done');
+          return;
+        }
+        el.textContent = text.slice(0, i + 1);
+        i++;
+        const ch = text[i - 1];
+        const extra = ch === '.' || ch === ',' ? 220 : Math.random() * 14;
+        setTimeout(tick, speed + extra);
+      };
+      tick();
+    }
+
+    async function refreshPresence(presenceEl: HTMLElement): Promise<void> {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const since = startOfToday.toISOString();
+      const [hRes, fRes] = await Promise.all([
+        sb.from('demoday_players')
+          .select('id', { count: 'exact', head: true })
+          .gte('started_at', since)
+          .is('completed_at', null),
+        sb.from('demoday_players')
+          .select('id', { count: 'exact', head: true })
+          .not('completed_at', 'is', null)
+          .gte('started_at', since),
+      ]);
+      const hunting = hRes.count ?? 0;
+      const finished = fRes.count ?? 0;
+      const huntWord = hunting === 1 ? 'person' : 'people';
+      presenceEl.innerHTML = `<span class="dd-presence-dot"></span>${hunting} ${huntWord} hunting · ${finished} finished today`;
+      presenceEl.classList.add('is-ready');
+    }
 
     document.addEventListener('astro:page-load', async () => {
       const playerId = localStorage.getItem('dd_player_id');
       const clueEl = document.getElementById('dd-clue') as HTMLParagraphElement;
+      const clueTyped = document.getElementById('dd-clue-typed') as HTMLSpanElement;
+      const clueCaret = clueEl?.querySelector('.dd-caret') as HTMLElement | null;
       const hintEl = document.getElementById('dd-hint') as HTMLParagraphElement;
       const stepNum = document.getElementById('dd-step-num') as HTMLSpanElement;
       const barFill = document.getElementById('dd-bar-fill') as HTMLDivElement;
       const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
+      const presenceEl = document.getElementById('dd-presence') as HTMLParagraphElement;
       const resetBtn = document.getElementById('dd-reset') as HTMLButtonElement;
 
       if (!playerId) {
@@ -74,30 +162,31 @@ import '../../styles/demoday.css';
         return;
       }
 
-      const { data, error } = await supabase
+      const resp = await sb
         .from('demoday_players')
         .select('id, name, current_step, completed_at')
         .eq('id', playerId)
         .maybeSingle();
+      const player = resp.data as { id: string; name: string; current_step: number; completed_at: string | null } | null;
 
-      if (error || !data) {
+      if (resp.error || !player) {
         localStorage.removeItem('dd_player_id');
         window.location.href = '/demoday/';
         return;
       }
 
-      if (data.completed_at) {
+      if (player.completed_at) {
         window.location.href = '/demoday/finish';
         return;
       }
 
-      const step = data.current_step ?? 0;
+      const step = player.current_step ?? 0;
       stepNum.textContent = String(step);
       barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
 
       const next = STATIONS[step];
       if (next) {
-        clueEl.textContent = next.clue;
+        typeInto(clueTyped, clueCaret, next.clue);
         hintEl.textContent = next.hint;
       }
 
@@ -109,18 +198,33 @@ import '../../styles/demoday.css';
       const params = new URLSearchParams(window.location.search);
       const after = params.get('after');
       if (after === 'ok') {
-        msg.textContent = 'Fragment unlocked. Read your next clue.';
+        msg.textContent = 'Got it. Here is your next clue.';
         msg.className = 'dd-msg dd-msg--ok';
+        playScanChime(step);
       } else if (after === 'wrong') {
-        msg.textContent = 'Not your next stop. Read the clue, find the right one.';
+        msg.textContent = 'Wrong booth. Check the clue and try the right one.';
         msg.className = 'dd-msg dd-msg--err';
+        playWrongTone();
       } else if (after === 'already') {
-        msg.textContent = 'You have already scanned this booth.';
+        msg.textContent = 'Already scanned this one.';
         msg.className = 'dd-msg';
+        playSoftTap();
       }
 
+      const onFirstTouch = () => {
+        primeAudio();
+        document.removeEventListener('click', onFirstTouch);
+        document.removeEventListener('touchstart', onFirstTouch);
+      };
+      document.addEventListener('click', onFirstTouch);
+      document.addEventListener('touchstart', onFirstTouch);
+
+      void refreshPresence(presenceEl);
+      const presenceTimer = window.setInterval(() => void refreshPresence(presenceEl), 20000);
+      document.addEventListener('astro:before-preparation', () => clearInterval(presenceTimer), { once: true });
+
       resetBtn.addEventListener('click', () => {
-        if (!confirm('This forgets you on this device. Your progress in the database is kept.')) return;
+        if (!confirm('Sign out on this device? Your progress on the server stays.')) return;
         localStorage.removeItem('dd_player_id');
         window.location.href = '/demoday/';
       });
