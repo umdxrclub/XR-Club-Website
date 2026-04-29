@@ -6,19 +6,169 @@ export interface RevealOptions {
   autoRotateSpeed?: number;
 }
 
+const LINE_COLOR = 0xf5efd5;
+
+function lineMat(): THREE.LineBasicMaterial {
+  return new THREE.LineBasicMaterial({
+    color: LINE_COLOR,
+    transparent: true,
+    opacity: 0,
+  });
+}
+
+function edgesFrom(geo: THREE.BufferGeometry, thresholdDeg = 12): THREE.BufferGeometry {
+  const e = new THREE.EdgesGeometry(geo, thresholdDeg);
+  geo.dispose();
+  return e;
+}
+
+function ring(cx: number, cy: number, cz: number, rx: number, rz: number, segs = 32, axis: 'y' | 'z' = 'y'): THREE.BufferGeometry {
+  const pts: THREE.Vector3[] = [];
+  for (let i = 0; i < segs; i++) {
+    const a1 = (i / segs) * Math.PI * 2;
+    const a2 = ((i + 1) / segs) * Math.PI * 2;
+    if (axis === 'y') {
+      pts.push(new THREE.Vector3(cx + Math.cos(a1) * rx, cy, cz + Math.sin(a1) * rz));
+      pts.push(new THREE.Vector3(cx + Math.cos(a2) * rx, cy, cz + Math.sin(a2) * rz));
+    } else {
+      pts.push(new THREE.Vector3(cx + Math.cos(a1) * rx, cy + Math.sin(a1) * rz, cz));
+      pts.push(new THREE.Vector3(cx + Math.cos(a2) * rx, cy + Math.sin(a2) * rz, cz));
+    }
+  }
+  return new THREE.BufferGeometry().setFromPoints(pts);
+}
+
+function shellArcAtZ(z: number, shellRX = 1.0, shellRZ = 1.15, shellRY = 0.45, segs = 18): THREE.BufferGeometry {
+  // Half-arc across the top of an oblate ellipsoid at a fixed z.
+  const k2 = 1 - (z / shellRZ) ** 2;
+  if (k2 <= 0) return new THREE.BufferGeometry();
+  const k = Math.sqrt(k2);
+  const pts: THREE.Vector3[] = [];
+  for (let i = 0; i < segs; i++) {
+    const t1 = i / segs;
+    const t2 = (i + 1) / segs;
+    const a1 = -Math.PI / 2 + t1 * Math.PI;
+    const a2 = -Math.PI / 2 + t2 * Math.PI;
+    pts.push(new THREE.Vector3(Math.sin(a1) * shellRX * k, Math.cos(a1) * shellRY * k, z));
+    pts.push(new THREE.Vector3(Math.sin(a2) * shellRX * k, Math.cos(a2) * shellRY * k, z));
+  }
+  return new THREE.BufferGeometry().setFromPoints(pts);
+}
+
+function spineCurve(): THREE.BufferGeometry {
+  const pts: THREE.Vector3[] = [];
+  const segs = 24;
+  const shellRZ = 1.15;
+  const shellRY = 0.45;
+  for (let i = 0; i < segs; i++) {
+    const t1 = i / segs;
+    const t2 = (i + 1) / segs;
+    const z1 = -shellRZ + t1 * shellRZ * 2;
+    const z2 = -shellRZ + t2 * shellRZ * 2;
+    const y1 = shellRY * Math.sqrt(Math.max(0, 1 - (z1 / shellRZ) ** 2));
+    const y2 = shellRY * Math.sqrt(Math.max(0, 1 - (z2 / shellRZ) ** 2));
+    pts.push(new THREE.Vector3(0, y1, z1));
+    pts.push(new THREE.Vector3(0, y2, z2));
+  }
+  return new THREE.BufferGeometry().setFromPoints(pts);
+}
+
+function buildLeg(x: number, z: number): THREE.BufferGeometry {
+  const g = new THREE.CylinderGeometry(0.13, 0.18, 0.42, 8, 1);
+  g.translate(x, -0.32, z);
+  return edgesFrom(g, 30);
+}
+
+function buildShellTop(): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  g.scale(1.0, 0.45, 1.15);
+  return edgesFrom(g, 14);
+}
+
+function buildPlastron(): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(0.92, 14, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  g.scale(1.0, 0.18, 1.1);
+  g.translate(0, -0.05, 0);
+  return edgesFrom(g, 14);
+}
+
+function buildTail(): THREE.BufferGeometry {
+  const g = new THREE.ConeGeometry(0.12, 0.32, 8);
+  g.rotateX(-Math.PI / 2);
+  g.translate(0, -0.05, -1.32);
+  return edgesFrom(g, 18);
+}
+
+function buildNeck(): THREE.BufferGeometry {
+  const g = new THREE.CylinderGeometry(0.18, 0.22, 0.4, 10, 1);
+  g.rotateX(Math.PI / 2);
+  g.translate(0, 0.0, 1.25);
+  return edgesFrom(g, 22);
+}
+
+function buildHead(): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(0.28, 12, 8);
+  g.scale(0.95, 0.95, 1.1);
+  g.translate(0, 0.05, 1.55);
+  return edgesFrom(g, 16);
+}
+
+function buildSnout(): THREE.BufferGeometry {
+  const g = new THREE.ConeGeometry(0.13, 0.18, 8);
+  g.rotateX(Math.PI / 2);
+  g.translate(0, -0.02, 1.82);
+  return edgesFrom(g, 18);
+}
+
+function buildEye(side: -1 | 1): THREE.BufferGeometry {
+  return ring(side * 0.13, 0.15, 1.68, 0.05, 0.05, 14, 'z');
+}
+
+interface PartDef {
+  name: string;
+  geom: () => THREE.BufferGeometry;
+}
+
+const PARTS: PartDef[] = [
+  { name: 'shell rim',          geom: () => ring(0, 0, 0, 1.0, 1.15, 36, 'y') },
+  { name: 'carapace',           geom: () => buildShellTop() },
+  { name: 'plastron rim',       geom: () => ring(0, -0.1, 0, 0.92, 1.05, 32, 'y') },
+  { name: 'plastron',           geom: () => buildPlastron() },
+  { name: 'spine',              geom: () => spineCurve() },
+  { name: 'front scute',        geom: () => shellArcAtZ(0.55) },
+  { name: 'rear scute',         geom: () => shellArcAtZ(-0.55) },
+  { name: 'front-left leg',     geom: () => buildLeg(-0.72,  0.7) },
+  { name: 'front-right leg',    geom: () => buildLeg( 0.72,  0.7) },
+  { name: 'rear-left leg',      geom: () => buildLeg(-0.72, -0.7) },
+  { name: 'rear-right leg',     geom: () => buildLeg( 0.72, -0.7) },
+  { name: 'tail',               geom: () => buildTail() },
+  { name: 'neck',               geom: () => buildNeck() },
+  { name: 'head',               geom: () => buildHead() },
+  { name: 'snout',              geom: () => buildSnout() },
+  { name: 'eyes',               geom: () => {
+      const left  = buildEye(-1);
+      const right = buildEye( 1);
+      const merged: THREE.Vector3[] = [];
+      const pos1 = left.attributes.position;
+      for (let i = 0; i < pos1.count; i++) merged.push(new THREE.Vector3().fromBufferAttribute(pos1, i));
+      const pos2 = right.attributes.position;
+      for (let i = 0; i < pos2.count; i++) merged.push(new THREE.Vector3().fromBufferAttribute(pos2, i));
+      left.dispose(); right.dispose();
+      return new THREE.BufferGeometry().setFromPoints(merged);
+    } },
+];
+
 export class RevealScene {
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private root = new THREE.Group();
-  private groups: THREE.Group[] = [];
+  private parts: THREE.LineSegments[] = [];
   private materials: THREE.LineBasicMaterial[] = [];
-  private revealed: number;
-  private targetRevealed: number;
   private targetOpacity: number[];
   private liveOpacity: number[];
-  private rotX = -0.4;
-  private rotY = 0.6;
+  private rotX = -0.35;
+  private rotY = -0.55;
   private velX = 0;
   private velY = 0;
   private lastPointerX = 0;
@@ -32,18 +182,20 @@ export class RevealScene {
 
   constructor(canvas: HTMLCanvasElement, opts: RevealOptions) {
     this.canvas = canvas;
-    this.autoRotateSpeed = opts.autoRotateSpeed ?? 0.15;
-    this.revealed = opts.initialRevealed;
-    this.targetRevealed = opts.initialRevealed;
-    this.targetOpacity = new Array(opts.totalGroups).fill(0);
-    this.liveOpacity = new Array(opts.totalGroups).fill(0);
-    for (let i = 0; i < opts.initialRevealed; i++) {
+    this.autoRotateSpeed = opts.autoRotateSpeed ?? 0.18;
+
+    const total = PARTS.length;
+    this.targetOpacity = new Array(total).fill(0);
+    this.liveOpacity = new Array(total).fill(0);
+    const initial = Math.min(opts.initialRevealed, total);
+    for (let i = 0; i < initial; i++) {
       this.targetOpacity[i] = 0.85;
       this.liveOpacity[i] = 0.85;
     }
 
-    this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    this.camera.position.set(0, 0, 4.5);
+    this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+    this.camera.position.set(0, 0.4, 5.4);
+    this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -54,7 +206,7 @@ export class RevealScene {
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 
     this.scene.add(this.root);
-    this.buildIcosphere(opts.totalGroups);
+    this.buildModel();
     this.bindPointer();
     this.bindResize();
     this.handleResize();
@@ -64,42 +216,22 @@ export class RevealScene {
     this.rafId = requestAnimationFrame(this.tick);
   }
 
-  private buildIcosphere(totalGroups: number): void {
-    const geo = new THREE.IcosahedronGeometry(1, 1);
-    const pos = geo.attributes.position;
-    const triCount = pos.count / 3;
-    const trisPerGroup = Math.ceil(triCount / totalGroups);
-
-    for (let g = 0; g < totalGroups; g++) {
-      const points: THREE.Vector3[] = [];
-      const start = g * trisPerGroup;
-      const end = Math.min(start + trisPerGroup, triCount);
-      for (let t = start; t < end; t++) {
-        const a = new THREE.Vector3().fromBufferAttribute(pos, t * 3);
-        const b = new THREE.Vector3().fromBufferAttribute(pos, t * 3 + 1);
-        const c = new THREE.Vector3().fromBufferAttribute(pos, t * 3 + 2);
-        points.push(a, b, b, c, c, a);
-      }
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-      const mat = new THREE.LineBasicMaterial({
-        color: 0xf5efd5,
-        transparent: true,
-        opacity: this.liveOpacity[g],
-      });
-      const lines = new THREE.LineSegments(lineGeo, mat);
-      const group = new THREE.Group();
-      group.add(lines);
-      this.root.add(group);
-      this.groups.push(group);
+  private buildModel(): void {
+    for (let i = 0; i < PARTS.length; i++) {
+      const geo = PARTS[i].geom();
+      const mat = lineMat();
+      mat.opacity = this.liveOpacity[i];
+      const seg = new THREE.LineSegments(geo, mat);
+      this.root.add(seg);
+      this.parts.push(seg);
       this.materials.push(mat);
     }
-    geo.dispose();
   }
 
   setRevealed(count: number): void {
-    this.targetRevealed = count;
+    const clamped = Math.max(0, Math.min(count, this.materials.length));
     for (let i = 0; i < this.targetOpacity.length; i++) {
-      this.targetOpacity[i] = i < count ? 0.85 : 0;
+      this.targetOpacity[i] = i < clamped ? 0.85 : 0;
     }
   }
 
@@ -177,12 +309,7 @@ export class RevealScene {
     cancelAnimationFrame(this.rafId);
     this.resizeObserver?.disconnect();
     this.materials.forEach((m) => m.dispose());
-    this.groups.forEach((g) => {
-      g.children.forEach((child) => {
-        const lines = child as THREE.LineSegments;
-        lines.geometry.dispose();
-      });
-    });
+    this.parts.forEach((p) => p.geometry.dispose());
     this.renderer.dispose();
   }
 }
