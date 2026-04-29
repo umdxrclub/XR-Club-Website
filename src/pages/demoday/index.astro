@@ -117,9 +117,11 @@ import '../../styles/demoday.css';
           .single();
         const inserted = insertResp.data as { id: string } | null;
         if (insertResp.error || !inserted) {
-          msg.textContent = 'Something went wrong. Try again.';
+          const err = insertResp.error?.message || 'Unknown error';
+          msg.textContent = err;
           msg.className = 'dd-msg dd-msg--err';
           btn.disabled = false;
+          console.error('demoday register failed', insertResp.error);
           return;
         }
 
