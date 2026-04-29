@@ -1,0 +1,74 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { TOTAL_STATIONS } from '../../lib/demoday';
+import '../../styles/demoday.css';
+---
+
+<AppLayout title="Finished — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-stagger">
+      <p class="dd-eyebrow">Demo Day</p>
+      <h1 class="dd-title" id="dd-finish-title">All sixteen. Complete.</h1>
+      <p class="dd-sub" id="dd-finish-sub">The fragments are whole. Bring this screen to the info booth to claim your place.</p>
+
+      <div class="dd-fragments" id="dd-fragments">
+        {Array.from({ length: TOTAL_STATIONS }).map((_, i) => (
+          <div class="dd-frag is-revealed" data-i={i}></div>
+        ))}
+      </div>
+
+      <div class="dd-card" style="margin-top:48px;">
+        <p class="dd-clue-label">Your time</p>
+        <p class="dd-clue" id="dd-finish-time" style="margin:0;">—</p>
+      </div>
+
+      <div class="dd-section-rule"></div>
+      <a class="dd-link" href="/demoday/leaderboard">See where you placed</a>
+    </div>
+  </main>
+
+  <style>
+    .dd-fragments { --dd-frag-img: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #f5f5f5 50%, #2a2a2a 75%, #1a1a1a 100%); }
+  </style>
+
+  <script is:inline define:vars={{ TOTAL_STATIONS }}>
+    const FRAG_POSITIONS = (() => {
+      const out = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          out.push(`${(c / 3) * 100}% ${(r / 3) * 100}%`);
+        }
+      }
+      return out;
+    })();
+    document.querySelectorAll('.dd-frag').forEach((el) => {
+      const i = parseInt(el.dataset.i, 10);
+      el.style.setProperty('--dd-frag-pos', FRAG_POSITIONS[i]);
+    });
+  </script>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+
+    document.addEventListener('astro:page-load', async () => {
+      const playerId = localStorage.getItem('dd_player_id');
+      const timeEl = document.getElementById('dd-finish-time') as HTMLParagraphElement;
+      if (!playerId) {
+        window.location.href = '/demoday/';
+        return;
+      }
+      const { data } = await supabase
+        .from('demoday_players')
+        .select('started_at, completed_at')
+        .eq('id', playerId)
+        .maybeSingle();
+      if (data?.started_at && data?.completed_at) {
+        const ms = new Date(data.completed_at).getTime() - new Date(data.started_at).getTime();
+        const totalSec = Math.floor(ms / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        timeEl.textContent = `${m} minutes ${String(s).padStart(2, '0')} seconds`;
+      }
+    });
+  </script>
+</AppLayout>

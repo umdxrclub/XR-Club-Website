@@ -1,0 +1,129 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
+import '../../styles/demoday.css';
+---
+
+<AppLayout title="Play — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-stagger">
+      <p class="dd-eyebrow">Demo Day</p>
+
+      <div class="dd-progress">
+        <div>
+          <span class="dd-progress-num" id="dd-step-num">0</span>
+          <span class="dd-progress-of"> of {TOTAL_STATIONS}</span>
+        </div>
+        <a class="dd-link" href="/demoday/leaderboard">Leaderboard</a>
+      </div>
+      <div class="dd-bar"><div class="dd-bar-fill" id="dd-bar-fill"></div></div>
+
+      <p class="dd-clue-label">Your clue</p>
+      <p class="dd-clue" id="dd-clue">Loading…</p>
+      <p class="dd-hint" id="dd-hint"></p>
+
+      <div class="dd-fragments" id="dd-fragments">
+        {Array.from({ length: TOTAL_STATIONS }).map((_, i) => (
+          <div class="dd-frag" data-i={i}></div>
+        ))}
+      </div>
+
+      <p class="dd-msg" id="dd-msg" style="margin-top:32px;"></p>
+
+      <div class="dd-section-rule"></div>
+      <button class="dd-btn dd-btn--ghost" id="dd-reset">Forget me</button>
+    </div>
+  </main>
+
+  <style>
+    .dd-fragments { --dd-frag-img: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #f5f5f5 50%, #2a2a2a 75%, #1a1a1a 100%); }
+  </style>
+
+  <script is:inline define:vars={{ STATIONS, TOTAL_STATIONS }}>
+    const FRAG_POSITIONS = (() => {
+      const out = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          out.push(`${(c / 3) * 100}% ${(r / 3) * 100}%`);
+        }
+      }
+      return out;
+    })();
+
+    document.querySelectorAll('.dd-frag').forEach((el) => {
+      const i = parseInt(el.dataset.i, 10);
+      el.style.setProperty('--dd-frag-pos', FRAG_POSITIONS[i]);
+    });
+  </script>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+    import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
+
+    document.addEventListener('astro:page-load', async () => {
+      const playerId = localStorage.getItem('dd_player_id');
+      const clueEl = document.getElementById('dd-clue') as HTMLParagraphElement;
+      const hintEl = document.getElementById('dd-hint') as HTMLParagraphElement;
+      const stepNum = document.getElementById('dd-step-num') as HTMLSpanElement;
+      const barFill = document.getElementById('dd-bar-fill') as HTMLDivElement;
+      const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
+      const resetBtn = document.getElementById('dd-reset') as HTMLButtonElement;
+
+      if (!playerId) {
+        window.location.href = '/demoday/';
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('demoday_players')
+        .select('id, name, current_step, completed_at')
+        .eq('id', playerId)
+        .maybeSingle();
+
+      if (error || !data) {
+        localStorage.removeItem('dd_player_id');
+        window.location.href = '/demoday/';
+        return;
+      }
+
+      if (data.completed_at) {
+        window.location.href = '/demoday/finish';
+        return;
+      }
+
+      const step = data.current_step ?? 0;
+      stepNum.textContent = String(step);
+      barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
+
+      const next = STATIONS[step];
+      if (next) {
+        clueEl.textContent = next.clue;
+        hintEl.textContent = next.hint;
+      }
+
+      document.querySelectorAll('.dd-frag').forEach((el) => {
+        const i = parseInt((el as HTMLElement).dataset.i || '0', 10);
+        if (i < step) el.classList.add('is-revealed');
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      const after = params.get('after');
+      if (after === 'ok') {
+        msg.textContent = 'Fragment unlocked. Read your next clue.';
+        msg.className = 'dd-msg dd-msg--ok';
+      } else if (after === 'wrong') {
+        msg.textContent = 'Not your next stop. Read the clue, find the right one.';
+        msg.className = 'dd-msg dd-msg--err';
+      } else if (after === 'already') {
+        msg.textContent = 'You have already scanned this booth.';
+        msg.className = 'dd-msg';
+      }
+
+      resetBtn.addEventListener('click', () => {
+        if (!confirm('This forgets you on this device. Your progress in the database is kept.')) return;
+        localStorage.removeItem('dd_player_id');
+        window.location.href = '/demoday/';
+      });
+    });
+  </script>
+</AppLayout>

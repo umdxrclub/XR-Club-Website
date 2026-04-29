@@ -1,0 +1,90 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import '../../styles/demoday.css';
+---
+
+<AppLayout title="Scan — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-fade-in">
+      <p class="dd-eyebrow">Demo Day</p>
+      <h1 class="dd-title" id="dd-scan-title">Reading station…</h1>
+      <p class="dd-sub" id="dd-scan-sub">One moment.</p>
+      <p class="dd-msg" id="dd-scan-msg"></p>
+      <a class="dd-btn dd-btn--ghost" href="/demoday/play" style="margin-top:24px;display:inline-block;text-align:center;text-decoration:none;width:auto;padding-left:32px;padding-right:32px;">Back to your game</a>
+    </div>
+  </main>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+    import { stationByToken } from '../../lib/demoday';
+
+    document.addEventListener('astro:page-load', async () => {
+      const titleEl = document.getElementById('dd-scan-title') as HTMLHeadingElement;
+      const subEl = document.getElementById('dd-scan-sub') as HTMLParagraphElement;
+      const msgEl = document.getElementById('dd-scan-msg') as HTMLParagraphElement;
+
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('s');
+      const playerId = localStorage.getItem('dd_player_id');
+
+      if (!token) {
+        titleEl.textContent = 'No station code.';
+        subEl.textContent = 'This QR is not a Demo Day station.';
+        return;
+      }
+
+      const found = stationByToken(token);
+      if (!found) {
+        titleEl.textContent = 'Unknown station.';
+        subEl.textContent = 'This code does not match any booth.';
+        return;
+      }
+
+      if (!playerId) {
+        titleEl.textContent = 'Start at the info booth.';
+        subEl.textContent = 'Register first, then come back to this booth.';
+        setTimeout(() => { window.location.href = '/demoday/'; }, 1800);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('demoday_record_scan', {
+        p_player_id: playerId,
+        p_station_slug: found.station.slug,
+      });
+
+      if (error) {
+        titleEl.textContent = 'Something went wrong.';
+        subEl.textContent = 'Try the QR again, or ask a club member.';
+        msgEl.textContent = error.message;
+        msgEl.className = 'dd-msg dd-msg--err';
+        return;
+      }
+
+      const result = data as { ok: boolean; reason: string; new_step: number; finished: boolean } | null;
+      if (!result) {
+        titleEl.textContent = 'No response.';
+        subEl.textContent = 'Try again.';
+        return;
+      }
+
+      if (result.ok && result.finished) {
+        window.location.href = '/demoday/finish';
+        return;
+      }
+      if (result.ok) {
+        window.location.href = '/demoday/play?after=ok';
+        return;
+      }
+      if (result.reason === 'already') {
+        window.location.href = '/demoday/play?after=already';
+        return;
+      }
+      if (result.reason === 'wrong_order') {
+        window.location.href = '/demoday/play?after=wrong';
+        return;
+      }
+      titleEl.textContent = 'Could not record.';
+      subEl.textContent = result.reason;
+    });
+  </script>
+</AppLayout>

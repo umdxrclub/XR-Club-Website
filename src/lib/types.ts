@@ -85,6 +85,22 @@ export interface ProjectSelection {
   created_at: string;
 }
 
+export interface DemoDayPlayer {
+  id: string;
+  name: string;
+  email: string;
+  current_step: number;
+  started_at: string;
+  completed_at: string | null;
+}
+
+export interface DemoDayScan {
+  id: string;
+  player_id: string;
+  station_slug: string;
+  scanned_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -117,6 +133,16 @@ export interface Database {
         Row: ProjectSelection;
         Insert: Omit<ProjectSelection, 'id' | 'created_at'>;
         Update: Partial<ProjectSelection>;
+      };
+      demoday_players: {
+        Row: DemoDayPlayer;
+        Insert: { name: string; email: string };
+        Update: Partial<DemoDayPlayer>;
+      };
+      demoday_scans: {
+        Row: DemoDayScan;
+        Insert: Omit<DemoDayScan, 'id' | 'scanned_at'>;
+        Update: never;
       };
     };
   };

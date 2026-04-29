@@ -1,0 +1,63 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import '../../styles/demoday.css';
+---
+
+<AppLayout title="Leaderboard — Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-stagger">
+      <p class="dd-eyebrow">Demo Day</p>
+      <h1 class="dd-title">Leaderboard</h1>
+      <p class="dd-sub">Fastest finishers first. The list updates as people finish.</p>
+
+      <ol class="dd-leader" id="dd-leader">
+        <li><span class="dd-leader-rank">—</span><span class="dd-leader-name">Loading…</span><span class="dd-leader-time"></span></li>
+      </ol>
+
+      <div class="dd-section-rule"></div>
+      <a class="dd-link" href="/demoday/play">Back to your game</a>
+    </div>
+  </main>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+
+    function formatDuration(startIso: string, endIso: string): string {
+      const start = new Date(startIso).getTime();
+      const end = new Date(endIso).getTime();
+      const ms = Math.max(0, end - start);
+      const totalSec = Math.floor(ms / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}m ${String(s).padStart(2, '0')}s`;
+    }
+
+    document.addEventListener('astro:page-load', async () => {
+      const list = document.getElementById('dd-leader') as HTMLOListElement;
+      const { data, error } = await supabase
+        .from('demoday_players')
+        .select('name, started_at, completed_at')
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: true })
+        .limit(25);
+
+      if (error || !data) {
+        list.innerHTML = '<li><span class="dd-leader-rank">—</span><span class="dd-leader-name">Could not load.</span><span class="dd-leader-time"></span></li>';
+        return;
+      }
+
+      if (data.length === 0) {
+        list.innerHTML = '<li><span class="dd-leader-rank">—</span><span class="dd-leader-name">No finishers yet. Be the first.</span><span class="dd-leader-time"></span></li>';
+        return;
+      }
+
+      type Row = { name: string | null; started_at: string | null; completed_at: string | null };
+      list.innerHTML = (data as Row[]).map((p, i) => {
+        const time = (p.started_at && p.completed_at) ? formatDuration(p.started_at, p.completed_at) : '';
+        const rank = String(i + 1).padStart(2, '0');
+        const name = (p.name || '').replace(/[<>]/g, '');
+        return `<li><span class="dd-leader-rank">${rank}</span><span class="dd-leader-name">${name}</span><span class="dd-leader-time">${time}</span></li>`;
+      }).join('');
+    });
+  </script>
+</AppLayout>

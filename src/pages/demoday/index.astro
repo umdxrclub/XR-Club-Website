@@ -1,0 +1,95 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import '../../styles/demoday.css';
+---
+
+<AppLayout title="Demo Day — XR Club" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-stagger">
+      <p class="dd-eyebrow">XR Club Demo Day</p>
+      <h1 class="dd-title">A scavenger hunt across sixteen worlds.</h1>
+      <p class="dd-sub">Each booth holds a fragment. Scan in the right order and you reveal the whole. The first to finish takes the prize. Begin at the info booth.</p>
+
+      <div class="dd-card">
+        <form id="dd-register-form" novalidate>
+          <label class="dd-field">
+            <span class="dd-label">Name</span>
+            <input class="dd-input" id="dd-name" type="text" autocomplete="name" placeholder="Your name" required />
+          </label>
+          <label class="dd-field">
+            <span class="dd-label">Email</span>
+            <input class="dd-input" id="dd-email" type="email" autocomplete="email" placeholder="you@umd.edu" required />
+          </label>
+          <button class="dd-btn" type="submit" id="dd-start-btn">Begin</button>
+          <p class="dd-msg" id="dd-msg"></p>
+        </form>
+      </div>
+
+      <div class="dd-section-rule"></div>
+      <p class="dd-eyebrow" style="margin-bottom:12px;">In progress</p>
+      <p class="dd-sub" style="margin-bottom:0;">Already started? <a class="dd-link" href="/demoday/play">Resume</a> or check the <a class="dd-link" href="/demoday/leaderboard">leaderboard</a>.</p>
+    </div>
+  </main>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+
+    document.addEventListener('astro:page-load', () => {
+      const form = document.getElementById('dd-register-form') as HTMLFormElement | null;
+      if (!form) return;
+
+      const nameInput = document.getElementById('dd-name') as HTMLInputElement;
+      const emailInput = document.getElementById('dd-email') as HTMLInputElement;
+      const btn = document.getElementById('dd-start-btn') as HTMLButtonElement;
+      const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
+
+      const existing = localStorage.getItem('dd_player_id');
+      if (existing) {
+        msg.textContent = 'Welcome back. Resuming…';
+        msg.className = 'dd-msg';
+        setTimeout(() => { window.location.href = '/demoday/play'; }, 600);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim().toLowerCase();
+        if (!name || !email || !email.includes('@')) {
+          msg.textContent = 'Add your name and a valid email.';
+          msg.className = 'dd-msg dd-msg--err';
+          return;
+        }
+
+        btn.disabled = true;
+        msg.textContent = 'Starting…';
+        msg.className = 'dd-msg';
+
+        const { data: existingPlayer } = await supabase
+          .from('demoday_players')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+
+        let playerId = existingPlayer?.id;
+
+        if (!playerId) {
+          const { data, error } = await supabase
+            .from('demoday_players')
+            .insert({ name, email })
+            .select('id')
+            .single();
+          if (error || !data) {
+            msg.textContent = 'Could not start. Try again.';
+            msg.className = 'dd-msg dd-msg--err';
+            btn.disabled = false;
+            return;
+          }
+          playerId = data.id;
+        }
+
+        localStorage.setItem('dd_player_id', playerId as string);
+        window.location.href = '/demoday/play';
+      });
+    });
+  </script>
+</AppLayout>

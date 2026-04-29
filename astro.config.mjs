@@ -12,7 +12,8 @@ export default defineConfig({
         !page.includes('/forgot-password') &&
         !page.includes('/reset-password') &&
         !page.includes('/verify-email') &&
-        !page.includes('/ideate'),
+        !page.includes('/ideate') &&
+        !page.includes('/demoday'),
     }),
   ],
   vite: {
