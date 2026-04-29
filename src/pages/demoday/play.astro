@@ -35,6 +35,7 @@ import '../../styles/demoday.css';
       </section>
 
       <div class="dd-section-rule"></div>
+      <a class="dd-btn dd-btn--ghost" href="/demoday/vote" style="display:block;text-align:center;text-decoration:none;margin-bottom:14px;">Pick your top three</a>
       <button class="dd-btn dd-btn--ghost" id="dd-reset">Sign out of this device</button>
     </div>
   </main>
@@ -57,24 +58,21 @@ import '../../styles/demoday.css';
     .dd-reveal {
       margin-top: 36px;
       width: 100%;
-      perspective: 1600px;
-      perspective-origin: 60% 40%;
-    }
-    .dd-puzzle-wrap {
-      width: 100%;
       aspect-ratio: 1;
       position: relative;
+      perspective: 1600px;
+      perspective-origin: 60% 40%;
       transform-style: preserve-3d;
     }
     .dd-puzzle-stage {
       position: absolute;
       inset: 0;
       transform-style: preserve-3d;
-      transform: rotateY(-14deg) rotateX(3deg);
+      transform: rotateY(-12deg) rotateX(3deg);
       transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    .dd-puzzle-wrap:hover .dd-puzzle-stage {
-      transform: rotateY(-9deg) rotateX(2deg);
+    .dd-reveal:hover .dd-puzzle-stage {
+      transform: rotateY(-7deg) rotateX(2deg);
     }
     .dd-piece {
       position: absolute;
@@ -83,14 +81,14 @@ import '../../styles/demoday.css';
       background-repeat: no-repeat;
       background-position: 0 0;
       opacity: 0;
-      transform: translateZ(var(--dd-piece-depth, -20px)) scale(1.04);
+      transform: scale(1.06);
       transform-origin: var(--dd-piece-cx, 50%) var(--dd-piece-cy, 50%);
       transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
       will-change: opacity, transform;
     }
     .dd-piece.is-revealed {
       opacity: 1;
-      transform: translateZ(0) scale(1);
+      transform: scale(1);
     }
     .dd-presence {
       font-size: 12px;
@@ -193,13 +191,32 @@ import '../../styles/demoday.css';
       margin: 0;
     }
     .dd-collected-item {
-      padding: 14px 0;
-      border-bottom: 1px solid var(--dd-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 14px 16px;
+      border: 1px solid var(--dd-line-strong);
+      border-radius: 12px;
+      margin-bottom: 8px;
       font-size: 15px;
+      font-weight: 500;
       letter-spacing: -0.01em;
+      background: rgba(245, 239, 213, 0.04);
       animation: dd-slide-up 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
-    .dd-collected-item:last-child { border-bottom: none; }
+    .dd-collected-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--dd-fg);
+      color: var(--dd-bg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
   </style>
 
   <script>
@@ -225,7 +242,7 @@ import '../../styles/demoday.css';
       listEl.innerHTML = scannedInOrder
         .map((slug) => lookup.get(slug))
         .filter((s): s is typeof STATIONS[number] => Boolean(s))
-        .map((s) => `<li class="dd-collected-item">${escapeHTML(s.name)}</li>`)
+        .map((s) => `<li class="dd-collected-item"><span>${escapeHTML(s.name)}</span><span class="dd-collected-check">✓</span></li>`)
         .join('');
     }
 
