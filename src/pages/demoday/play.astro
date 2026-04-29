@@ -24,10 +24,9 @@ import '../../styles/demoday.css';
 
       <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
 
-      <div class="dd-fragments" id="dd-fragments">
-        {Array.from({ length: TOTAL_STATIONS }).map((_, i) => (
-          <div class="dd-frag" data-i={i}></div>
-        ))}
+      <div class="dd-reveal">
+        <canvas class="dd-reveal-canvas" id="dd-reveal-canvas"></canvas>
+        <p class="dd-reveal-hint">Drag to rotate.</p>
       </div>
 
       <p class="dd-msg" id="dd-msg" style="margin-top:32px;"></p>
@@ -38,7 +37,36 @@ import '../../styles/demoday.css';
   </main>
 
   <style>
-    .dd-fragments { --dd-frag-img: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #f5f5f5 50%, #2a2a2a 75%, #1a1a1a 100%); }
+    .dd-reveal {
+      margin-top: 44px;
+      aspect-ratio: 1;
+      width: 100%;
+      border: 1px solid var(--dd-line);
+      border-radius: 14px;
+      background: var(--dd-bg-card);
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .dd-reveal-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+    .dd-reveal-canvas:active { cursor: grabbing; }
+    .dd-reveal-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: var(--dd-mute);
+      margin: 0;
+      pointer-events: none;
+      letter-spacing: 0.04em;
+    }
     .dd-caret {
       display: inline-block;
       width: 0.06em;
@@ -77,27 +105,11 @@ import '../../styles/demoday.css';
     }
   </style>
 
-  <script is:inline define:vars={{ STATIONS, TOTAL_STATIONS }}>
-    const FRAG_POSITIONS = (() => {
-      const out = [];
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          out.push(`${(c / 3) * 100}% ${(r / 3) * 100}%`);
-        }
-      }
-      return out;
-    })();
-
-    document.querySelectorAll('.dd-frag').forEach((el) => {
-      const i = parseInt(el.dataset.i, 10);
-      el.style.setProperty('--dd-frag-pos', FRAG_POSITIONS[i]);
-    });
-  </script>
-
   <script>
     import { supabase } from '../../lib/supabase';
     import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
     import { playScanChime, playWrongTone, playSoftTap, primeAudio } from '../../lib/demoday-sound';
+    import { RevealScene } from '../../lib/demoday-reveal';
     const sb = supabase as any;
 
     function typeInto(el: HTMLElement, caret: HTMLElement | null, text: string, speed = 26): void {
@@ -190,10 +202,9 @@ import '../../styles/demoday.css';
         hintEl.textContent = next.hint;
       }
 
-      document.querySelectorAll('.dd-frag').forEach((el) => {
-        const i = parseInt((el as HTMLElement).dataset.i || '0', 10);
-        if (i < step) el.classList.add('is-revealed');
-      });
+      const canvas = document.getElementById('dd-reveal-canvas') as HTMLCanvasElement;
+      const reveal = new RevealScene(canvas, { totalGroups: TOTAL_STATIONS, initialRevealed: step });
+      document.addEventListener('astro:before-preparation', () => reveal.dispose(), { once: true });
 
       const params = new URLSearchParams(window.location.search);
       const after = params.get('after');

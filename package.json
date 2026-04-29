@@ -12,8 +12,10 @@
     "@fontsource/exo-2": "^5.2.8",
     "@fontsource/orbitron": "^5.2.8",
     "@supabase/supabase-js": "^2.96.0",
+    "@types/three": "^0.184.0",
     "astro": "^5.16.11",
-    "gsap": "^3.14.2"
+    "gsap": "^3.14.2",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",
