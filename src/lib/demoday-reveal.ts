@@ -135,8 +135,9 @@ const PARTS: PartDef[] = [
   { name: 'plastron rim',       geom: () => ring(0, -0.1, 0, 0.92, 1.05, 32, 'y') },
   { name: 'plastron',           geom: () => buildPlastron() },
   { name: 'spine',              geom: () => spineCurve() },
-  { name: 'front scute',        geom: () => shellArcAtZ(0.55) },
-  { name: 'rear scute',         geom: () => shellArcAtZ(-0.55) },
+  { name: 'front scute',        geom: () => shellArcAtZ(0.65) },
+  { name: 'middle scute',       geom: () => shellArcAtZ(0.0) },
+  { name: 'rear scute',         geom: () => shellArcAtZ(-0.65) },
   { name: 'front-left leg',     geom: () => buildLeg(-0.72,  0.7) },
   { name: 'front-right leg',    geom: () => buildLeg( 0.72,  0.7) },
   { name: 'rear-left leg',      geom: () => buildLeg(-0.72, -0.7) },
@@ -145,17 +146,8 @@ const PARTS: PartDef[] = [
   { name: 'neck',               geom: () => buildNeck() },
   { name: 'head',               geom: () => buildHead() },
   { name: 'snout',              geom: () => buildSnout() },
-  { name: 'eyes',               geom: () => {
-      const left  = buildEye(-1);
-      const right = buildEye( 1);
-      const merged: THREE.Vector3[] = [];
-      const pos1 = left.attributes.position;
-      for (let i = 0; i < pos1.count; i++) merged.push(new THREE.Vector3().fromBufferAttribute(pos1, i));
-      const pos2 = right.attributes.position;
-      for (let i = 0; i < pos2.count; i++) merged.push(new THREE.Vector3().fromBufferAttribute(pos2, i));
-      left.dispose(); right.dispose();
-      return new THREE.BufferGeometry().setFromPoints(merged);
-    } },
+  { name: 'left eye',           geom: () => buildEye(-1) },
+  { name: 'right eye',          geom: () => buildEye( 1) },
 ];
 
 export class RevealScene {

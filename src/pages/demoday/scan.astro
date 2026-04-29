@@ -80,8 +80,12 @@ import '../../styles/demoday.css';
         window.location.href = '/demoday/play?after=already';
         return;
       }
-      if (result.reason === 'wrong_order') {
-        window.location.href = '/demoday/play?after=wrong';
+      if (result.reason === 'finished_already') {
+        window.location.href = '/demoday/finish';
+        return;
+      }
+      if (result.reason === 'unknown_station') {
+        window.location.href = '/demoday/play?after=unknown';
         return;
       }
       titleEl.textContent = 'Could not save that scan.';

@@ -1,6 +1,6 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
-import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
+import { TOTAL_STATIONS } from '../../lib/demoday';
 import '../../styles/demoday.css';
 ---
 
@@ -18,10 +18,7 @@ import '../../styles/demoday.css';
       </div>
       <div class="dd-bar"><div class="dd-bar-fill" id="dd-bar-fill"></div></div>
 
-      <p class="dd-clue-label">Next up</p>
-      <p class="dd-clue" id="dd-clue"><span class="dd-typed" id="dd-clue-typed"></span><span class="dd-caret" aria-hidden="true"></span></p>
-      <p class="dd-hint" id="dd-hint"></p>
-
+      <p class="dd-sub" style="margin-bottom:8px;">Scan every booth. Order does not matter. First to scan all 18 wins.</p>
       <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
 
       <div class="dd-reveal">
@@ -29,7 +26,9 @@ import '../../styles/demoday.css';
         <p class="dd-reveal-hint">Drag to rotate.</p>
       </div>
 
-      <p class="dd-msg" id="dd-msg" style="margin-top:32px;"></p>
+      <p class="dd-msg" id="dd-msg" style="margin-top:24px;"></p>
+
+      <ul class="dd-stations" id="dd-stations"></ul>
 
       <div class="dd-section-rule"></div>
       <button class="dd-btn dd-btn--ghost" id="dd-reset">Sign out of this device</button>
@@ -38,7 +37,7 @@ import '../../styles/demoday.css';
 
   <style>
     .dd-reveal {
-      margin-top: 44px;
+      margin-top: 36px;
       aspect-ratio: 1;
       width: 100%;
       border: 1px solid var(--dd-line);
@@ -48,18 +47,11 @@ import '../../styles/demoday.css';
       overflow: hidden;
       touch-action: none;
     }
-    .dd-reveal-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      cursor: grab;
-    }
+    .dd-reveal-canvas { width: 100%; height: 100%; display: block; cursor: grab; }
     .dd-reveal-canvas:active { cursor: grabbing; }
     .dd-reveal-hint {
       position: absolute;
-      bottom: 12px;
-      left: 0;
-      right: 0;
+      bottom: 12px; left: 0; right: 0;
       text-align: center;
       font-size: 11px;
       color: var(--dd-mute);
@@ -67,32 +59,17 @@ import '../../styles/demoday.css';
       pointer-events: none;
       letter-spacing: 0.04em;
     }
-    .dd-caret {
-      display: inline-block;
-      width: 0.06em;
-      height: 1em;
-      background: var(--dd-fg);
-      vertical-align: -0.12em;
-      margin-left: 0.06em;
-      animation: dd-blink 900ms steps(2) infinite;
-    }
-    .dd-caret.is-done { opacity: 0; }
-    @keyframes dd-blink {
-      0%, 50% { opacity: 1; }
-      50.01%, 100% { opacity: 0; }
-    }
     .dd-presence {
       font-size: 12px;
       color: var(--dd-mute);
-      margin: 18px 0 0;
+      margin: 14px 0 0;
       opacity: 0;
       transition: opacity 700ms ease;
     }
     .dd-presence.is-ready { opacity: 1; }
     .dd-presence-dot {
       display: inline-block;
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: #c8e3c4;
       margin-right: 8px;
@@ -103,6 +80,43 @@ import '../../styles/demoday.css';
       0%, 100% { opacity: 0.5; }
       50% { opacity: 1; }
     }
+    .dd-stations {
+      list-style: none;
+      padding: 0;
+      margin: 32px 0 0;
+    }
+    .dd-station {
+      display: flex;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--dd-line);
+      gap: 14px;
+      transition: opacity 320ms ease;
+    }
+    .dd-station:last-child { border-bottom: none; }
+    .dd-station-check {
+      width: 18px;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--dd-faint);
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+    }
+    .dd-station.is-done .dd-station-check { color: var(--dd-fg); }
+    .dd-station-text { flex: 1; min-width: 0; }
+    .dd-station-name {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .dd-station-desc {
+      font-size: 13px;
+      color: var(--dd-mute);
+      margin-top: 2px;
+      line-height: 1.45;
+    }
+    .dd-station.is-done .dd-station-name { opacity: 0.45; }
+    .dd-station.is-done .dd-station-desc { opacity: 0.45; }
   </style>
 
   <script>
@@ -112,28 +126,22 @@ import '../../styles/demoday.css';
     import { RevealScene } from '../../lib/demoday-reveal';
     const sb = supabase as any;
 
-    function typeInto(el: HTMLElement, caret: HTMLElement | null, text: string, speed = 26): void {
-      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      caret?.classList.remove('is-done');
-      if (reduced) {
-        el.textContent = text;
-        caret?.classList.add('is-done');
-        return;
-      }
-      el.textContent = '';
-      let i = 0;
-      const tick = () => {
-        if (i >= text.length) {
-          caret?.classList.add('is-done');
-          return;
-        }
-        el.textContent = text.slice(0, i + 1);
-        i++;
-        const ch = text[i - 1];
-        const extra = ch === '.' || ch === ',' ? 220 : Math.random() * 14;
-        setTimeout(tick, speed + extra);
-      };
-      tick();
+    function escapeHTML(s: string): string {
+      return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    }
+
+    function renderStations(listEl: HTMLElement, scanned: Set<string>): void {
+      const sorted = [...STATIONS].sort((a, b) => a.name.localeCompare(b.name));
+      listEl.innerHTML = sorted.map((s) => {
+        const done = scanned.has(s.slug);
+        return `<li class="dd-station${done ? ' is-done' : ''}">
+          <span class="dd-station-check">${done ? '✓' : '·'}</span>
+          <div class="dd-station-text">
+            <div class="dd-station-name">${escapeHTML(s.name)}</div>
+            <div class="dd-station-desc">${escapeHTML(s.description)}</div>
+          </div>
+        </li>`;
+      }).join('');
     }
 
     async function refreshPresence(presenceEl: HTMLElement): Promise<void> {
@@ -159,14 +167,11 @@ import '../../styles/demoday.css';
 
     document.addEventListener('astro:page-load', async () => {
       const playerId = localStorage.getItem('dd_player_id');
-      const clueEl = document.getElementById('dd-clue') as HTMLParagraphElement;
-      const clueTyped = document.getElementById('dd-clue-typed') as HTMLSpanElement;
-      const clueCaret = clueEl?.querySelector('.dd-caret') as HTMLElement | null;
-      const hintEl = document.getElementById('dd-hint') as HTMLParagraphElement;
       const stepNum = document.getElementById('dd-step-num') as HTMLSpanElement;
       const barFill = document.getElementById('dd-bar-fill') as HTMLDivElement;
       const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
       const presenceEl = document.getElementById('dd-presence') as HTMLParagraphElement;
+      const stationsList = document.getElementById('dd-stations') as HTMLUListElement;
       const resetBtn = document.getElementById('dd-reset') as HTMLButtonElement;
 
       if (!playerId) {
@@ -192,15 +197,16 @@ import '../../styles/demoday.css';
         return;
       }
 
+      const scansResp = await sb
+        .from('demoday_scans')
+        .select('station_slug')
+        .eq('player_id', playerId);
+      const scanned = new Set<string>(((scansResp.data ?? []) as { station_slug: string }[]).map((r) => r.station_slug));
+      renderStations(stationsList, scanned);
+
       const step = player.current_step ?? 0;
       stepNum.textContent = String(step);
       barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
-
-      const next = STATIONS[step];
-      if (next) {
-        typeInto(clueTyped, clueCaret, next.clue);
-        hintEl.textContent = next.hint;
-      }
 
       const canvas = document.getElementById('dd-reveal-canvas') as HTMLCanvasElement;
       const reveal = new RevealScene(canvas, { totalGroups: TOTAL_STATIONS, initialRevealed: step });
@@ -209,11 +215,11 @@ import '../../styles/demoday.css';
       const params = new URLSearchParams(window.location.search);
       const after = params.get('after');
       if (after === 'ok') {
-        msg.textContent = 'Got it. Here is your next clue.';
+        msg.textContent = 'Scanned. Keep going.';
         msg.className = 'dd-msg dd-msg--ok';
         playScanChime(step);
-      } else if (after === 'wrong') {
-        msg.textContent = 'Wrong booth. Check the clue and try the right one.';
+      } else if (after === 'unknown') {
+        msg.textContent = 'That QR is not part of the hunt.';
         msg.className = 'dd-msg dd-msg--err';
         playWrongTone();
       } else if (after === 'already') {

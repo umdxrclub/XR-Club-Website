@@ -41,23 +41,29 @@ create table if not exists public.demoday_scans (
 -- =============================================================
 -- Seed station order. Update this list to match src/lib/demoday.ts.
 -- =============================================================
+-- Reset step_index for any existing rows so we can re-seed cleanly
+-- (step_index has a UNIQUE constraint and the order is shifting).
+update public.demoday_stations set step_index = -step_index - 1 where step_index >= 0;
+
 insert into public.demoday_stations (slug, step_index, name) values
-  ('app-dev',                 0,  'App Dev'),
-  ('drone-club',              1,  'Drone Club'),
-  ('athletics',               2,  'UMD Athletics'),
-  ('great-teachers',          3,  'Great Teachers'),
-  ('testugo',                 4,  'TestuGo'),
-  ('augmented-worlds',        5,  'Augmented Worlds'),
-  ('tron',                    6,  'Tron'),
-  ('double-point',            7,  'Double Point'),
-  ('sisu-vr',                 8,  'Sisu VR'),
-  ('tanit-xr',                9,  'Tanit XR'),
-  ('paraverse',              10,  'Paraverse'),
-  ('vusexr',                 11,  'vuseXR'),
-  ('virnect',                12,  'Virnect'),
-  ('niantic',                13,  'Niantic'),
-  ('immersive-installation', 14,  'Immersive Installation'),
-  ('rosetta-engine',         15,  'Rosetta Engine')
+  ('info-booth',              0,  'XR Club Info Booth'),
+  ('imdm',                    1,  'IMDM'),
+  ('app-dev',                 2,  'App Dev'),
+  ('drone-club',              3,  'Drone Club'),
+  ('athletics',               4,  'UMD Athletics'),
+  ('great-teachers',          5,  'Great Teachers'),
+  ('testugo',                 6,  'TestuGo'),
+  ('augmented-worlds',        7,  'Augmented Worlds'),
+  ('tron',                    8,  'Tron'),
+  ('double-point',            9,  'Double Point'),
+  ('sisu-vr',                10,  'Sisu VR'),
+  ('tanit-xr',               11,  'Tanit XR'),
+  ('paraverse',              12,  'Paraverse'),
+  ('vusexr',                 13,  'vuseXR'),
+  ('virnect',                14,  'Virnect'),
+  ('niantic',                15,  'Niantic'),
+  ('immersive-installation', 16,  'Immersive Installation'),
+  ('rosetta-engine',         17,  'Rosetta Engine')
 on conflict (slug) do update set
   step_index = excluded.step_index,
   name = excluded.name;
@@ -94,9 +100,9 @@ create policy demoday_scans_select on public.demoday_scans
   for select to anon, authenticated using (true);
 
 -- =============================================================
--- RPC: validate and record a scan atomically.
+-- RPC: record a scan atomically. Order does not matter.
 -- Returns: { ok, reason, new_step, finished }
--- reason in: 'ok', 'no_player', 'unknown_station', 'wrong_order', 'already', 'finished_already'
+-- reason in: 'ok', 'no_player', 'unknown_station', 'already', 'finished_already'
 -- =============================================================
 create or replace function public.demoday_record_scan(
   p_player_id uuid,
@@ -110,6 +116,7 @@ as $$
 declare
   v_player    public.demoday_players%rowtype;
   v_station   public.demoday_stations%rowtype;
+  v_count     int;
   v_total     int;
   v_finished  boolean := false;
 begin
@@ -131,18 +138,15 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'already', 'new_step', v_player.current_step, 'finished', false);
   end if;
 
-  if v_station.step_index <> v_player.current_step then
-    return jsonb_build_object('ok', false, 'reason', 'wrong_order', 'new_step', v_player.current_step, 'finished', false);
-  end if;
-
   insert into public.demoday_scans (player_id, station_slug)
     values (v_player.id, v_station.slug);
 
+  select count(*) into v_count from public.demoday_scans where player_id = v_player.id;
   select count(*) into v_total from public.demoday_stations;
 
   update public.demoday_players
-    set current_step = current_step + 1,
-        completed_at = case when current_step + 1 >= v_total then now() else null end
+    set current_step = v_count,
+        completed_at = case when v_count >= v_total then now() else completed_at end
     where id = v_player.id
     returning current_step, completed_at is not null
     into v_player.current_step, v_finished;
