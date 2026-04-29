@@ -21,7 +21,7 @@ import '../../styles/demoday.css';
       </div>
       <div class="dd-bar"><div class="dd-bar-fill" id="dd-bar-fill"></div></div>
 
-      <p class="dd-sub" style="margin-bottom:8px;">Scan every booth. Order does not matter. First to scan all 18 wins.</p>
+      <p class="dd-sub" style="margin-bottom:8px;">Scan every booth. Order does not matter. First to scan every project wins!</p>
       <p class="dd-presence" id="dd-presence" aria-live="polite"></p>
 
       <div class="dd-reveal" id="dd-reveal"></div>
@@ -71,25 +71,20 @@ import '../../styles/demoday.css';
       transition: opacity 900ms ease;
     }
     .dd-presence {
-      font-size: 12px;
-      color: var(--dd-mute);
-      margin: 14px 0 0;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--dd-fg);
+      margin: 18px 0 0;
       opacity: 0;
       transition: opacity 700ms ease;
     }
     .dd-presence.is-ready { opacity: 1; }
-    .dd-presence-dot {
-      display: inline-block;
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #c8e3c4;
-      margin-right: 8px;
-      vertical-align: 1px;
-      animation: dd-pulse 1800ms ease-in-out infinite;
-    }
-    @keyframes dd-pulse {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
+    .dd-presence-suffix {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--dd-mute);
+      margin-left: 6px;
     }
     .dd-scanner {
       position: fixed;
@@ -230,20 +225,13 @@ import '../../styles/demoday.css';
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const since = startOfToday.toISOString();
-      const [hRes, fRes] = await Promise.all([
-        sb.from('demoday_players')
-          .select('id', { count: 'exact', head: true })
-          .gte('started_at', since)
-          .is('completed_at', null),
-        sb.from('demoday_players')
-          .select('id', { count: 'exact', head: true })
-          .not('completed_at', 'is', null)
-          .gte('started_at', since),
-      ]);
+      const hRes = await sb.from('demoday_players')
+        .select('id', { count: 'exact', head: true })
+        .gte('started_at', since)
+        .is('completed_at', null);
       const hunting = hRes.count ?? 0;
-      const finished = fRes.count ?? 0;
-      const huntWord = hunting === 1 ? 'person' : 'people';
-      presenceEl.innerHTML = `<span class="dd-presence-dot"></span>${hunting} ${huntWord} hunting · ${finished} finished today`;
+      const huntWord = hunting === 1 ? 'person hunting' : 'people hunting';
+      presenceEl.innerHTML = `${hunting}<span class="dd-presence-suffix">${huntWord}</span>`;
       presenceEl.classList.add('is-ready');
     }
 
