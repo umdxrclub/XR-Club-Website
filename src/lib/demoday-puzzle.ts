@@ -135,7 +135,6 @@ export class PuzzleReveal {
 
     this.stage = document.createElement('div');
     this.stage.className = 'dd-puzzle-stage';
-    this.stage.style.setProperty('--dd-puzzle-img', `url('${opts.imageUrl}')`);
     this.wrap.appendChild(this.stage);
 
     const seed = hashStr(opts.seedKey);
@@ -148,9 +147,10 @@ export class PuzzleReveal {
       const div = document.createElement('div');
       div.className = 'dd-piece';
       div.style.clipPath = pieceToClip(p);
+      div.style.backgroundImage = `url("${opts.imageUrl}")`;
       div.style.setProperty('--dd-piece-cx', `${(cx * 100).toFixed(2)}%`);
       div.style.setProperty('--dd-piece-cy', `${(cy * 100).toFixed(2)}%`);
-      div.style.setProperty('--dd-piece-depth', `${(rng() * 80 - 40).toFixed(1)}px`);
+      div.style.setProperty('--dd-piece-depth', `${(rng() * 60 - 30).toFixed(1)}px`);
       this.stage.appendChild(div);
       this.pieces.push(div);
     });

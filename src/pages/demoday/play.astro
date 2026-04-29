@@ -25,7 +25,10 @@ import '../../styles/demoday.css';
 
       <p class="dd-msg" id="dd-msg" style="margin-top:24px;"></p>
 
-      <ul class="dd-stations" id="dd-stations"></ul>
+      <section class="dd-collected" id="dd-collected" hidden>
+        <p class="dd-eyebrow" style="margin-top:48px;margin-bottom:16px;">Collected</p>
+        <ul class="dd-collected-list" id="dd-collected-list"></ul>
+      </section>
 
       <div class="dd-section-rule"></div>
       <button class="dd-btn dd-btn--ghost" id="dd-reset">Sign out of this device</button>
@@ -58,11 +61,11 @@ import '../../styles/demoday.css';
     .dd-piece {
       position: absolute;
       inset: 0;
-      background-image: var(--dd-puzzle-img);
       background-size: 100% 100%;
       background-repeat: no-repeat;
+      background-position: 0 0;
       opacity: 0;
-      transform: translateZ(var(--dd-piece-depth, -30px)) scale(1.04);
+      transform: translateZ(var(--dd-piece-depth, -20px)) scale(1.04);
       transform-origin: var(--dd-piece-cx, 50%) var(--dd-piece-cy, 50%);
       transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
       will-change: opacity, transform;
@@ -92,43 +95,19 @@ import '../../styles/demoday.css';
       0%, 100% { opacity: 0.5; }
       50% { opacity: 1; }
     }
-    .dd-stations {
+    .dd-collected-list {
       list-style: none;
       padding: 0;
-      margin: 32px 0 0;
+      margin: 0;
     }
-    .dd-station {
-      display: flex;
-      align-items: flex-start;
+    .dd-collected-item {
       padding: 14px 0;
       border-bottom: 1px solid var(--dd-line);
-      gap: 14px;
-      transition: opacity 320ms ease;
-    }
-    .dd-station:last-child { border-bottom: none; }
-    .dd-station-check {
-      width: 18px;
-      flex-shrink: 0;
-      font-size: 13px;
-      color: var(--dd-faint);
-      line-height: 1.5;
-      font-variant-numeric: tabular-nums;
-    }
-    .dd-station.is-done .dd-station-check { color: var(--dd-fg); }
-    .dd-station-text { flex: 1; min-width: 0; }
-    .dd-station-name {
       font-size: 15px;
-      font-weight: 500;
       letter-spacing: -0.01em;
+      animation: dd-slide-up 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
-    .dd-station-desc {
-      font-size: 13px;
-      color: var(--dd-mute);
-      margin-top: 2px;
-      line-height: 1.45;
-    }
-    .dd-station.is-done .dd-station-name { opacity: 0.45; }
-    .dd-station.is-done .dd-station-desc { opacity: 0.45; }
+    .dd-collected-item:last-child { border-bottom: none; }
   </style>
 
   <script>
@@ -142,18 +121,19 @@ import '../../styles/demoday.css';
       return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
     }
 
-    function renderStations(listEl: HTMLElement, scanned: Set<string>): void {
-      const sorted = [...STATIONS].sort((a, b) => a.name.localeCompare(b.name));
-      listEl.innerHTML = sorted.map((s) => {
-        const done = scanned.has(s.slug);
-        return `<li class="dd-station${done ? ' is-done' : ''}">
-          <span class="dd-station-check">${done ? '✓' : '·'}</span>
-          <div class="dd-station-text">
-            <div class="dd-station-name">${escapeHTML(s.name)}</div>
-            <div class="dd-station-desc">${escapeHTML(s.description)}</div>
-          </div>
-        </li>`;
-      }).join('');
+    function renderCollected(section: HTMLElement, listEl: HTMLElement, scannedInOrder: string[]): void {
+      if (scannedInOrder.length === 0) {
+        section.setAttribute('hidden', '');
+        listEl.innerHTML = '';
+        return;
+      }
+      section.removeAttribute('hidden');
+      const lookup = new Map(STATIONS.map((s) => [s.slug, s]));
+      listEl.innerHTML = scannedInOrder
+        .map((slug) => lookup.get(slug))
+        .filter((s): s is typeof STATIONS[number] => Boolean(s))
+        .map((s) => `<li class="dd-collected-item">${escapeHTML(s.name)}</li>`)
+        .join('');
     }
 
     async function refreshPresence(presenceEl: HTMLElement): Promise<void> {
@@ -183,7 +163,8 @@ import '../../styles/demoday.css';
       const barFill = document.getElementById('dd-bar-fill') as HTMLDivElement;
       const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
       const presenceEl = document.getElementById('dd-presence') as HTMLParagraphElement;
-      const stationsList = document.getElementById('dd-stations') as HTMLUListElement;
+      const collectedSection = document.getElementById('dd-collected') as HTMLElement;
+      const collectedList = document.getElementById('dd-collected-list') as HTMLUListElement;
       const resetBtn = document.getElementById('dd-reset') as HTMLButtonElement;
 
       if (!playerId) {
@@ -211,10 +192,12 @@ import '../../styles/demoday.css';
 
       const scansResp = await sb
         .from('demoday_scans')
-        .select('station_slug')
-        .eq('player_id', playerId);
-      const scanned = new Set<string>(((scansResp.data ?? []) as { station_slug: string }[]).map((r) => r.station_slug));
-      renderStations(stationsList, scanned);
+        .select('station_slug, scanned_at')
+        .eq('player_id', playerId)
+        .order('scanned_at', { ascending: false });
+      const scannedRows = (scansResp.data ?? []) as { station_slug: string; scanned_at: string }[];
+      const scannedSlugs = scannedRows.map((r) => r.station_slug);
+      renderCollected(collectedSection, collectedList, scannedSlugs);
 
       const step = player.current_step ?? 0;
       stepNum.textContent = String(step);
