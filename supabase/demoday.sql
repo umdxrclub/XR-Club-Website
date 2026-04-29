@@ -164,3 +164,60 @@ $$;
 
 revoke all on function public.demoday_record_scan(uuid, text) from public;
 grant execute on function public.demoday_record_scan(uuid, text) to anon, authenticated;
+
+-- =============================================================
+-- Voting: each player picks a top 3 (rank 1, 2, 3).
+-- =============================================================
+create table if not exists public.demoday_votes (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.demoday_players(id) on delete cascade,
+  station_slug text not null references public.demoday_stations(slug),
+  rank int not null check (rank between 1 and 3),
+  created_at timestamptz not null default now(),
+  unique (player_id, rank),
+  unique (player_id, station_slug)
+);
+
+alter table public.demoday_votes enable row level security;
+
+drop policy if exists demoday_votes_select on public.demoday_votes;
+create policy demoday_votes_select on public.demoday_votes
+  for select to anon, authenticated using (true);
+
+create or replace function public.demoday_save_vote(
+  p_player_id uuid,
+  p_first    text,
+  p_second   text,
+  p_third    text
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_first = p_second or p_first = p_third or p_second = p_third then
+    return jsonb_build_object('ok', false, 'reason', 'duplicate');
+  end if;
+
+  if not exists (select 1 from public.demoday_players where id = p_player_id) then
+    return jsonb_build_object('ok', false, 'reason', 'no_player');
+  end if;
+
+  if not exists (select 1 from public.demoday_stations where slug = p_first)
+     or not exists (select 1 from public.demoday_stations where slug = p_second)
+     or not exists (select 1 from public.demoday_stations where slug = p_third) then
+    return jsonb_build_object('ok', false, 'reason', 'unknown_station');
+  end if;
+
+  delete from public.demoday_votes where player_id = p_player_id;
+  insert into public.demoday_votes (player_id, station_slug, rank) values
+    (p_player_id, p_first,  1),
+    (p_player_id, p_second, 2),
+    (p_player_id, p_third,  3);
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+revoke all on function public.demoday_save_vote(uuid, text, text, text) from public;
+grant execute on function public.demoday_save_vote(uuid, text, text, text) to anon, authenticated;

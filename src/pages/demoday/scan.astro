@@ -34,10 +34,10 @@ import '../../styles/demoday.css';
         return;
       }
 
-      const found = stationByToken(token);
-      if (!found) {
+      const station = stationByToken(token);
+      if (!station) {
         titleEl.textContent = 'Not a booth.';
-        subEl.textContent = 'This code does not match any of the sixteen.';
+        subEl.textContent = 'This code does not match any of the booths.';
         return;
       }
 
@@ -50,7 +50,7 @@ import '../../styles/demoday.css';
 
       const { data, error } = await sb.rpc('demoday_record_scan', {
         p_player_id: playerId,
-        p_station_slug: found.station.slug,
+        p_station_slug: station.slug,
       });
 
       if (error) {

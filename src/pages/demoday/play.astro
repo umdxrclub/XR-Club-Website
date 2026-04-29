@@ -14,7 +14,10 @@ import '../../styles/demoday.css';
           <span class="dd-progress-num" id="dd-step-num">0</span>
           <span class="dd-progress-of"> of {TOTAL_STATIONS}</span>
         </div>
-        <a class="dd-link" href="/demoday/leaderboard">Leaderboard</a>
+        <div style="display:flex;gap:18px;">
+          <a class="dd-link" href="/demoday/vote">Vote</a>
+          <a class="dd-link" href="/demoday/leaderboard">Leaderboard</a>
+        </div>
       </div>
       <div class="dd-bar"><div class="dd-bar-fill" id="dd-bar-fill"></div></div>
 
@@ -23,7 +26,8 @@ import '../../styles/demoday.css';
 
       <div class="dd-reveal" id="dd-reveal"></div>
 
-      <p class="dd-msg" id="dd-msg" style="margin-top:24px;"></p>
+      <button class="dd-btn" id="dd-scan-btn" style="margin-top:24px;">Scan a booth</button>
+      <p class="dd-msg" id="dd-msg" style="margin-top:18px;"></p>
 
       <section class="dd-collected" id="dd-collected" hidden>
         <p class="dd-eyebrow" style="margin-top:48px;margin-bottom:16px;">Collected</p>
@@ -34,6 +38,20 @@ import '../../styles/demoday.css';
       <button class="dd-btn dd-btn--ghost" id="dd-reset">Sign out of this device</button>
     </div>
   </main>
+
+  <div class="dd-scanner" id="dd-scanner" hidden>
+    <video class="dd-scanner-video" id="dd-scanner-video" playsinline muted></video>
+    <div class="dd-scanner-overlay">
+      <div class="dd-scanner-frame">
+        <span class="dd-scanner-corner dd-scanner-corner--tl"></span>
+        <span class="dd-scanner-corner dd-scanner-corner--tr"></span>
+        <span class="dd-scanner-corner dd-scanner-corner--bl"></span>
+        <span class="dd-scanner-corner dd-scanner-corner--br"></span>
+      </div>
+      <p class="dd-scanner-status" id="dd-scanner-status">Point at a booth's QR code.</p>
+      <button class="dd-scanner-close" id="dd-scanner-close">Cancel</button>
+    </div>
+  </div>
 
   <style>
     .dd-reveal {
@@ -95,6 +113,80 @@ import '../../styles/demoday.css';
       0%, 100% { opacity: 0.5; }
       50% { opacity: 1; }
     }
+    .dd-scanner {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: dd-fade-in 280ms ease;
+    }
+    .dd-scanner[hidden] { display: none; }
+    .dd-scanner-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+    .dd-scanner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .dd-scanner-frame {
+      position: relative;
+      width: min(70vmin, 320px);
+      height: min(70vmin, 320px);
+      border-radius: 24px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    }
+    .dd-scanner-corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: rgba(245, 239, 213, 0.95);
+      border-style: solid;
+      border-width: 0;
+    }
+    .dd-scanner-corner--tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 18px; }
+    .dd-scanner-corner--tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 18px; }
+    .dd-scanner-corner--bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 18px; }
+    .dd-scanner-corner--br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 18px; }
+    .dd-scanner-status {
+      position: absolute;
+      bottom: max(48px, env(safe-area-inset-bottom));
+      left: 0; right: 0;
+      text-align: center;
+      color: rgba(245, 239, 213, 0.85);
+      font-size: 14px;
+      letter-spacing: -0.005em;
+      margin: 0;
+    }
+    .dd-scanner-close {
+      position: absolute;
+      top: max(20px, env(safe-area-inset-top));
+      right: 20px;
+      pointer-events: auto;
+      background: rgba(245, 239, 213, 0.12);
+      color: var(--dd-fg);
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
     .dd-collected-list {
       list-style: none;
       padding: 0;
@@ -115,6 +207,7 @@ import '../../styles/demoday.css';
     import { STATIONS, TOTAL_STATIONS } from '../../lib/demoday';
     import { playScanChime, playWrongTone, playSoftTap, primeAudio } from '../../lib/demoday-sound';
     import { PuzzleReveal } from '../../lib/demoday-puzzle';
+    import { DemoDayScanner, extractTokenFromQR } from '../../lib/demoday-scanner';
     const sb = supabase as any;
 
     function escapeHTML(s: string): string {
@@ -245,6 +338,80 @@ import '../../styles/demoday.css';
         localStorage.removeItem('dd_player_id');
         window.location.href = '/demoday/';
       });
+
+      const scanBtn = document.getElementById('dd-scan-btn') as HTMLButtonElement;
+      const scannerEl = document.getElementById('dd-scanner') as HTMLDivElement;
+      const scannerVideo = document.getElementById('dd-scanner-video') as HTMLVideoElement;
+      const scannerStatus = document.getElementById('dd-scanner-status') as HTMLParagraphElement;
+      const scannerClose = document.getElementById('dd-scanner-close') as HTMLButtonElement;
+      let activeScanner: DemoDayScanner | null = null;
+
+      function closeScanner(): void {
+        activeScanner?.stop();
+        activeScanner = null;
+        scannerEl.setAttribute('hidden', '');
+      }
+
+      async function handleQRText(text: string): Promise<void> {
+        const token = extractTokenFromQR(text);
+        if (!token) {
+          scannerStatus.textContent = 'That QR is not part of the hunt.';
+          setTimeout(closeScanner, 900);
+          playWrongTone();
+          return;
+        }
+        const station = STATIONS.find((s) => s.token === token);
+        if (!station) {
+          scannerStatus.textContent = 'That QR is not part of the hunt.';
+          setTimeout(closeScanner, 900);
+          playWrongTone();
+          return;
+        }
+        scannerStatus.textContent = `${station.name}…`;
+        const { data, error } = await sb.rpc('demoday_record_scan', {
+          p_player_id: playerId,
+          p_station_slug: station.slug,
+        });
+        if (error) {
+          scannerStatus.textContent = error.message || 'Could not save that scan.';
+          setTimeout(closeScanner, 1500);
+          return;
+        }
+        const result = data as { ok: boolean; reason: string; finished: boolean } | null;
+        if (result?.ok && result.finished) {
+          closeScanner();
+          window.location.href = '/demoday/finish';
+          return;
+        }
+        if (result?.ok) {
+          closeScanner();
+          window.location.href = '/demoday/play?after=ok';
+          return;
+        }
+        if (result?.reason === 'already') {
+          closeScanner();
+          window.location.href = '/demoday/play?after=already';
+          return;
+        }
+        scannerStatus.textContent = result?.reason || 'Could not save that scan.';
+        setTimeout(closeScanner, 1500);
+      }
+
+      scanBtn.addEventListener('click', async () => {
+        primeAudio();
+        scannerEl.removeAttribute('hidden');
+        scannerStatus.textContent = 'Point at a booth\'s QR code.';
+        activeScanner = new DemoDayScanner(scannerVideo, {
+          onDetect: (text) => { void handleQRText(text); },
+          onError: (e) => {
+            scannerStatus.textContent = e.message || 'Could not open the camera.';
+          },
+        });
+        await activeScanner.start();
+      });
+
+      scannerClose.addEventListener('click', closeScanner);
+      document.addEventListener('astro:before-preparation', closeScanner, { once: true });
     });
   </script>
 </AppLayout>
