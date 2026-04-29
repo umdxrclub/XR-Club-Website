@@ -1,5 +1,6 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
+import { TOTAL_STATIONS } from '../../lib/demoday';
 import '../../styles/demoday.css';
 ---
 
@@ -8,59 +9,226 @@ import '../../styles/demoday.css';
     <div class="dd-shell dd-stagger">
       <p class="dd-eyebrow">Demo Day</p>
       <h1 class="dd-title">Leaderboard</h1>
-      <p class="dd-sub">Fastest first.</p>
+      <p class="dd-sub" id="dd-relative">Loading.</p>
 
-      <ol class="dd-leader" id="dd-leader">
-        <li><span class="dd-leader-rank">·</span><span class="dd-leader-name">Loading.</span><span class="dd-leader-time"></span></li>
-      </ol>
+      <div class="dd-podium" id="dd-podium" hidden>
+        <p class="dd-podium-eyebrow">Leading</p>
+        <h2 class="dd-podium-name" id="dd-podium-name">—</h2>
+        <p class="dd-podium-stat" id="dd-podium-stat">—</p>
+      </div>
+
+      <ol class="dd-rank" id="dd-rank"></ol>
 
       <div class="dd-section-rule"></div>
       <a class="dd-link" href="/demoday/play">Back to the hunt</a>
     </div>
   </main>
 
+  <style>
+    .dd-podium {
+      margin: 36px 0 36px;
+      padding: 28px 24px 32px;
+      border: 1px solid var(--dd-line-strong);
+      border-radius: 16px;
+      background: var(--dd-bg-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .dd-podium::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(245, 239, 213, 0.04), transparent 60%);
+    }
+    .dd-podium-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--dd-mute);
+      margin: 0 0 12px;
+      font-weight: 500;
+    }
+    .dd-podium-name {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      margin: 0 0 6px;
+      line-height: 1.1;
+    }
+    .dd-podium-stat {
+      font-size: 14px;
+      color: var(--dd-mute);
+      margin: 0;
+    }
+
+    .dd-rank {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+    }
+    .dd-rank-row {
+      display: flex;
+      align-items: baseline;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--dd-line);
+      gap: 14px;
+    }
+    .dd-rank-row:last-child { border-bottom: none; }
+    .dd-rank-num {
+      width: 28px;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--dd-mute);
+      font-variant-numeric: tabular-nums;
+    }
+    .dd-rank-name {
+      flex: 1;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dd-rank-stat {
+      font-size: 13px;
+      color: var(--dd-mute);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .dd-rank-row.is-me {
+      position: relative;
+    }
+    .dd-rank-row.is-me::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      width: 4px;
+      height: 18px;
+      background: var(--dd-fg);
+      border-radius: 2px;
+      transform: translateY(-50%);
+    }
+    .dd-rank-row.is-me .dd-rank-name { font-weight: 600; }
+
+    .dd-empty {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--dd-mute);
+      font-size: 14px;
+    }
+  </style>
+
   <script>
     import { supabase } from '../../lib/supabase';
     const sb = supabase as any;
 
+    type Row = {
+      id: string;
+      name: string;
+      current_step: number;
+      started_at: string;
+      completed_at: string | null;
+    };
+
+    function escapeHTML(s: string): string {
+      return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    }
+
     function formatDuration(startIso: string, endIso: string): string {
-      const start = new Date(startIso).getTime();
-      const end = new Date(endIso).getTime();
-      const ms = Math.max(0, end - start);
+      const ms = Math.max(0, new Date(endIso).getTime() - new Date(startIso).getTime());
       const totalSec = Math.floor(ms / 1000);
       const m = Math.floor(totalSec / 60);
       const s = totalSec % 60;
-      return `${m}m ${String(s).padStart(2, '0')}s`;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function statFor(p: Row, total: number): string {
+      if (p.completed_at) return `Done · ${formatDuration(p.started_at, p.completed_at)}`;
+      return `${p.current_step ?? 0} of ${total}`;
+    }
+
+    function firstName(full: string): string {
+      return (full || '').trim().split(/\s+/)[0] || full;
     }
 
     document.addEventListener('astro:page-load', async () => {
-      const list = document.getElementById('dd-leader') as HTMLOListElement;
-      type Row = { name: string | null; started_at: string | null; completed_at: string | null };
+      const podium = document.getElementById('dd-podium') as HTMLDivElement;
+      const podiumName = document.getElementById('dd-podium-name') as HTMLHeadingElement;
+      const podiumStat = document.getElementById('dd-podium-stat') as HTMLParagraphElement;
+      const list = document.getElementById('dd-rank') as HTMLOListElement;
+      const relative = document.getElementById('dd-relative') as HTMLParagraphElement;
+
+      const total = (window as any).__DD_TOTAL ?? 18;
+
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const since = startOfToday.toISOString();
+
       const resp = await sb
         .from('demoday_players')
-        .select('name, started_at, completed_at')
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: true })
-        .limit(25);
-      const error = resp.error;
-      const data = resp.data as Row[] | null;
+        .select('id, name, current_step, started_at, completed_at')
+        .gte('started_at', since)
+        .order('completed_at', { ascending: true, nullsFirst: false })
+        .order('current_step', { ascending: false })
+        .order('started_at', { ascending: true })
+        .limit(200);
 
-      if (error || !data) {
-        list.innerHTML = '<li><span class="dd-leader-rank">·</span><span class="dd-leader-name">Could not load.</span><span class="dd-leader-time"></span></li>';
+      if (resp.error) {
+        relative.textContent = 'Could not load.';
         return;
       }
 
-      if (data.length === 0) {
-        list.innerHTML = '<li><span class="dd-leader-rank">·</span><span class="dd-leader-name">No one has finished yet.</span><span class="dd-leader-time"></span></li>';
+      const players: Row[] = resp.data ?? [];
+
+      if (players.length === 0) {
+        relative.textContent = 'No one has started today yet.';
+        list.innerHTML = '<li class="dd-empty">Be the first.</li>';
         return;
       }
 
-      list.innerHTML = data.map((p, i) => {
-        const time = (p.started_at && p.completed_at) ? formatDuration(p.started_at, p.completed_at) : '';
-        const rank = String(i + 1).padStart(2, '0');
-        const name = (p.name || '').replace(/[<>]/g, '');
-        return `<li><span class="dd-leader-rank">${rank}</span><span class="dd-leader-name">${name}</span><span class="dd-leader-time">${time}</span></li>`;
-      }).join('');
+      const top = players[0];
+      podium.removeAttribute('hidden');
+      podiumName.textContent = top.name;
+      podiumStat.textContent = statFor(top, total);
+
+      const myId = localStorage.getItem('dd_player_id');
+      const myIdx = myId ? players.findIndex((p) => p.id === myId) : -1;
+      const me = myIdx >= 0 ? players[myIdx] : null;
+
+      if (!me) {
+        relative.textContent = `${players.length} ${players.length === 1 ? 'player' : 'players'} today.`;
+      } else if (myIdx === 0) {
+        relative.textContent = me.completed_at ? 'You finished first.' : 'You are leading.';
+      } else {
+        const ahead = players[myIdx - 1];
+        if (ahead.completed_at && !me.completed_at) {
+          relative.textContent = `${firstName(ahead.name)} already finished. You are ${total - (me.current_step ?? 0)} away.`;
+        } else if ((ahead.current_step ?? 0) === (me.current_step ?? 0)) {
+          relative.textContent = `Tied with ${firstName(ahead.name)}.`;
+        } else {
+          const diff = (ahead.current_step ?? 0) - (me.current_step ?? 0);
+          const word = diff === 1 ? 'one' : String(diff);
+          const plural = diff === 1 ? 'scan' : 'scans';
+          relative.textContent = `${firstName(ahead.name)} is ${word} ${plural} ahead.`;
+        }
+      }
+
+      const rest = players.slice(1);
+      list.innerHTML = rest.map((p, i) => {
+        const rank = String(i + 2).padStart(2, '0');
+        const meCls = p.id === myId ? ' is-me' : '';
+        return `<li class="dd-rank-row${meCls}">
+          <span class="dd-rank-num">${rank}</span>
+          <span class="dd-rank-name">${escapeHTML(p.name)}</span>
+          <span class="dd-rank-stat">${statFor(p, total)}</span>
+        </li>`;
+      }).join('') || '<li class="dd-empty">No one else yet.</li>';
     });
+  </script>
+  <script is:inline define:vars={{ TOTAL_STATIONS }}>
+    window.__DD_TOTAL = TOTAL_STATIONS;
   </script>
 </AppLayout>

@@ -13,12 +13,8 @@ import '../../styles/demoday.css';
       <div class="dd-card">
         <form id="dd-register-form" novalidate>
           <label class="dd-field">
-            <span class="dd-label">Name</span>
-            <input class="dd-input" id="dd-name" type="text" autocomplete="name" placeholder="Your name" required />
-          </label>
-          <label class="dd-field">
-            <span class="dd-label">Email</span>
-            <input class="dd-input" id="dd-email" type="email" autocomplete="email" placeholder="you@umd.edu" required />
+            <span class="dd-label">Full name</span>
+            <input class="dd-input" id="dd-name" type="text" autocomplete="name" placeholder="First and last" required />
           </label>
           <button class="dd-btn" type="submit" id="dd-start-btn">Start</button>
           <p class="dd-msg" id="dd-msg"></p>
@@ -43,8 +39,7 @@ import '../../styles/demoday.css';
     .dd-presence.is-ready { opacity: 1; }
     .dd-presence-dot {
       display: inline-block;
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: #c8e3c4;
       margin-right: 8px;
@@ -87,7 +82,6 @@ import '../../styles/demoday.css';
       if (!form) return;
 
       const nameInput = document.getElementById('dd-name') as HTMLInputElement;
-      const emailInput = document.getElementById('dd-email') as HTMLInputElement;
       const btn = document.getElementById('dd-start-btn') as HTMLButtonElement;
       const msg = document.getElementById('dd-msg') as HTMLParagraphElement;
       const presenceEl = document.getElementById('dd-presence') as HTMLParagraphElement;
@@ -106,9 +100,8 @@ import '../../styles/demoday.css';
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = nameInput.value.trim();
-        const email = emailInput.value.trim().toLowerCase();
-        if (!name || !email || !email.includes('@')) {
-          msg.textContent = 'Need your name and a real email.';
+        if (name.length < 2 || !name.includes(' ')) {
+          msg.textContent = 'First and last name, please.';
           msg.className = 'dd-msg dd-msg--err';
           return;
         }
@@ -117,32 +110,20 @@ import '../../styles/demoday.css';
         msg.textContent = '';
         msg.className = 'dd-msg';
 
-        const existingResp = await sb
+        const insertResp = await sb
           .from('demoday_players')
+          .insert({ name })
           .select('id')
-          .eq('email', email)
-          .maybeSingle();
-        const existingPlayer = existingResp.data as { id: string } | null;
-
-        let playerId: string | undefined = existingPlayer?.id;
-
-        if (!playerId) {
-          const insertResp = await sb
-            .from('demoday_players')
-            .insert({ name, email })
-            .select('id')
-            .single();
-          const inserted = insertResp.data as { id: string } | null;
-          if (insertResp.error || !inserted) {
-            msg.textContent = 'Something went wrong. Try again.';
-            msg.className = 'dd-msg dd-msg--err';
-            btn.disabled = false;
-            return;
-          }
-          playerId = inserted.id;
+          .single();
+        const inserted = insertResp.data as { id: string } | null;
+        if (insertResp.error || !inserted) {
+          msg.textContent = 'Something went wrong. Try again.';
+          msg.className = 'dd-msg dd-msg--err';
+          btn.disabled = false;
+          return;
         }
 
-        localStorage.setItem('dd_player_id', playerId);
+        localStorage.setItem('dd_player_id', inserted.id);
         window.location.href = '/demoday/play';
       });
     });

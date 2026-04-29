@@ -17,11 +17,15 @@ create table if not exists public.demoday_stations (
 create table if not exists public.demoday_players (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  email text not null unique,
+  email text,
   current_step int not null default 0,
   started_at timestamptz not null default now(),
   completed_at timestamptz
 );
+
+-- For existing installs that had unique-email-not-null
+alter table public.demoday_players alter column email drop not null;
+alter table public.demoday_players drop constraint if exists demoday_players_email_key;
 
 create index if not exists demoday_players_completed_idx
   on public.demoday_players (completed_at)
@@ -89,9 +93,7 @@ create policy demoday_players_select on public.demoday_players
 drop policy if exists demoday_players_insert on public.demoday_players;
 create policy demoday_players_insert on public.demoday_players
   for insert to anon, authenticated with check (
-    char_length(name) between 1 and 80 and
-    char_length(email) between 3 and 200 and
-    email like '%@%'
+    char_length(name) between 1 and 80
   );
 
 -- Scans: read open (so the leaderboard / counts work). Writes go through the RPC.
