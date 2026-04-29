@@ -121,6 +121,7 @@ export class PuzzleReveal {
 
   constructor(wrap: HTMLElement, opts: PuzzleOptions) {
     this.wrap = wrap;
+    while (this.wrap.firstChild) this.wrap.removeChild(this.wrap.firstChild);
 
     const seed = hashStr(opts.seedKey);
     const rng = mulberry32(seed ^ 0xa1f3c9);
@@ -175,7 +176,6 @@ export class PuzzleReveal {
 
   setRevealed(count: number): void {
     const target = Math.max(0, Math.min(count, this.polygons.length));
-    if (target === this.currentRevealed) return;
     const visible = new Set(this.revealOrder.slice(0, target));
     this.polygons.forEach((p, i) => {
       p.setAttribute('opacity', visible.has(i) ? '1' : '0');

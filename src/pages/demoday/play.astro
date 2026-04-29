@@ -256,58 +256,70 @@ import '../../styles/demoday.css';
       const collectedSection = document.getElementById('dd-collected') as HTMLElement;
       const collectedList = document.getElementById('dd-collected-list') as HTMLUListElement;
       const resetBtn = document.getElementById('dd-reset') as HTMLButtonElement;
+      const revealEl = document.getElementById('dd-reveal') as HTMLDivElement;
 
       if (!playerId) {
         window.location.href = '/demoday/';
         return;
       }
 
-      const resp = await sb
-        .from('demoday_players')
-        .select('id, name, current_step, completed_at')
-        .eq('id', playerId)
-        .maybeSingle();
-      const player = resp.data as { id: string; name: string; current_step: number; completed_at: string | null } | null;
+      let reveal: PuzzleReveal | null = null;
 
-      if (resp.error || !player) {
-        localStorage.removeItem('dd_player_id');
-        window.location.href = '/demoday/';
-        return;
+      async function refreshGame(): Promise<{ step: number; finished: boolean } | null> {
+        const resp = await sb
+          .from('demoday_players')
+          .select('id, name, current_step, completed_at')
+          .eq('id', playerId)
+          .maybeSingle();
+        const player = resp.data as { id: string; name: string; current_step: number; completed_at: string | null } | null;
+
+        if (resp.error || !player) {
+          localStorage.removeItem('dd_player_id');
+          window.location.href = '/demoday/';
+          return null;
+        }
+        if (player.completed_at) {
+          window.location.href = '/demoday/finish';
+          return { step: player.current_step ?? 0, finished: true };
+        }
+
+        const step = player.current_step ?? 0;
+        stepNum.textContent = String(step);
+        barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
+
+        const scansResp = await sb
+          .from('demoday_scans')
+          .select('station_slug, scanned_at')
+          .eq('player_id', playerId)
+          .order('scanned_at', { ascending: false });
+        const scannedRows = (scansResp.data ?? []) as { station_slug: string; scanned_at: string }[];
+        renderCollected(collectedSection, collectedList, scannedRows.map((r) => r.station_slug));
+
+        if (!reveal) {
+          reveal = new PuzzleReveal(revealEl, {
+            imageUrl: '/Images/puzzleboy.png',
+            totalPieces: TOTAL_STATIONS,
+            initialRevealed: step,
+            seedKey: playerId as string,
+          });
+        } else {
+          reveal.setRevealed(step);
+        }
+
+        return { step, finished: false };
       }
 
-      if (player.completed_at) {
-        window.location.href = '/demoday/finish';
-        return;
-      }
+      const initial = await refreshGame();
+      if (!initial) return;
 
-      const scansResp = await sb
-        .from('demoday_scans')
-        .select('station_slug, scanned_at')
-        .eq('player_id', playerId)
-        .order('scanned_at', { ascending: false });
-      const scannedRows = (scansResp.data ?? []) as { station_slug: string; scanned_at: string }[];
-      const scannedSlugs = scannedRows.map((r) => r.station_slug);
-      renderCollected(collectedSection, collectedList, scannedSlugs);
-
-      const step = player.current_step ?? 0;
-      stepNum.textContent = String(step);
-      barFill.style.width = `${(step / TOTAL_STATIONS) * 100}%`;
-
-      const revealEl = document.getElementById('dd-reveal') as HTMLDivElement;
-      const reveal = new PuzzleReveal(revealEl, {
-        imageUrl: '/Images/puzzleboy.png',
-        totalPieces: TOTAL_STATIONS,
-        initialRevealed: step,
-        seedKey: playerId,
-      });
-      document.addEventListener('astro:before-preparation', () => reveal.dispose(), { once: true });
+      document.addEventListener('astro:before-preparation', () => { reveal?.dispose(); reveal = null; }, { once: true });
 
       const params = new URLSearchParams(window.location.search);
       const after = params.get('after');
       if (after === 'ok') {
         msg.textContent = 'Scanned. Keep going.';
         msg.className = 'dd-msg dd-msg--ok';
-        playScanChime(step);
+        playScanChime(initial.step);
       } else if (after === 'unknown') {
         msg.textContent = 'That QR is not part of the hunt.';
         msg.className = 'dd-msg dd-msg--err';
@@ -382,12 +394,19 @@ import '../../styles/demoday.css';
         }
         if (result?.ok) {
           closeScanner();
-          window.location.href = '/demoday/play?after=ok';
+          const state = await refreshGame();
+          if (state) {
+            playScanChime(state.step);
+            msg.textContent = `${station.name} scanned. ${TOTAL_STATIONS - state.step} to go.`;
+            msg.className = 'dd-msg dd-msg--ok';
+          }
           return;
         }
         if (result?.reason === 'already') {
           closeScanner();
-          window.location.href = '/demoday/play?after=already';
+          msg.textContent = 'Already scanned this one.';
+          msg.className = 'dd-msg';
+          playSoftTap();
           return;
         }
         scannerStatus.textContent = result?.reason || 'Could not save that scan.';
