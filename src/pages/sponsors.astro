@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 
 const base = import.meta.env.BASE_URL;
 
@@ -49,7 +48,6 @@ const studentOrgs = [
   <section class="sp">
     <div class="sp__hero">
       <h1 class="sp__title">Sponsors & Partners</h1>
-      <p class="sp__subtitle">The organizations and communities that make our work possible.</p>
     </div>
 
     <div class="sp__section">
@@ -79,17 +77,24 @@ const studentOrgs = [
       </div>
     </div>
   </section>
-
-  <Footer />
 </BaseLayout>
 
 <style>
+  /*
+   * The whole page is one screen: a fixed-height column with the title on top
+   * and the three carousels sharing the rest. Sizes are in vh so it fits any
+   * viewport height without scrolling.
+   */
   .sp {
     background: #fff;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
     width: 100%;
     overflow: hidden;
-    padding-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    padding: calc(5.5rem + 7vh) 0 3vh;
+    box-sizing: border-box;
   }
 
   .sp__hero {
@@ -98,40 +103,36 @@ const studentOrgs = [
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: clamp(10rem, 18vh, 14rem) var(--page-padding) clamp(2rem, 4vh, 4rem);
+    padding: 0 var(--page-padding);
+    flex-shrink: 0;
   }
 
   .sp__title {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-size: clamp(1.75rem, 5.5vh, 4.5rem);
     font-weight: 800;
     letter-spacing: -0.04em;
     color: #000;
     line-height: 0.95;
   }
 
-  .sp__subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(1rem, 1.3vw, 1.4rem);
-    font-weight: 300;
-    color: rgba(0, 0, 0, 0.7);
-    margin-top: 1.5rem;
-    max-width: 500px;
-    line-height: 1.6;
-  }
-
   .sp__section {
-    padding: clamp(3rem, 5vh, 5rem) 0;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
   }
 
   .sp__section-title {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(1.3rem, 2vw, 2rem);
+    font-size: clamp(0.9rem, 2vh, 1.6rem);
     font-weight: 700;
     color: rgba(0, 0, 0, 0.65);
     letter-spacing: -0.02em;
     text-align: center;
-    margin-bottom: clamp(2rem, 3vh, 3rem);
+    margin-bottom: 1.2vh;
   }
 
   .sp__track-wrap {
@@ -142,7 +143,7 @@ const studentOrgs = [
   .sp__track {
     display: flex;
     align-items: center;
-    gap: clamp(3rem, 5vw, 5rem);
+    gap: clamp(2rem, 4vw, 4rem);
     width: max-content;
     will-change: transform;
     animation-timing-function: linear;
@@ -168,9 +169,9 @@ const studentOrgs = [
   }
 
   .sp__logo {
-    height: clamp(7rem, 12vw, 12rem);
+    height: clamp(3.5rem, 13vh, 11rem);
     width: auto;
-    max-width: clamp(14rem, 22vw, 22rem);
+    max-width: clamp(8rem, 24vh, 20rem);
     object-fit: contain;
     flex-shrink: 0;
     border-radius: 12px;
@@ -196,39 +197,6 @@ const studentOrgs = [
     transform: scale(1.05);
   }
 
-  @media (max-width: 768px) {
-    .sp__hero {
-      padding: 7rem var(--page-padding) 2rem;
-    }
-
-    .sp__title {
-      font-size: 2.5rem;
-    }
-
-    .sp__logo {
-      height: 5.5rem;
-      max-width: 13rem;
-    }
-
-    .sp__section {
-      padding: 2rem 0;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .sp__hero {
-      padding: 6rem 1rem 1.5rem;
-    }
-
-    .sp__title {
-      font-size: 2rem;
-    }
-
-    .sp__logo {
-      height: 5rem;
-      max-width: 11rem;
-    }
-  }
 </style>
 
 <script>

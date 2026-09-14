@@ -1,0 +1,1126 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="NASA SUITS Applications — XR Club" hideHeader hideChatBot noindex>
+  <div class="sd-gate" id="sd-gate">
+    <span class="sd-spinner"></span>
+    <p>Loading applications…</p>
+  </div>
+
+  <div class="sd" id="sd" hidden>
+    <header class="sd__top">
+      <div class="sd__top-left">
+        <h1 class="sd__title">NASA SUITS Applications</h1>
+        <span class="sd__count" id="sd-count"></span>
+      </div>
+      <div class="sd__top-right">
+        <button type="button" class="sd__btn" id="sd-export">Export CSV</button>
+        <a href={`${base}dashboard`} class="sd__btn">Club dashboard</a>
+        <a href={base} class="sd__btn">Back to site</a>
+        <button type="button" class="sd__btn sd__btn--quiet" id="sd-signout">Sign out</button>
+      </div>
+    </header>
+
+    <div class="sd__filters">
+      <div class="sd__segment" id="sd-status-filter" role="tablist">
+        <button type="button" class="sd__seg is-active" data-status="">All <span class="sd__seg-n" data-count="all"></span></button>
+        <button type="button" class="sd__seg" data-status="new">New <span class="sd__seg-n" data-count="new"></span></button>
+        <button type="button" class="sd__seg" data-status="interview">Interview <span class="sd__seg-n" data-count="interview"></span></button>
+        <button type="button" class="sd__seg" data-status="accepted">Accepted <span class="sd__seg-n" data-count="accepted"></span></button>
+        <button type="button" class="sd__seg" data-status="rejected">Rejected <span class="sd__seg-n" data-count="rejected"></span></button>
+      </div>
+
+      <div class="sd__tools">
+        <input class="sd__search" id="sd-search" type="search" placeholder="Search name, email, Discord, major" autocomplete="off" />
+        <select class="sd__select" id="sd-year">
+          <option value="">Any year</option>
+          <option>Freshman</option>
+          <option>Sophomore</option>
+          <option>Junior</option>
+          <option>Senior</option>
+          <option>5th Year or Above</option>
+          <option>Graduate Student</option>
+        </select>
+        <select class="sd__select" id="sd-interest">
+          <option value="">Any interest</option>
+          <option>XR and Unity Development</option>
+          <option>UI and UX Design</option>
+          <option>Navigation and Mapping</option>
+          <option>AI and Machine Learning</option>
+          <option>Systems and Telemetry Integration</option>
+          <option>Voice Assistant</option>
+          <option>Human Factors and UX Research</option>
+          <option>Hardware and Peripherals</option>
+          <option>Project Management</option>
+          <option>Outreach and Industry Engagement</option>
+          <option>Graphic Design and Media</option>
+          <option>Documentation and Technical Writing</option>
+          <option>Other</option>
+        </select>
+        <select class="sd__select" id="sd-eligible">
+          <option value="">Any eligibility</option>
+          <option value="ok">Eligible and available</option>
+          <option value="flag">Has a flag</option>
+        </select>
+        <select class="sd__select" id="sd-sort">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="name">Name A to Z</option>
+          <option value="hours">Most hours per week</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sd__body">
+      <section class="sd__list" id="sd-list" aria-label="Applicants"></section>
+      <p class="sd__empty" id="sd-empty" hidden>No applications match these filters.</p>
+
+      <section class="sd__detail" id="sd-detail" aria-live="polite">
+        <div class="sd__detail-placeholder" id="sd-placeholder">
+          <p>Select an applicant to review.</p>
+          <p class="sd__hint">Arrow keys move through the list. Press <kbd>I</kbd> to mark for interview, <kbd>A</kbd> accept, <kbd>R</kbd> reject, <kbd>N</kbd> reset to new.</p>
+        </div>
+        <div id="sd-detail-content" hidden></div>
+      </section>
+    </div>
+  </div>
+
+  <style is:global>
+    /* ------------------------------------------------------------------ */
+    /* Tokens                                                              */
+    /* ------------------------------------------------------------------ */
+    .sd,
+    .sd-gate {
+      --sd-accent: #8b5cf6;
+      --sd-grad: linear-gradient(90deg, #a855f7 0%, #8b5cf6 45%, #3b82f6 100%);
+      --sd-ring: rgba(139, 92, 246, 0.28);
+      --sd-text: #f5f5f7;
+      --sd-muted: #9d9da6;
+      --sd-line: #26262c;
+      --sd-card: #131316;
+      --sd-field: #1a1a1f;
+      --sd-field-line: #2f2f37;
+      --sd-ok: #34d399;
+      --sd-warn: #fbbf24;
+      --sd-bad: #ff6b6b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--sd-text);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .sd [hidden],
+    .sd-gate[hidden],
+    .sd[hidden] {
+      display: none !important;
+    }
+
+    .sd-gate {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--sd-muted);
+    }
+
+    .sd-spinner {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid var(--sd-line);
+      border-top-color: var(--sd-accent);
+      animation: sd-spin 0.8s linear infinite;
+    }
+
+    @keyframes sd-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Frame                                                               */
+    /* ------------------------------------------------------------------ */
+    .sd {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sd__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--sd-line);
+      background: #0a0a0a;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .sd__top-left {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .sd__title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .sd__count {
+      color: var(--sd-muted);
+      font-weight: 500;
+    }
+
+    .sd__top-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .sd__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 0.95rem;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--sd-text);
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+
+    .sd__btn:hover {
+      background: #22222a;
+      border-color: #3c3c46;
+    }
+
+    .sd__btn--quiet {
+      background: transparent;
+      border-color: transparent;
+      color: var(--sd-muted);
+    }
+
+    .sd__btn--primary {
+      color: #fff;
+      background: var(--sd-grad);
+      border-color: transparent;
+    }
+
+    .sd__btn--primary:hover {
+      filter: brightness(1.08);
+      background: var(--sd-grad);
+    }
+
+    .sd__btn--danger {
+      color: var(--sd-bad);
+    }
+
+    .sd__btn--danger:hover {
+      border-color: rgba(255, 107, 107, 0.5);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Filters                                                             */
+    /* ------------------------------------------------------------------ */
+    .sd__filters {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--sd-line);
+    }
+
+    .sd__segment {
+      display: inline-flex;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 12px;
+      align-self: flex-start;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .sd__seg {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 34px;
+      padding: 0 0.85rem;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--sd-muted);
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 150ms ease, color 150ms ease;
+    }
+
+    .sd__seg:hover {
+      color: var(--sd-text);
+    }
+
+    .sd__seg.is-active {
+      color: #fff;
+      background: var(--sd-grad);
+    }
+
+    .sd__seg-n {
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0.8;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sd__tools {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .sd__search,
+    .sd__select {
+      min-height: 40px;
+      padding: 0 0.85rem;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--sd-text);
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .sd__search {
+      flex: 1 1 260px;
+      min-width: 0;
+    }
+
+    .sd__search:focus,
+    .sd__select:focus {
+      border-color: var(--sd-accent);
+      box-shadow: 0 0 0 3px var(--sd-ring);
+    }
+
+    .sd__select option {
+      background: #1a1a1f;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Body: list + detail                                                 */
+    /* ------------------------------------------------------------------ */
+    .sd__body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 400px minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .sd__list {
+      border-right: 1px solid var(--sd-line);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: calc(100vh - 150px);
+      overflow-y: auto;
+      position: sticky;
+      top: 150px;
+    }
+
+    .sd__empty {
+      grid-column: 1;
+      padding: 2rem 1.5rem;
+      color: var(--sd-muted);
+    }
+
+    .sd__card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      color: var(--sd-text);
+      background: var(--sd-card);
+      border: 1px solid var(--sd-line);
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+
+    .sd__card:hover {
+      border-color: #3c3c46;
+    }
+
+    .sd__card.is-selected {
+      border-color: var(--sd-accent);
+      background: #17151f;
+    }
+
+    .sd__card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+
+    .sd__card-name {
+      font-weight: 700;
+      font-size: 1rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sd__card-meta {
+      color: var(--sd-muted);
+      font-size: 0.88rem;
+      margin-top: 0.15rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sd__card-foot {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+      font-size: 0.82rem;
+      color: var(--sd-muted);
+    }
+
+    .sd__pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 980px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .sd__pill--new { color: #c7c7d1; background: #22222a; }
+    .sd__pill--interview { color: #dcc7ff; background: rgba(139, 92, 246, 0.22); }
+    .sd__pill--accepted { color: #a7f3d0; background: rgba(52, 211, 153, 0.18); }
+    .sd__pill--rejected { color: #ffb4b4; background: rgba(255, 107, 107, 0.16); }
+
+    .sd__flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      color: var(--sd-warn);
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    .sd__flag--bad {
+      color: var(--sd-bad);
+      background: rgba(255, 107, 107, 0.12);
+    }
+
+    .sd__tag {
+      display: inline-flex;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.78rem;
+      border-radius: 6px;
+      color: #c7c7d1;
+      background: #1f1f26;
+      border: 1px solid #2c2c34;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Detail                                                              */
+    /* ------------------------------------------------------------------ */
+    .sd__detail {
+      padding: 1.25rem 1.5rem 3rem;
+      min-width: 0;
+    }
+
+    .sd__detail-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 50vh;
+      text-align: center;
+      color: var(--sd-muted);
+    }
+
+    .sd__hint {
+      font-size: 0.88rem;
+      max-width: 34rem;
+    }
+
+    .sd__detail kbd {
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 0.05rem 0.4rem;
+      border: 1px solid var(--sd-field-line);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: var(--sd-field);
+      color: var(--sd-text);
+    }
+
+    .sd__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .sd__name {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .sd__sub {
+      color: var(--sd-muted);
+      margin: 0.2rem 0 0;
+    }
+
+    .sd__nav {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .sd__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+
+    .sd__status {
+      display: inline-flex;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 12px;
+    }
+
+    .sd__status button {
+      min-height: 34px;
+      padding: 0 0.85rem;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--sd-muted);
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 150ms ease, color 150ms ease;
+    }
+
+    .sd__status button:hover {
+      color: var(--sd-text);
+    }
+
+    .sd__status button.is-active[data-status="new"] { color: #fff; background: #2c2c35; }
+    .sd__status button.is-active[data-status="interview"] { color: #fff; background: var(--sd-accent); }
+    .sd__status button.is-active[data-status="accepted"] { color: #062f21; background: var(--sd-ok); }
+    .sd__status button.is-active[data-status="rejected"] { color: #fff; background: #d64545; }
+
+    .sd__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .sd__panel {
+      background: var(--sd-card);
+      border: 1px solid var(--sd-line);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.75rem;
+      min-width: 0;
+    }
+
+    .sd__panel-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--sd-muted);
+      margin: 0 0 0.6rem;
+    }
+
+    .sd__kv {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.35rem 1rem;
+      font-size: 0.95rem;
+    }
+
+    .sd__kv dt {
+      color: var(--sd-muted);
+    }
+
+    .sd__kv dd {
+      margin: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .sd__kv a {
+      color: #b49bff;
+      text-decoration: none;
+    }
+
+    .sd__kv a:hover {
+      text-decoration: underline;
+    }
+
+    .sd__ok { color: var(--sd-ok); font-weight: 600; }
+    .sd__warn { color: var(--sd-warn); font-weight: 600; }
+    .sd__bad { color: var(--sd-bad); font-weight: 600; }
+
+    .sd__q {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.4rem;
+    }
+
+    .sd__a {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #d6d6dd;
+      margin: 0;
+    }
+
+    .sd__a--muted {
+      color: var(--sd-muted);
+    }
+
+    .sd__words {
+      font-size: 0.8rem;
+      color: var(--sd-muted);
+      margin: 0.4rem 0 0;
+    }
+
+    .sd__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .sd__cal {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+
+    .sd__cal-day {
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 10px;
+      padding: 0.6rem 0.7rem;
+      min-width: 0;
+    }
+
+    .sd__cal-dow {
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+
+    .sd__cal-slot {
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+      color: #d6d6dd;
+      line-height: 1.6;
+    }
+
+    .sd__cal-none {
+      font-size: 0.82rem;
+      color: var(--sd-muted);
+    }
+
+    .sd__notes {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 110px;
+      padding: 0.7rem 0.85rem;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--sd-text);
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 10px;
+      outline: none;
+      resize: vertical;
+    }
+
+    .sd__notes:focus {
+      border-color: var(--sd-accent);
+      box-shadow: 0 0 0 3px var(--sd-ring);
+    }
+
+    .sd__notes-status {
+      font-size: 0.82rem;
+      color: var(--sd-muted);
+      margin: 0.4rem 0 0;
+      min-height: 1.2em;
+    }
+
+    .sd__danger {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Responsive                                                          */
+    /* ------------------------------------------------------------------ */
+    @media (max-width: 900px) {
+      .sd__body {
+        grid-template-columns: 1fr;
+      }
+
+      .sd__list {
+        position: static;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--sd-line);
+      }
+
+      .sd__list.has-selection {
+        display: none;
+      }
+
+      .sd__detail {
+        padding: 1rem;
+      }
+
+      .sd__cal {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .sd__top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+    import type { Profile, SuitsApplication, SuitsStatus } from '../lib/types';
+
+    const base = import.meta.env.BASE_URL;
+
+    const STATUS_LABEL: Record<SuitsStatus, string> = { new: 'New', interview: 'Interview', accepted: 'Accepted', rejected: 'Rejected' };
+    const HOURS_RANK: Record<string, number> = { 'Less than 3 hours': 1, '3 to 5 hours': 2, '5 to 7 hours': 3, '7 to 10 hours': 4, '10 or more hours': 5 };
+    const DAY_LABEL: Record<string, string> = { '2026-09-18': 'Fri, Sep 18', '2026-09-19': 'Sat, Sep 19', '2026-09-20': 'Sun, Sep 20', '2026-09-21': 'Mon, Sep 21' };
+
+    const QUESTIONS: Array<[keyof SuitsApplication, string]> = [
+      ['bring_to_table', 'What would you bring to the table as a member of this year’s NASA SUITS team?'],
+      ['why_join', 'Why do you want to be on this year’s NASA SUITS team?'],
+      ['teamwork_story', 'Tell us about a time you worked closely with a team on a project.'],
+      ['team_environment', 'What would you personally do to help create a strong and collaborative team environment?'],
+    ];
+
+    function esc(s: string | null | undefined) {
+      const d = document.createElement('div');
+      d.textContent = s ?? '';
+      return d.innerHTML;
+    }
+
+    function words(s: string) {
+      const t = s.trim();
+      return t ? t.split(/\s+/).length : 0;
+    }
+
+    function fmtDate(iso: string) {
+      return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    function fmtSlot(slot: string) {
+      const h = Number(slot.slice(11, 13));
+      return `${((h + 11) % 12) + 1}:00 ${h < 12 ? 'AM' : 'PM'}`;
+    }
+
+    // Eligibility flags drive the warning badges and the "Has a flag" filter.
+    function flagsFor(a: SuitsApplication) {
+      const flags: Array<{ text: string; bad: boolean }> = [];
+      if (a.us_citizen_or_pr !== 'Yes') flags.push({ text: 'Not a citizen or PR', bad: true });
+      if (a.required_dates === 'No') flags.push({ text: 'Cannot attend required dates', bad: true });
+      if (a.required_dates.startsWith('Unsure')) flags.push({ text: 'Unsure about required dates', bad: false });
+      if (a.hours_per_week === 'Less than 3 hours') flags.push({ text: 'Under 3 hours a week', bad: false });
+      return flags;
+    }
+
+    document.addEventListener('astro:page-load', () => {
+      const root = document.getElementById('sd');
+      if (!root) return;
+
+      const gate = document.getElementById('sd-gate')!;
+      const listEl = document.getElementById('sd-list')!;
+      const emptyEl = document.getElementById('sd-empty')!;
+      const detailEl = document.getElementById('sd-detail-content')!;
+      const placeholder = document.getElementById('sd-placeholder')!;
+      const countEl = document.getElementById('sd-count')!;
+      const search = document.getElementById('sd-search') as HTMLInputElement;
+      const yearSel = document.getElementById('sd-year') as HTMLSelectElement;
+      const interestSel = document.getElementById('sd-interest') as HTMLSelectElement;
+      const eligibleSel = document.getElementById('sd-eligible') as HTMLSelectElement;
+      const sortSel = document.getElementById('sd-sort') as HTMLSelectElement;
+
+      let me: Profile | null = null;
+      let all: SuitsApplication[] = [];
+      let visible: SuitsApplication[] = [];
+      let statusFilter = '';
+      let selectedId: string | null = null;
+
+      // -------------------------------------------------------------
+      // Auth: board and admin only
+      // -------------------------------------------------------------
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { window.location.href = `${base}login`; return; }
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (!profile || (profile.role !== 'board' && profile.role !== 'admin')) { window.location.href = base; return; }
+        me = profile as Profile;
+
+        await load();
+        gate.hidden = true;
+        root.hidden = false;
+      })();
+
+      async function load() {
+        const { data, error } = await supabase.from('suits_applications').select('*').order('created_at', { ascending: false });
+        if (error) { gate.innerHTML = `<p>Could not load applications: ${esc(error.message)}</p>`; return; }
+        all = (data || []) as SuitsApplication[];
+        render();
+      }
+
+      // -------------------------------------------------------------
+      // Filtering and list
+      // -------------------------------------------------------------
+      function applyFilters() {
+        const q = search.value.trim().toLowerCase();
+        visible = all.filter(a => {
+          if (statusFilter && a.status !== statusFilter) return false;
+          if (yearSel.value && a.year !== yearSel.value) return false;
+          if (interestSel.value && !a.interest_areas.includes(interestSel.value)) return false;
+          if (eligibleSel.value === 'ok' && flagsFor(a).length) return false;
+          if (eligibleSel.value === 'flag' && !flagsFor(a).length) return false;
+          if (q) {
+            const hay = `${a.full_name} ${a.email} ${a.discord_username} ${a.majors} ${a.minors ?? ''}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+
+        const sort = sortSel.value;
+        visible.sort((x, y) => {
+          if (sort === 'name') return x.full_name.localeCompare(y.full_name);
+          if (sort === 'hours') return (HOURS_RANK[y.hours_per_week] || 0) - (HOURS_RANK[x.hours_per_week] || 0) || y.created_at.localeCompare(x.created_at);
+          if (sort === 'oldest') return x.created_at.localeCompare(y.created_at);
+          return y.created_at.localeCompare(x.created_at);
+        });
+      }
+
+      function render() {
+        applyFilters();
+
+        const counts: Record<string, number> = { all: all.length, new: 0, interview: 0, accepted: 0, rejected: 0 };
+        all.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
+        document.querySelectorAll<HTMLElement>('[data-count]').forEach(el => { el.textContent = String(counts[el.dataset.count!] ?? 0); });
+        countEl.textContent = `${visible.length} of ${all.length}`;
+
+        listEl.innerHTML = visible.map(a => {
+          const flags = flagsFor(a);
+          const interests = a.interest_areas.slice(0, 3).map(i => `<span class="sd__tag">${esc(i)}</span>`).join('');
+          const more = a.interest_areas.length > 3 ? `<span class="sd__tag">+${a.interest_areas.length - 3}</span>` : '';
+          return `
+            <button type="button" class="sd__card${a.id === selectedId ? ' is-selected' : ''}" data-id="${a.id}">
+              <div class="sd__card-row">
+                <span class="sd__card-name">${esc(a.full_name)}</span>
+                <span class="sd__pill sd__pill--${a.status}">${STATUS_LABEL[a.status]}</span>
+              </div>
+              <div class="sd__card-meta">${esc(a.year)} · ${esc(a.majors)}</div>
+              <div class="sd__card-foot">
+                ${interests}${more}
+              </div>
+              <div class="sd__card-foot">
+                <span>${esc(a.hours_per_week)}</span>
+                ${flags.map(f => `<span class="sd__flag${f.bad ? ' sd__flag--bad' : ''}">${esc(f.text)}</span>`).join('')}
+                <span style="margin-left:auto">${fmtDate(a.created_at)}</span>
+              </div>
+            </button>`;
+        }).join('');
+
+        emptyEl.hidden = visible.length > 0;
+        listEl.classList.toggle('has-selection', !!selectedId);
+
+        if (selectedId && !all.some(a => a.id === selectedId)) selectedId = null;
+        renderDetail();
+      }
+
+      listEl.addEventListener('click', e => {
+        const card = (e.target as HTMLElement).closest<HTMLElement>('.sd__card');
+        if (!card) return;
+        select(card.dataset.id!);
+      });
+
+      function select(id: string | null) {
+        selectedId = id;
+        listEl.querySelectorAll('.sd__card').forEach(c => c.classList.toggle('is-selected', (c as HTMLElement).dataset.id === id));
+        listEl.classList.toggle('has-selection', !!id);
+        renderDetail();
+        listEl.querySelector<HTMLElement>('.sd__card.is-selected')?.scrollIntoView({ block: 'nearest' });
+      }
+
+      function moveSelection(delta: number) {
+        if (!visible.length) return;
+        const idx = visible.findIndex(a => a.id === selectedId);
+        const next = idx < 0 ? 0 : Math.min(visible.length - 1, Math.max(0, idx + delta));
+        select(visible[next].id);
+      }
+
+      // -------------------------------------------------------------
+      // Detail
+      // -------------------------------------------------------------
+      function renderDetail() {
+        const a = all.find(x => x.id === selectedId);
+        if (!a) {
+          detailEl.hidden = true;
+          placeholder.hidden = false;
+          return;
+        }
+        placeholder.hidden = true;
+        detailEl.hidden = false;
+
+        const flags = flagsFor(a);
+        const idx = visible.findIndex(x => x.id === a.id);
+
+        const slotsByDay: Record<string, string[]> = {};
+        a.interview_slots.forEach(s => { const d = s.slice(0, 10); (slotsByDay[d] ||= []).push(fmtSlot(s)); });
+
+        const eligibility = (label: string, value: string, good: boolean, unsure = false) =>
+          `<dt>${label}</dt><dd class="${good ? 'sd__ok' : unsure ? 'sd__warn' : 'sd__bad'}">${esc(value)}</dd>`;
+
+        detailEl.innerHTML = `
+          <div class="sd__head">
+            <div>
+              <h2 class="sd__name">${esc(a.full_name)}</h2>
+              <p class="sd__sub">${esc(a.year)} · ${esc(a.majors)}${a.minors ? ` · Minor: ${esc(a.minors)}` : ''} · Submitted ${fmtDate(a.created_at)}</p>
+            </div>
+            <div class="sd__nav">
+              <button type="button" class="sd__btn" id="sd-prev" ${idx <= 0 ? 'disabled' : ''}>Previous</button>
+              <button type="button" class="sd__btn" id="sd-next" ${idx >= visible.length - 1 ? 'disabled' : ''}>Next</button>
+              <button type="button" class="sd__btn sd__btn--quiet" id="sd-close">Close</button>
+            </div>
+          </div>
+
+          <div class="sd__actions">
+            <div class="sd__status" id="sd-status">
+              ${(['new', 'interview', 'accepted', 'rejected'] as SuitsStatus[]).map(s => `<button type="button" data-status="${s}" class="${a.status === s ? 'is-active' : ''}">${STATUS_LABEL[s]}</button>`).join('')}
+            </div>
+            <button type="button" class="sd__btn sd__btn--primary" id="sd-resume">Open resume</button>
+            <a class="sd__btn" href="mailto:${esc(a.email)}">Email</a>
+            <button type="button" class="sd__btn" id="sd-copy-discord">Copy Discord</button>
+            ${a.portfolio_url ? `<a class="sd__btn" href="${esc(/^https?:\/\//i.test(a.portfolio_url) ? a.portfolio_url : 'https://' + a.portfolio_url)}" target="_blank" rel="noopener">Portfolio</a>` : ''}
+          </div>
+
+          <div class="sd__grid">
+            <div class="sd__panel">
+              <p class="sd__panel-title">Contact</p>
+              <dl class="sd__kv">
+                <dt>Email</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a></dd>
+                <dt>Discord</dt><dd>${esc(a.discord_username)}</dd>
+                <dt>Orgs</dt><dd>${esc(a.organizations)}</dd>
+              </dl>
+            </div>
+            <div class="sd__panel">
+              <p class="sd__panel-title">Eligibility</p>
+              <dl class="sd__kv">
+                ${eligibility('Citizen or PR', a.us_citizen_or_pr, a.us_citizen_or_pr === 'Yes')}
+                ${eligibility('Required dates', a.required_dates, a.required_dates === 'Yes', a.required_dates.startsWith('Unsure'))}
+                ${eligibility('Hours per week', a.hours_per_week, HOURS_RANK[a.hours_per_week] >= 3, HOURS_RANK[a.hours_per_week] === 2)}
+              </dl>
+              ${flags.length ? `<div class="sd__chips" style="margin-top:0.6rem">${flags.map(f => `<span class="sd__flag${f.bad ? ' sd__flag--bad' : ''}">${esc(f.text)}</span>`).join('')}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="sd__panel">
+            <p class="sd__panel-title">Interested in</p>
+            <div class="sd__chips">${a.interest_areas.map(i => `<span class="sd__tag">${esc(i === 'Other' && a.interest_other ? `Other: ${a.interest_other}` : i)}</span>`).join('')}</div>
+          </div>
+
+          <div class="sd__panel">
+            <p class="sd__panel-title">Interview availability (Eastern, over Zoom)</p>
+            <div class="sd__cal">
+              ${Object.keys(DAY_LABEL).map(d => `
+                <div class="sd__cal-day">
+                  <p class="sd__cal-dow">${DAY_LABEL[d]}</p>
+                  ${(slotsByDay[d] || []).length ? slotsByDay[d].map(s => `<div class="sd__cal-slot">${s}</div>`).join('') : '<div class="sd__cal-none">None</div>'}
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <div class="sd__panel">
+            <p class="sd__panel-title">Availability changes before May 2027</p>
+            <p class="sd__a">${esc(a.availability_changes)}</p>
+          </div>
+
+          ${QUESTIONS.map(([key, q]) => `
+            <div class="sd__panel">
+              <p class="sd__q">${esc(q)}</p>
+              <p class="sd__a">${esc(a[key] as string)}</p>
+              <p class="sd__words">${words(a[key] as string)} words</p>
+            </div>`).join('')}
+
+          <div class="sd__panel">
+            <p class="sd__panel-title">Anything else</p>
+            <p class="sd__a${a.anything_else ? '' : ' sd__a--muted'}">${a.anything_else ? esc(a.anything_else) : 'Nothing added.'}</p>
+          </div>
+
+          <div class="sd__panel">
+            <p class="sd__panel-title">Reviewer notes</p>
+            <textarea class="sd__notes" id="sd-notes" placeholder="Notes for the board. Saved when you click away.">${esc(a.reviewer_notes)}</textarea>
+            <p class="sd__notes-status" id="sd-notes-status"></p>
+          </div>
+
+          <div class="sd__danger">
+            <button type="button" class="sd__btn sd__btn--danger" id="sd-delete">Delete application</button>
+          </div>`;
+
+        document.getElementById('sd-prev')!.addEventListener('click', () => moveSelection(-1));
+        document.getElementById('sd-next')!.addEventListener('click', () => moveSelection(1));
+        document.getElementById('sd-close')!.addEventListener('click', () => select(null));
+
+        document.getElementById('sd-status')!.addEventListener('click', e => {
+          const btn = (e.target as HTMLElement).closest<HTMLElement>('button[data-status]');
+          if (btn) setStatus(a.id, btn.dataset.status as SuitsStatus);
+        });
+
+        document.getElementById('sd-resume')!.addEventListener('click', async () => {
+          const { data, error } = await supabase.storage.from('suits-resumes').createSignedUrl(a.resume_path, 300);
+          if (error || !data) { alert(`Could not open the resume: ${error?.message ?? 'unknown error'}`); return; }
+          window.open(data.signedUrl, '_blank', 'noopener');
+        });
+
+        document.getElementById('sd-copy-discord')!.addEventListener('click', async e => {
+          const btn = e.currentTarget as HTMLButtonElement;
+          try { await navigator.clipboard.writeText(a.discord_username); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy Discord'; }, 1200); } catch { /* clipboard blocked */ }
+        });
+
+        const notes = document.getElementById('sd-notes') as HTMLTextAreaElement;
+        const notesStatus = document.getElementById('sd-notes-status')!;
+        notes.addEventListener('blur', async () => {
+          const value = notes.value.trim() || null;
+          if (value === (a.reviewer_notes || null)) return;
+          notesStatus.textContent = 'Saving…';
+          const { error } = await supabase.from('suits_applications').update({ reviewer_notes: value, updated_at: new Date().toISOString() }).eq('id', a.id);
+          notesStatus.textContent = error ? `Not saved: ${error.message}` : 'Saved.';
+          if (!error) a.reviewer_notes = value;
+        });
+
+        document.getElementById('sd-delete')!.addEventListener('click', async () => {
+          if (!confirm(`Delete ${a.full_name}’s application? This also removes their resume and cannot be undone.`)) return;
+          await supabase.storage.from('suits-resumes').remove([a.resume_path]);
+          const { error } = await supabase.from('suits_applications').delete().eq('id', a.id);
+          if (error) { alert(`Could not delete: ${error.message}`); return; }
+          all = all.filter(x => x.id !== a.id);
+          selectedId = null;
+          render();
+        });
+      }
+
+      async function setStatus(id: string, status: SuitsStatus) {
+        const a = all.find(x => x.id === id);
+        if (!a || a.status === status) return;
+        const previous = a.status;
+        a.status = status;
+        render();
+        const { error } = await supabase.from('suits_applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+        if (error) {
+          a.status = previous;
+          render();
+          alert(`Could not update status: ${error.message}`);
+        }
+      }
+
+      // -------------------------------------------------------------
+      // Filters, keyboard, export, sign out
+      // -------------------------------------------------------------
+      document.getElementById('sd-status-filter')!.addEventListener('click', e => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('.sd__seg');
+        if (!btn) return;
+        statusFilter = btn.dataset.status || '';
+        document.querySelectorAll('.sd__seg').forEach(b => b.classList.toggle('is-active', b === btn));
+        render();
+      });
+      [search, yearSel, interestSel, eligibleSel, sortSel].forEach(el => el.addEventListener('input', render));
+
+      document.addEventListener('keydown', e => {
+        const target = e.target as HTMLElement;
+        if (target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); moveSelection(1); }
+        else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); moveSelection(-1); }
+        else if (selectedId) {
+          const map: Record<string, SuitsStatus> = { i: 'interview', a: 'accepted', r: 'rejected', n: 'new' };
+          const s = map[e.key.toLowerCase()];
+          if (s) setStatus(selectedId, s);
+        }
+      });
+
+      document.getElementById('sd-export')!.addEventListener('click', () => {
+        const cols: Array<keyof SuitsApplication> = ['full_name', 'email', 'discord_username', 'year', 'majors', 'minors', 'organizations', 'status', 'hours_per_week', 'us_citizen_or_pr', 'required_dates', 'availability_changes', 'interest_areas', 'interest_other', 'interview_slots', 'portfolio_url', 'bring_to_table', 'why_join', 'teamwork_story', 'team_environment', 'anything_else', 'reviewer_notes', 'resume_path', 'created_at'];
+        const cell = (v: unknown) => `"${String(Array.isArray(v) ? v.join('; ') : v ?? '').replace(/"/g, '""')}"`;
+        const csv = [cols.join(','), ...visible.map(a => cols.map(c => cell(a[c])).join(','))].join('\r\n');
+        const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+        const link = Object.assign(document.createElement('a'), { href: url, download: `nasa-suits-applications-${new Date().toISOString().slice(0, 10)}.csv` });
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('sd-signout')!.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.href = base;
+      });
+    });
+  </script>
+</AppLayout>

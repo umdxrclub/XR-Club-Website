@@ -16,7 +16,7 @@ const storageBase = `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/pu
         <p class="proj__desc">XR Creators are at the core of our membership. They are engineers, designers, and risk-takers who refuse to settle for what they've built and push themselves to create something greater. <strong>Whether you're a freshman with no experience but a strong drive to learn, or a senior with extensive experience, you're welcome here.</strong></p>
         <p class="proj__desc proj__desc--spaced">As an XR Creator, you can propose your own projects and request the resources or equipment needed to bring them to life. Note that new project proposals may undergo a more rigorous review than applications to join existing projects.</p>
         <div class="proj__btns">
-          <a href="#apply" class="proj__apply">Apply Now</a>
+          <a href={`${base}apply`} class="proj__apply proj__apply--suits">Join NASA SUITS</a>
           <a href={`${base}ideate`} class="proj__apply proj__apply--outline">Project Proposals</a>
         </div>
       </div>
@@ -231,6 +231,21 @@ const storageBase = `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/pu
     gap: 0.75rem;
     margin-top: 1.5rem;
     align-self: flex-start;
+  }
+
+  .proj__apply--suits {
+    font-family: 'Orbitron', 'Inter', sans-serif;
+    font-size: clamp(0.85rem, 1vw, 1.15rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: #7c3aed;
+    border-color: #7c3aed;
+  }
+
+  .proj__apply--suits:hover {
+    background: #8f55f5;
+    border-color: #8f55f5;
   }
 
   .proj__apply {

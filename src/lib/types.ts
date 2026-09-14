@@ -101,6 +101,37 @@ export interface DemoDayScan {
   scanned_at: string;
 }
 
+export type SuitsStatus = 'new' | 'interview' | 'accepted' | 'rejected';
+
+export interface SuitsApplication {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  status: SuitsStatus;
+  full_name: string;
+  email: string;
+  discord_username: string;
+  year: string;
+  majors: string;
+  minors: string | null;
+  organizations: string;
+  resume_path: string;
+  portfolio_url: string | null;
+  bring_to_table: string;
+  why_join: string;
+  teamwork_story: string;
+  team_environment: string;
+  interest_areas: string[];
+  interest_other: string | null;
+  hours_per_week: string;
+  availability_changes: string;
+  required_dates: string;
+  us_citizen_or_pr: string;
+  interview_slots: string[];
+  anything_else: string | null;
+  reviewer_notes: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -143,6 +174,11 @@ export interface Database {
         Row: DemoDayScan;
         Insert: Omit<DemoDayScan, 'id' | 'scanned_at'>;
         Update: never;
+      };
+      suits_applications: {
+        Row: SuitsApplication;
+        Insert: Omit<SuitsApplication, 'created_at' | 'updated_at' | 'status' | 'reviewer_notes'> & { status?: SuitsStatus };
+        Update: Partial<SuitsApplication>;
       };
     };
     Functions: {

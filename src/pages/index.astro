@@ -1,41 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 import SplitHero from '../components/SplitHero.astro';
-import AboutSection from '../components/AboutSection.astro';
-import ProjectsSection from '../components/ProjectsSection.astro';
-import LabSection from '../components/LabSection.astro';
-import EventsSection from '../components/EventsSection.astro';
-import BoardSection from '../components/BoardSection.astro';
-import ResourceSection from '../components/ResourceSection.astro';
-import RecognitionSection from '../components/RecognitionSection.astro';
 
 const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="XR Club">
+  <link slot="head" rel="preload" as="image" href={`${base}Images/bubble.png`} fetchpriority="high" />
   <Header />
 
   <section class="hero-section" data-hero-wrapper>
     <SplitHero />
-    <div class="hero-title" data-hero-title>
-      <img class="hero-ring" src={`${base}Images/ring.webp`} alt="" />
-      <p class="hero-title__tagline">Design, Engineer, Create</p>
-      <h1 class="hero-title__heading">XR Club</h1>
+    <div class="hero-bubble" data-hero-bubble>
+      <div class="hero-bubble__tilt" data-hero-tilt>
+        <img class="hero-bubble__img" src={`${base}Images/bubble.png`} alt="" fetchpriority="high" decoding="async" />
+        <h1 class="hero-bubble__heading"><span class="hero-bubble__xr">XR</span> <span class="hero-bubble__club">Club<span class="hero-bubble__dot">.</span></span></h1>
+      </div>
     </div>
   </section>
-
-  <AboutSection />
-  <ProjectsSection />
-  <LabSection />
-  <EventsSection />
-  <RecognitionSection />
-  <BoardSection />
-  <ResourceSection />
-  <Footer />
-
-  <img class="watermark" src={`${base}Images/vrlocked.webp`} alt="" loading="lazy" decoding="async" />
 </BaseLayout>
 
 <style>
@@ -44,113 +27,245 @@ const base = import.meta.env.BASE_URL;
     width: 100%;
     height: 100vh;
     height: 100dvh;
+    overflow: hidden;
   }
 
-  .hero-title {
+  /*
+   * The bubble used to be baked into homescreen.jpg; it's now bubble.png so it
+   * can animate in. It rests at the centre of the hero, sized to match the
+   * artwork (~31% of the 2:1 image width; under object-fit: cover the image
+   * fills the viewport height, hence vh). --bubble-drop is how far below its
+   * resting spot the bubble starts before floating up into place.
+   */
+  .hero-bubble {
+    --bubble-drop: 8vh;
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 50%;
+    left: 50%;
+    width: max(62vh, 31vw);
+    width: max(62dvh, 31vw);
     z-index: 3;
     pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    perspective: 800px;
+    container-type: inline-size;
+    transform: translate(-50%, -50%);
+    perspective: 1200px;
   }
 
-  .hero-ring {
-    position: absolute;
-    width: clamp(28rem, 60vw, 56rem);
-    height: auto;
-    z-index: -1;
-    pointer-events: none;
-    user-select: none;
-    transform: translateY(10%) rotateX(55deg);
-    filter: drop-shadow(0 0 40px rgba(180, 120, 255, 0.3));
-  }
-
-  .hero-title__tagline {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(0.9rem, 1.4vw, 1.3rem);
-    font-weight: 400;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 1rem;
-  }
-
-  .hero-title__heading {
+  /* Leans toward the cursor; --tilt-x/y are driven by the script below. */
+  .hero-bubble__tilt {
     position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    will-change: transform;
+  }
+
+  .hero-bubble__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  /* Font size is a share of the bubble's width so the title always fills the loop. */
+  .hero-bubble__heading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(60px);
+    margin: 0;
     font-family: 'Inter', sans-serif;
-    font-size: clamp(5rem, 12vw, 10rem);
-    font-weight: 800;
+    font-size: min(max(13vh, 6.5vw), 22vw);
+    font-size: min(21cqw, 22vw); /* 22vw keeps it on-screen where the bubble is wider than the viewport */
+    font-weight: 900;
     color: #fff;
-    letter-spacing: -0.04em;
-    line-height: 0.92;
-    text-shadow: 0 8px 40px rgba(0, 0, 0, 1), 0 4px 15px rgba(0, 0, 0, 1), 0 0 120px rgba(0, 0, 0, 0.8), 0 0 200px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.05em;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 12px 40px rgba(0, 0, 0, 0.5);
   }
 
-  .watermark {
-    position: fixed;
-    bottom: 0;
-    right: 0.75rem;
-    z-index: 9999;
-    height: 80px;
-    width: auto;
-    pointer-events: none;
-    user-select: none;
+  /*
+   * Wordmark: heavy "XR" against a medium-weight "Club", finished with a
+   * purple full stop in the site's accent colour. Each word is its own
+   * element so they can land one after the other in the intro.
+   */
+  .hero-bubble__xr,
+  .hero-bubble__club {
+    display: inline-block;
+    opacity: 0;
   }
 
-  @media (max-width: 768px) {
-    .hero-ring {
-      width: clamp(18rem, 70vw, 28rem);
-    }
+  .hero-bubble__club {
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
 
-    .hero-title__heading {
-      font-size: clamp(3.5rem, 14vw, 6rem);
-    }
+  .hero-bubble__dot {
+    color: #b46bff;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
 
-    .watermark {
-      right: auto;
-      left: 50%;
-      transform: translateX(-50%);
-      height: 60px;
+  /*
+   * Intro (~1.6s), started by the script below once bubble.png has painted:
+   * the bubble fades in and inflates while drifting gently up into place, the
+   * film gives one soft jiggle as it settles, then the title fades in. After
+   * that it idles with a slow float and a barely-there breathe.
+   */
+  .hero-bubble.is-ready {
+    animation:
+      bubble-rise 1.6s cubic-bezier(0.22, 1, 0.36, 1) both,
+      bubble-float 7s ease-in-out 1.6s infinite;
+  }
+
+  .hero-bubble.is-ready .hero-bubble__img {
+    animation:
+      bubble-inflate 1.6s cubic-bezier(0.22, 1, 0.36, 1) both,
+      bubble-breathe 5s ease-in-out 1.6s infinite;
+  }
+
+  .hero-bubble.is-ready .hero-bubble__xr {
+    animation: word-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
+  }
+
+  .hero-bubble.is-ready .hero-bubble__club {
+    animation: word-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.38s both;
+  }
+
+  @keyframes bubble-rise {
+    from {
+      transform: translate(-50%, calc(-50% + var(--bubble-drop)));
+    }
+    to {
+      transform: translate(-50%, -50%);
     }
   }
 
-  @media (max-width: 480px) {
-    .hero-title {
-      padding-left: 5vw;
-      padding-right: 5vw;
+  @keyframes bubble-float {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    33% {
+      transform: translate(-50%, calc(-50% - 1.5%)) rotate(0.6deg);
+    }
+    66% {
+      transform: translate(-50%, calc(-50% + 1%)) rotate(-0.5deg);
+    }
+  }
+
+  @keyframes bubble-inflate {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    40% {
+      opacity: 1;
+    }
+    72% {
+      transform: scale(1.025, 0.985);
+    }
+    88% {
+      transform: scale(0.99, 1.012);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bubble-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.015, 1.01);
+    }
+  }
+
+  @keyframes word-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.35em);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-bubble.is-ready,
+    .hero-bubble.is-ready .hero-bubble__img,
+    .hero-bubble.is-ready .hero-bubble__xr,
+    .hero-bubble.is-ready .hero-bubble__club {
+      animation: none;
+    }
+
+    .hero-bubble.is-ready .hero-bubble__img,
+    .hero-bubble.is-ready .hero-bubble__xr,
+    .hero-bubble.is-ready .hero-bubble__club {
+      opacity: 1;
     }
   }
 </style>
 
 <script>
-  import { initScrollAnimations } from '../animations/scrollAnimations';
-
   document.addEventListener('astro:page-load', () => {
     if (!document.querySelector('[data-hero-wrapper]')) return;
 
-    initScrollAnimations();
-
-    // Deep links like /#events arrive from other pages via the header nav.
-    if (window.location.hash) {
-      const target = window.location.hash.slice(1);
-      if (target === 'home') {
-        window.scrollTo(0, 0);
-        history.replaceState(null, '', window.location.pathname);
+    // Start the intro only once bubble.png has painted so it never animates as
+    // an empty box; the timeout is a safety net if the load stalls.
+    const bubble = document.querySelector<HTMLElement>('[data-hero-bubble]');
+    const bubbleImg = bubble?.querySelector('img');
+    if (bubble && bubbleImg) {
+      const start = () => bubble.classList.add('is-ready');
+      if (bubbleImg.complete) {
+        start();
       } else {
-        const section = document.querySelector(`[data-${target}]`) as HTMLElement | null;
-        if (section) {
-          section.scrollIntoView({ behavior: 'instant' });
-          history.replaceState(null, '', window.location.pathname);
-        }
+        bubbleImg.addEventListener('load', start, { once: true });
+        bubbleImg.addEventListener('error', start, { once: true });
+        setTimeout(start, 2500);
       }
+    }
+
+    // Mouse-follow tilt: the bubble and title lean toward the cursor, eased
+    // each frame so it feels weighty rather than twitchy. Desktop only.
+    const tilt = bubble?.querySelector<HTMLElement>('[data-hero-tilt]');
+    const hero = document.querySelector<HTMLElement>('[data-hero-wrapper]');
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (tilt && hero && finePointer && !reducedMotion) {
+      const MAX_X = 8;   // degrees of up/down tip
+      const MAX_Y = 12;  // degrees of left/right turn
+      let targetX = 0, targetY = 0, currentX = 0, currentY = 0, raf = 0;
+
+      const render = () => {
+        currentX += (targetX - currentX) * 0.08;
+        currentY += (targetY - currentY) * 0.08;
+        tilt.style.setProperty('--tilt-x', `${currentX.toFixed(2)}deg`);
+        tilt.style.setProperty('--tilt-y', `${currentY.toFixed(2)}deg`);
+        const settled = Math.abs(targetX - currentX) < 0.01 && Math.abs(targetY - currentY) < 0.01;
+        raf = settled ? 0 : requestAnimationFrame(render);
+      };
+      const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+      hero.addEventListener('pointermove', (e) => {
+        const r = hero.getBoundingClientRect();
+        const nx = ((e.clientX - r.left) / r.width) * 2 - 1;  // -1 (left) .. 1 (right)
+        const ny = ((e.clientY - r.top) / r.height) * 2 - 1;  // -1 (top) .. 1 (bottom)
+        targetY = nx * MAX_Y;
+        targetX = -ny * MAX_X;
+        schedule();
+      });
+      hero.addEventListener('pointerleave', () => {
+        targetX = 0;
+        targetY = 0;
+        schedule();
+      });
     }
   });
 </script>
