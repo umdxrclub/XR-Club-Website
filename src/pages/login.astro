@@ -77,7 +77,7 @@ const base = import.meta.env.BASE_URL;
     const googleBtn = document.getElementById('google-btn') as HTMLButtonElement;
 
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || `${base}apply`;
+    const redirect = params.get('redirect') || `${base}suits/apply`;
 
     googleBtn.addEventListener('click', async () => {
       googleBtn.disabled = true;

@@ -2,6 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import SplitHero from '../components/SplitHero.astro';
+import MinecraftScene from '../components/MinecraftScene.astro';
+import HeroWordmark from '../components/HeroWordmark.astro';
+import ButterflyScene from '../components/ButterflyScene.astro';
 
 const base = import.meta.env.BASE_URL;
 ---
@@ -10,14 +13,19 @@ const base = import.meta.env.BASE_URL;
   <link slot="head" rel="preload" as="image" href={`${base}Images/bubble.png`} fetchpriority="high" />
   <Header />
 
-  <section class="hero-section" data-hero-wrapper>
+  <section class="hero-section" data-hero-wrapper data-bubble-intro="pending">
     <SplitHero />
     <div class="hero-bubble" data-hero-bubble>
       <div class="hero-bubble__tilt" data-hero-tilt>
         <img class="hero-bubble__img" src={`${base}Images/bubble.png`} alt="" fetchpriority="high" decoding="async" />
-        <h1 class="hero-bubble__heading"><span class="hero-bubble__xr">XR</span> <span class="hero-bubble__club">Club<span class="hero-bubble__dot">.</span></span></h1>
+        <h1 class="hero-bubble__heading">
+          <span class="sr-only">XR Club</span>
+          <HeroWordmark />
+        </h1>
       </div>
     </div>
+    <MinecraftScene />
+    <ButterflyScene />
   </section>
 </BaseLayout>
 
@@ -31,14 +39,10 @@ const base = import.meta.env.BASE_URL;
   }
 
   /*
-   * The bubble used to be baked into homescreen.jpg; it's now bubble.png so it
-   * can animate in. It rests at the centre of the hero, sized to match the
-   * artwork (~31% of the 2:1 image width; under object-fit: cover the image
-   * fills the viewport height, hence vh). --bubble-drop is how far below its
-   * resting spot the bubble starts before floating up into place.
+   * The butterfly reveals the existing bubble in place. Its resting size
+   * matches the artwork (~31% of the 2:1 image width under object-fit: cover).
    */
   .hero-bubble {
-    --bubble-drop: 8vh;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -63,84 +67,43 @@ const base = import.meta.env.BASE_URL;
     display: block;
     width: 100%;
     height: auto;
-    opacity: 0;
-    will-change: transform, opacity;
+    opacity: 1;
+    -webkit-mask-image: conic-gradient(from 315deg at 50% 50%, black 0deg, black max(0deg, calc(var(--bubble-reveal, 0deg) - 6deg)), transparent var(--bubble-reveal, 0deg), transparent 360deg);
+    mask-image: conic-gradient(from 315deg at 50% 50%, black 0deg, black max(0deg, calc(var(--bubble-reveal, 0deg) - 6deg)), transparent var(--bubble-reveal, 0deg), transparent 360deg);
+    will-change: transform;
   }
 
-  /* Font size is a share of the bubble's width so the title always fills the loop. */
+  /* The wordmark scales with the bubble, capped to fit narrow viewports. */
   .hero-bubble__heading {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) translateZ(60px);
     margin: 0;
-    font-family: 'Inter', sans-serif;
-    font-size: min(max(13vh, 6.5vw), 22vw);
-    font-size: min(21cqw, 22vw); /* 22vw keeps it on-screen where the bubble is wider than the viewport */
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: -0.05em;
     line-height: 1;
-    text-align: center;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
     white-space: nowrap;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 12px 40px rgba(0, 0, 0, 0.5);
   }
 
   /*
-   * Wordmark: heavy "XR" against a medium-weight "Club", finished with a
-   * purple full stop in the site's accent colour. Each word is its own
-   * element so they can land one after the other in the intro.
+   * Keep the bubble still while its outline is drawn. Gentle idle motion and
+   * mouse-follow tilt begin only after the butterfly completes the reveal.
    */
-  .hero-bubble__xr,
-  .hero-bubble__club {
-    display: inline-block;
-    opacity: 0;
+  .hero-bubble.is-drawn {
+    animation: bubble-float 7s ease-in-out infinite;
   }
 
-  .hero-bubble__club {
-    font-weight: 500;
-    letter-spacing: -0.03em;
-  }
-
-  .hero-bubble__dot {
-    color: #b46bff;
-    font-weight: 900;
-    letter-spacing: 0;
-  }
-
-  /*
-   * Intro (~1.6s), started by the script below once bubble.png has painted:
-   * the bubble fades in and inflates while drifting gently up into place, the
-   * film gives one soft jiggle as it settles, then the title fades in. After
-   * that it idles with a slow float and a barely-there breathe.
-   */
-  .hero-bubble.is-ready {
-    animation:
-      bubble-rise 1.6s cubic-bezier(0.22, 1, 0.36, 1) both,
-      bubble-float 7s ease-in-out 1.6s infinite;
-  }
-
-  .hero-bubble.is-ready .hero-bubble__img {
-    animation:
-      bubble-inflate 1.6s cubic-bezier(0.22, 1, 0.36, 1) both,
-      bubble-breathe 5s ease-in-out 1.6s infinite;
-  }
-
-  .hero-bubble.is-ready .hero-bubble__xr {
-    animation: word-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
-  }
-
-  .hero-bubble.is-ready .hero-bubble__club {
-    animation: word-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.38s both;
-  }
-
-  @keyframes bubble-rise {
-    from {
-      transform: translate(-50%, calc(-50% + var(--bubble-drop)));
-    }
-    to {
-      transform: translate(-50%, -50%);
-    }
+  .hero-bubble.is-drawn .hero-bubble__img {
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: bubble-breathe 5s ease-in-out infinite;
   }
 
   @keyframes bubble-float {
@@ -156,26 +119,6 @@ const base = import.meta.env.BASE_URL;
     }
   }
 
-  @keyframes bubble-inflate {
-    0% {
-      opacity: 0;
-      transform: scale(0.5);
-    }
-    40% {
-      opacity: 1;
-    }
-    72% {
-      transform: scale(1.025, 0.985);
-    }
-    88% {
-      transform: scale(0.99, 1.012);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
   @keyframes bubble-breathe {
     0%,
     100% {
@@ -186,86 +129,139 @@ const base = import.meta.env.BASE_URL;
     }
   }
 
-  @keyframes word-in {
-    from {
-      opacity: 0;
-      transform: translateY(0.35em);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .hero-bubble.is-ready,
-    .hero-bubble.is-ready .hero-bubble__img,
-    .hero-bubble.is-ready .hero-bubble__xr,
-    .hero-bubble.is-ready .hero-bubble__club {
+    .hero-bubble.is-drawn,
+    .hero-bubble.is-drawn .hero-bubble__img {
       animation: none;
     }
 
-    .hero-bubble.is-ready .hero-bubble__img,
-    .hero-bubble.is-ready .hero-bubble__xr,
-    .hero-bubble.is-ready .hero-bubble__club {
+    .hero-bubble__img,
+    .hero-bubble.is-drawn .hero-bubble__img {
+      -webkit-mask-image: none;
+      mask-image: none;
       opacity: 1;
+      transform: none;
+    }
+
+    .hero-bubble__tilt {
+      transform: none;
+    }
+  }
+
+  /* A quiet, fitted logo on phones, including phone-sized landscape windows. */
+  @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) {
+    .hero-section {
+      background: #08090d;
+    }
+
+    .hero-section :global([data-hero]),
+    .hero-section :global([data-minecraft-scene]),
+    .hero-section :global([data-butterfly-scene]) {
+      display: none;
+    }
+
+    .hero-bubble,
+    .hero-bubble.is-drawn {
+      width: min(88vw, 70vh, 480px);
+      width: min(88vw, 70dvh, 480px);
+      animation: none;
+      transform: translate(-50%, -50%);
+      perspective: none;
+    }
+
+    .hero-bubble__tilt {
+      transform: none;
+      transform-style: flat;
+      will-change: auto;
+    }
+
+    .hero-bubble__img,
+    .hero-bubble.is-drawn .hero-bubble__img {
+      animation: none;
+      -webkit-mask-image: none;
+      mask-image: none;
+      opacity: 1;
+      transform: none;
+      will-change: auto;
+    }
+
+    .hero-bubble__heading {
+      transform: translate(-50%, -50%);
     }
   }
 </style>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
-    if (!document.querySelector('[data-hero-wrapper]')) return;
+  import { MOBILE_HERO_QUERY } from '../scripts/heroMotion';
 
-    // Start the intro only once bubble.png has painted so it never animates as
-    // an empty box; the timeout is a safety net if the load stalls.
+  let disposeHeroMotion: (() => void) | undefined;
+  const mountHeroMotion = () => {
+    disposeHeroMotion?.();
+    disposeHeroMotion = undefined;
+    const hero = document.querySelector<HTMLElement>('[data-hero-wrapper]');
     const bubble = document.querySelector<HTMLElement>('[data-hero-bubble]');
     const bubbleImg = bubble?.querySelector('img');
-    if (bubble && bubbleImg) {
-      const start = () => bubble.classList.add('is-ready');
-      if (bubbleImg.complete) {
-        start();
-      } else {
-        bubbleImg.addEventListener('load', start, { once: true });
-        bubbleImg.addEventListener('error', start, { once: true });
-        setTimeout(start, 2500);
-      }
-    }
-
-    // Mouse-follow tilt: the bubble and title lean toward the cursor, eased
-    // each frame so it feels weighty rather than twitchy. Desktop only.
     const tilt = bubble?.querySelector<HTMLElement>('[data-hero-tilt]');
-    const hero = document.querySelector<HTMLElement>('[data-hero-wrapper]');
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (tilt && hero && finePointer && !reducedMotion) {
-      const MAX_X = 8;   // degrees of up/down tip
-      const MAX_Y = 12;  // degrees of left/right turn
-      let targetX = 0, targetY = 0, currentX = 0, currentY = 0, raf = 0;
+    if (!hero || !bubble || !bubbleImg || !tilt) return;
 
-      const render = () => {
-        currentX += (targetX - currentX) * 0.08;
-        currentY += (targetY - currentY) * 0.08;
-        tilt.style.setProperty('--tilt-x', `${currentX.toFixed(2)}deg`);
-        tilt.style.setProperty('--tilt-y', `${currentY.toFixed(2)}deg`);
-        const settled = Math.abs(targetX - currentX) < 0.01 && Math.abs(targetY - currentY) < 0.01;
-        raf = settled ? 0 : requestAnimationFrame(render);
-      };
-      const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+    const listeners = new AbortController();
+    const { signal } = listeners;
+    const mobile = matchMedia(MOBILE_HERO_QUERY);
+    const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    let targetX = 0, targetY = 0, currentX = 0, currentY = 0, raf = 0;
+    let tiltEnabled = false;
 
-      hero.addEventListener('pointermove', (e) => {
-        const r = hero.getBoundingClientRect();
-        const nx = ((e.clientX - r.left) / r.width) * 2 - 1;  // -1 (left) .. 1 (right)
-        const ny = ((e.clientY - r.top) / r.height) * 2 - 1;  // -1 (top) .. 1 (bottom)
-        targetY = nx * MAX_Y;
-        targetX = -ny * MAX_X;
-        schedule();
-      });
-      hero.addEventListener('pointerleave', () => {
-        targetX = 0;
-        targetY = 0;
-        schedule();
-      });
-    }
+    const resetTilt = () => {
+      cancelAnimationFrame(raf);
+      raf = targetX = targetY = currentX = currentY = 0;
+      tilt.style.removeProperty('--tilt-x');
+      tilt.style.removeProperty('--tilt-y');
+    };
+    const syncMotion = () => {
+      if (mobile.matches || reducedMotion.matches) {
+        const changed = hero.dataset.bubbleIntro !== 'complete';
+        hero.dataset.bubbleIntro = 'complete';
+        bubble.classList.add('is-drawn');
+        if (changed) document.dispatchEvent(new Event('xr:bubble-intro'));
+      }
+      tiltEnabled = hero.dataset.bubbleIntro === 'complete' && !mobile.matches && finePointer.matches && !reducedMotion.matches;
+      if (!tiltEnabled) resetTilt();
+    };
+    const render = () => {
+      if (!tiltEnabled) { resetTilt(); return; }
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      tilt.style.setProperty('--tilt-x', `${currentX.toFixed(2)}deg`);
+      tilt.style.setProperty('--tilt-y', `${currentY.toFixed(2)}deg`);
+      const settled = Math.abs(targetX - currentX) < 0.01 && Math.abs(targetY - currentY) < 0.01;
+      raf = settled ? 0 : requestAnimationFrame(render);
+    };
+    const schedule = () => { if (!raf && tiltEnabled) raf = requestAnimationFrame(render); };
+
+    hero.addEventListener('pointermove', (event) => {
+      if (!tiltEnabled) return;
+      const rect = hero.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      targetY = (((event.clientX - rect.left) / rect.width) * 2 - 1) * 12;
+      targetX = -(((event.clientY - rect.top) / rect.height) * 2 - 1) * 8;
+      schedule();
+    }, { signal });
+    hero.addEventListener('pointerleave', () => {
+      targetX = targetY = 0;
+      schedule();
+    }, { signal });
+    for (const query of [mobile, finePointer, reducedMotion]) query.addEventListener('change', syncMotion, { signal });
+    document.addEventListener('xr:bubble-intro', syncMotion, { signal });
+    syncMotion();
+    disposeHeroMotion = () => {
+      listeners.abort();
+      resetTilt();
+    };
+  };
+  document.addEventListener('astro:page-load', mountHeroMotion);
+  document.addEventListener('astro:before-swap', () => {
+    disposeHeroMotion?.();
+    disposeHeroMotion = undefined;
   });
 </script>

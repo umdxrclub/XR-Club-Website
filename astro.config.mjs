@@ -3,6 +3,10 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://xr.umd.edu',
+  redirects: {
+    '/apply': '/suits/apply',
+    '/suits-dashboard': '/suits/dashboard',
+  },
   integrations: [
     sitemap({
       filter: (page) =>

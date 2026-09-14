@@ -10,11 +10,11 @@ const PROJECTS_OPEN = false;
   {!PROJECTS_OPEN && (
     <section class="pclosed">
       <div class="pclosed__inner">
-        <h1 class="pclosed__title">No Projects<br />Currently Open</h1>
+        <h1 class="pclosed__title">No Projects Currently Open</h1>
         <p class="pclosed__sub">All new and existing projects will be announced at our Fall Kickoff Meeting! Join our Discord for kickoff updates, announcements, and upcoming events.</p>
         <div class="pclosed__actions">
           <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener" class="pclosed__btn">Join the Discord</a>
-          <a href={base} class="pclosed__btn pclosed__btn--ghost">Back to Home</a>
+          <a href={base} class="pclosed__btn">Back to Home</a>
         </div>
       </div>
     </section>
@@ -41,7 +41,7 @@ const PROJECTS_OPEN = false;
       <div class="plist__grid" id="projects-grid"></div>
       <div class="plist__empty" id="projects-empty" style="display:none;">No projects found.</div>
       <div class="plist__cta">
-        <a href={`${base}apply`} class="plist__apply-btn">Apply Now</a>
+        <a href={`${base}suits/apply`} class="plist__apply-btn">Apply Now</a>
       </div>
     </div>
   </div>
@@ -68,24 +68,25 @@ const PROJECTS_OPEN = false;
       max-width: 52rem;
     }
 
+    /* Matches the "Coming Soon" block on the Ideate page. */
     .pclosed__title {
       font-family: 'Inter', sans-serif;
-      font-size: clamp(3rem, 8vw, 7rem);
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      line-height: 0.95;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
       color: #fff;
-      margin: 0;
+      margin: 1.5rem 0 0.8rem;
     }
 
     .pclosed__sub {
       font-family: 'Inter', sans-serif;
-      font-size: clamp(1rem, 1.4vw, 1.3rem);
+      font-size: clamp(0.95rem, 1.1vw, 1.15rem);
       font-weight: 300;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.6);
-      max-width: 34rem;
-      margin: 1.75rem 0 0;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.4);
+      max-width: 400px;
+      margin: 0;
     }
 
     .pclosed__actions {
@@ -93,35 +94,27 @@ const PROJECTS_OPEN = false;
       flex-wrap: wrap;
       justify-content: center;
       gap: 0.75rem;
-      margin-top: 2.5rem;
+      margin-top: 2rem;
     }
 
     .pclosed__btn {
+      display: inline-block;
       font-family: 'Inter', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      color: #000;
-      background: #fff;
-      border: 1px solid #fff;
-      padding: 0.8rem 1.8rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 0.65rem 1.8rem;
       border-radius: 980px;
-      transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+      text-decoration: none;
+      transition: all 200ms ease;
       white-space: nowrap;
     }
 
     .pclosed__btn:hover {
-      background: rgba(255, 255, 255, 0.85);
-    }
-
-    .pclosed__btn--ghost {
-      color: #fff;
       background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-
-    .pclosed__btn--ghost:hover {
-      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
     }
   </style>
 

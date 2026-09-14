@@ -1,0 +1,47 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="butterfly-scene" data-butterfly-scene data-base={base} aria-hidden="true"></div>
+
+<style>
+  .butterfly-scene { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  .butterfly-scene :global(canvas) { display: block; width: 100%; height: 100%; }
+</style>
+
+<script>
+  import { MOBILE_HERO_QUERY } from '../scripts/heroMotion';
+  const mobile = matchMedia(MOBILE_HERO_QUERY);
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let dispose: (() => void) | undefined;
+  let generation = 0;
+  const revealStill = () => {
+    const hero = document.querySelector<HTMLElement>('[data-hero-wrapper]');
+    if (!hero) return;
+    hero.dataset.bubbleIntro = 'complete';
+    hero.querySelector('[data-hero-bubble]')?.classList.add('is-drawn');
+    document.dispatchEvent(new Event('xr:bubble-intro'));
+  };
+  const mount = async () => {
+    const current = ++generation;
+    dispose?.();
+    dispose = undefined;
+    const host = document.querySelector<HTMLElement>('[data-butterfly-scene]');
+    if (!host) return;
+    if (mobile.matches || reducedMotion.matches) { revealStill(); return; }
+    try {
+      const { mountButterflyScene } = await import('../scripts/butterflyScene');
+      if (current !== generation || !host.isConnected) return;
+      const cleanup = await mountButterflyScene(host);
+      if (current !== generation || !host.isConnected) cleanup();
+      else dispose = cleanup;
+    } catch (error) {
+      revealStill();
+      console.warn('The butterfly intro could not load.', error);
+    }
+  };
+  document.addEventListener('astro:page-load', mount);
+  mobile.addEventListener('change', mount);
+  reducedMotion.addEventListener('change', mount);
+  document.addEventListener('astro:before-swap', () => { generation++; dispose?.(); dispose = undefined; });
+</script>

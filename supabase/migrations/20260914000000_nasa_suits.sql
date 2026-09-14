@@ -1,5 +1,5 @@
 -- NASA SUITS 2026–2027 team application.
--- Applicants submit without an account; board/admin review in /suits-dashboard.
+-- Applicants submit without an account; board/admin review in /suits/dashboard.
 
 CREATE TABLE public.suits_applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

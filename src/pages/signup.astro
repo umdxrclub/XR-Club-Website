@@ -162,7 +162,7 @@ const base = import.meta.env.BASE_URL;
 
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) window.location.href = `${base}apply`;
+      if (user) window.location.href = `${base}suits/apply`;
     })();
   </script>
 </AppLayout>

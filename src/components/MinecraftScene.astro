@@ -1,0 +1,74 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="minecraft-scene" data-minecraft-scene data-base={base}>
+  <img class="minecraft-scene__star" data-star-image src={`${base}models/homepage-star.png`} width="351" height="397" alt="" aria-hidden="true" />
+  <div class="minecraft-scene__viewport" data-minecraft-viewport aria-hidden="true"></div>
+  <div class="minecraft-scene__controls" data-minecraft-controls hidden>
+    <button class="minecraft-scene__pause" data-minecraft-pause aria-label="Pause homepage animations" title="Pause animations">
+      <svg data-pause-icon width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M3 2h2v8H3zm4 0h2v8H7z" /></svg>
+      <svg data-play-icon width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true" hidden><path d="m3 1 8 5-8 5z" /></svg>
+    </button>
+    <button class="minecraft-scene__pause" data-butterfly-replay aria-label="Replay butterfly intro" title="Replay butterfly intro" hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 3v7h7" /></svg>
+    </button>
+    <details class="minecraft-scene__credits">
+      <summary>3D credits</summary>
+      <div class="minecraft-scene__credit-card">
+        <a href="https://sketchfab.com/3d-models/the-perfect-steve-rigged-0cffc39bdab04551bde4f8cdfbc52eca" target="_blank" rel="noopener noreferrer">The Perfect Steve Rigged</a> by Blender3D<br />
+        Steve: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · Model resized; animation adapted.<br />
+        Star modeled from the supplied homepage artwork.
+        <br /><a href="https://sketchfab.com/3d-models/fantasy-butterfly-animation-0f24b085e8654e4db09c2fe681a79e3f" target="_blank" rel="noopener noreferrer">Fantasy Butterfly Animation</a> by lunequinox · CC BY 4.0.<br />
+        Butterfly textures optimized; flight path adapted.
+      </div>
+    </details>
+  </div>
+</div>
+
+<style>
+  .minecraft-scene { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .minecraft-scene__viewport { position: absolute; inset: 0; opacity: 0; }
+  .minecraft-scene__star { position: absolute; left: calc(50% - max(13.20167824vw, 26.40335648dvh)); top: calc(50% + max(17.5853588vw, 35.17071759dvh)); width: max(5.078125vw, 10.15625dvh); height: auto; transform: translate(-50%, -50%); }
+  .minecraft-scene.is-ready .minecraft-scene__star { visibility: hidden; }
+  .minecraft-scene.is-ready .minecraft-scene__viewport { opacity: 1; }
+  .minecraft-scene__viewport :global(canvas) { display: block; width: 100%; height: 100%; }
+  .minecraft-scene__controls { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; pointer-events: auto; color: #bfc3cd; }
+  .minecraft-scene__controls[hidden], [hidden] { display: none !important; }
+  .minecraft-scene__pause { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #ffffff25; border-radius: 50%; background: #080a10b8; }
+  .minecraft-scene__pause:hover, .minecraft-scene__pause:focus-visible { color: white; border-color: #ffffff80; }
+  .minecraft-scene__credits { font-size: 10px; position: relative; }
+  summary { cursor: pointer; list-style: none; padding: 8px 4px; text-shadow: 0 1px 4px #000; }
+  summary::-webkit-details-marker { display: none; }
+  .minecraft-scene__credit-card { position: absolute; bottom: 38px; left: 50%; transform: translateX(-50%); width: min(310px, 80vw); padding: 14px 16px; background: #101219f5; border: 1px solid #ffffff25; border-radius: 12px; font-size: 11px; line-height: 1.8; box-shadow: 0 8px 24px #0008; }
+  .minecraft-scene__credit-card a { text-decoration: underline; text-underline-offset: 3px; color: #e5ddff; }
+  @media (prefers-reduced-motion: reduce) { .minecraft-scene__viewport { transition: none; } }
+</style>
+
+<script>
+  import { MOBILE_HERO_QUERY } from '../scripts/heroMotion';
+  const mobileHero = matchMedia(MOBILE_HERO_QUERY);
+  let dispose: (() => void) | undefined;
+  let generation = 0;
+  const mount = async () => {
+    const current = ++generation;
+    dispose?.();
+    dispose = undefined;
+    const host = document.querySelector<HTMLElement>('[data-minecraft-scene]');
+    if (!host) return;
+    host.classList.remove('is-ready');
+    if (mobileHero.matches) return;
+    try {
+      const { mountMinecraftScene } = await import('../scripts/minecraftScene');
+      if (current !== generation || !host.isConnected) return;
+      const cleanup = await mountMinecraftScene(host);
+      if (current !== generation || !host.isConnected) cleanup();
+      else dispose = cleanup;
+    } catch (error) {
+      console.warn('The Minecraft scene could not load.', error);
+    }
+  };
+  document.addEventListener('astro:page-load', mount);
+  mobileHero.addEventListener('change', mount);
+  document.addEventListener('astro:before-swap', () => { generation++; dispose?.(); dispose = undefined; });
+</script>

@@ -18,7 +18,7 @@ const base = import.meta.env.BASE_URL;
       <div id="success-state" style="display:none;">
         <h1 class="auth-card__title">Email Verified!</h1>
         <p class="auth-card__subtitle">Your account is ready. Redirecting to your application…</p>
-        <a href={`${base}apply`} class="auth-form__btn" style="display:inline-block; text-decoration:none; margin-top:1rem;">
+        <a href={`${base}suits/apply`} class="auth-form__btn" style="display:inline-block; text-decoration:none; margin-top:1rem;">
           Go to Application
         </a>
       </div>
@@ -56,14 +56,14 @@ const base = import.meta.env.BASE_URL;
       if (session) {
         loadingState.style.display = 'none';
         successState.style.display = 'block';
-        setTimeout(() => { window.location.href = `${base}apply`; }, 2000);
+        setTimeout(() => { window.location.href = `${base}suits/apply`; }, 2000);
       } else {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
           if (event === 'SIGNED_IN') {
             loadingState.style.display = 'none';
             successState.style.display = 'block';
             subscription.unsubscribe();
-            setTimeout(() => { window.location.href = `${base}apply`; }, 2000);
+            setTimeout(() => { window.location.href = `${base}suits/apply`; }, 2000);
           }
         });
 

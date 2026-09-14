@@ -1,12 +1,21 @@
 ---
-import AppLayout from '../layouts/AppLayout.astro';
+import AppLayout from '../../layouts/AppLayout.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
 <AppLayout title="NASA SUITS Applications — XR Club" hideHeader hideChatBot noindex>
   <div class="sd-gate" id="sd-gate">
-    <span class="sd-spinner"></span>
-    <p>Loading applications…</p>
+    <div class="sd-gate__loading" id="sd-gate-loading">
+      <span class="sd-spinner"></span>
+      <p>Loading applications…</p>
+    </div>
+    <form class="sd-gate__form" id="sd-gate-form" hidden>
+      <h1 class="sd-gate__title">NASA SUITS Applications</h1>
+      <p class="sd-gate__text">Enter the reviewer password to open the dashboard.</p>
+      <input class="sd-gate__input" id="sd-gate-password" type="password" autocomplete="current-password" placeholder="Password" required />
+      <button type="submit" class="sd__btn sd__btn--primary sd-gate__btn" id="sd-gate-submit">Open dashboard</button>
+      <p class="sd-gate__error" id="sd-gate-error" hidden></p>
+    </form>
   </div>
 
   <div class="sd" id="sd" hidden>
@@ -19,7 +28,7 @@ const base = import.meta.env.BASE_URL;
         <button type="button" class="sd__btn" id="sd-export">Export CSV</button>
         <a href={`${base}dashboard`} class="sd__btn">Club dashboard</a>
         <a href={base} class="sd__btn">Back to site</a>
-        <button type="button" class="sd__btn sd__btn--quiet" id="sd-signout">Sign out</button>
+        <button type="button" class="sd__btn sd__btn--quiet" id="sd-signout">Lock</button>
       </div>
     </header>
 
@@ -123,8 +132,72 @@ const base = import.meta.env.BASE_URL;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
+      padding: 2rem 1.5rem;
       color: var(--sd-muted);
+    }
+
+    .sd-gate [hidden] {
+      display: none !important;
+    }
+
+    .sd-gate__loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .sd-gate__form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      width: 100%;
+      max-width: 380px;
+      padding: 2rem;
+      background: var(--sd-card);
+      border: 1px solid var(--sd-line);
+      border-radius: 20px;
+    }
+
+    .sd-gate__title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--sd-text);
+      margin: 0;
+    }
+
+    .sd-gate__text {
+      margin: -0.25rem 0 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .sd-gate__input {
+      min-height: 46px;
+      padding: 0 0.95rem;
+      font: inherit;
+      font-size: 1rem;
+      color: var(--sd-text);
+      background: var(--sd-field);
+      border: 1px solid var(--sd-field-line);
+      border-radius: 10px;
+      outline: none;
+    }
+
+    .sd-gate__input:focus {
+      border-color: var(--sd-accent);
+      box-shadow: 0 0 0 3px var(--sd-ring);
+    }
+
+    .sd-gate__btn {
+      min-height: 46px;
+      font-size: 1rem;
+    }
+
+    .sd-gate__error {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--sd-bad);
     }
 
     .sd-spinner {
@@ -744,14 +817,38 @@ const base = import.meta.env.BASE_URL;
   </style>
 
   <script>
-    import { supabase } from '../lib/supabase';
-    import type { Profile, SuitsApplication, SuitsStatus } from '../lib/types';
+    import type { SuitsApplication, SuitsStatus } from '../../lib/types';
 
     const base = import.meta.env.BASE_URL;
 
+    // The dashboard is opened with one shared password and no accounts. Every
+    // read and write goes through the suits-review Edge Function, which checks
+    // the password on the server before touching the applications.
+    const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL;
+    const SUPABASE_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+    const REVIEW_URL = `${SUPABASE_URL}/functions/v1/suits-review`;
+    const PASSWORD_KEY = 'xr-suits-review-password';
+    let password = '';
+
+    class ReviewError extends Error {
+      status: number;
+      constructor(message: string, status: number) { super(message); this.status = status; }
+    }
+
+    async function review<T = unknown>(action: string, params: Record<string, unknown> = {}): Promise<T> {
+      const res = await fetch(REVIEW_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ password, action, ...params }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new ReviewError(data.error || `Request failed (${res.status})`, res.status);
+      return data as T;
+    }
+
     const STATUS_LABEL: Record<SuitsStatus, string> = { new: 'New', interview: 'Interview', accepted: 'Accepted', rejected: 'Rejected' };
     const HOURS_RANK: Record<string, number> = { 'Less than 3 hours': 1, '3 to 5 hours': 2, '5 to 7 hours': 3, '7 to 10 hours': 4, '10 or more hours': 5 };
-    const DAY_LABEL: Record<string, string> = { '2026-09-18': 'Fri, Sep 18', '2026-09-19': 'Sat, Sep 19', '2026-09-20': 'Sun, Sep 20', '2026-09-21': 'Mon, Sep 21' };
+    const DAY_LABEL: Record<string, string> = { '2026-09-18': 'Fri, Sep 18', '2026-09-19': 'Sat, Sep 19', '2026-09-20': 'Sun, Sep 20', '2026-09-21': 'Mon, Sep 21', '2026-09-22': 'Tue, Sep 22', '2026-09-23': 'Wed, Sep 23', '2026-09-24': 'Thu, Sep 24', '2026-09-25': 'Fri, Sep 25' };
 
     const QUESTIONS: Array<[keyof SuitsApplication, string]> = [
       ['bring_to_table', 'What would you bring to the table as a member of this year’s NASA SUITS team?'],
@@ -790,7 +887,7 @@ const base = import.meta.env.BASE_URL;
       return flags;
     }
 
-    document.addEventListener('astro:page-load', () => {
+    document.addEventListener('astro:page-load', async () => {
       const root = document.getElementById('sd');
       if (!root) return;
 
@@ -806,32 +903,77 @@ const base = import.meta.env.BASE_URL;
       const eligibleSel = document.getElementById('sd-eligible') as HTMLSelectElement;
       const sortSel = document.getElementById('sd-sort') as HTMLSelectElement;
 
-      let me: Profile | null = null;
       let all: SuitsApplication[] = [];
       let visible: SuitsApplication[] = [];
       let statusFilter = '';
       let selectedId: string | null = null;
 
       // -------------------------------------------------------------
-      // Auth: board and admin only
+      // Gate: password box. A password that opened the dashboard is kept for
+      // this tab only, so a reload doesn't ask again but closing the tab does.
       // -------------------------------------------------------------
-      (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { window.location.href = `${base}login`; return; }
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (!profile || (profile.role !== 'board' && profile.role !== 'admin')) { window.location.href = base; return; }
-        me = profile as Profile;
+      const gateLoading = document.getElementById('sd-gate-loading')!;
+      const gateForm = document.getElementById('sd-gate-form') as HTMLFormElement;
+      const gatePassword = document.getElementById('sd-gate-password') as HTMLInputElement;
+      const gateSubmit = document.getElementById('sd-gate-submit') as HTMLButtonElement;
+      const gateError = document.getElementById('sd-gate-error')!;
 
-        await load();
-        gate.hidden = true;
-        root.hidden = false;
-      })();
+      function showGate(message?: string) {
+        gateLoading.hidden = true;
+        gateForm.hidden = false;
+        gateError.textContent = message || '';
+        gateError.hidden = !message;
+        gateSubmit.disabled = false;
+        gateSubmit.textContent = 'Open dashboard';
+        gatePassword.focus();
+      }
+
+      async function tryOpen(candidate: string): Promise<boolean> {
+        password = candidate;
+        try {
+          const { applications } = await review<{ applications: SuitsApplication[] }>('list');
+          all = applications;
+          try { sessionStorage.setItem(PASSWORD_KEY, candidate); } catch { /* storage unavailable */ }
+          render();
+          gate.hidden = true;
+          root.hidden = false;
+          return true;
+        } catch (err) {
+          password = '';
+          const e = err as ReviewError;
+          if (e.status === 401) showGate('That password is not right.');
+          else if (e.status === 500 && /SUITS_DASHBOARD_PASSWORD/.test(e.message)) showGate('The dashboard password has not been set on the server yet.');
+          else if (!SUPABASE_URL || !SUPABASE_KEY) showGate('Supabase is not configured on this site. Set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY.');
+          else showGate(`Could not reach the review service: ${e.message}`);
+          return false;
+        }
+      }
+
+      let remembered = '';
+      try { remembered = sessionStorage.getItem(PASSWORD_KEY) || ''; } catch { /* ignore */ }
+      if (remembered) {
+        const ok = await tryOpen(remembered);
+        if (!ok) { try { sessionStorage.removeItem(PASSWORD_KEY); } catch { /* ignore */ } }
+      } else {
+        showGate();
+      }
+
+      gateForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        gateError.hidden = true;
+        gateSubmit.disabled = true;
+        gateSubmit.textContent = 'Opening…';
+        await tryOpen(gatePassword.value);
+      });
 
       async function load() {
-        const { data, error } = await supabase.from('suits_applications').select('*').order('created_at', { ascending: false });
-        if (error) { gate.innerHTML = `<p>Could not load applications: ${esc(error.message)}</p>`; return; }
-        all = (data || []) as SuitsApplication[];
-        render();
+        try {
+          const { applications } = await review<{ applications: SuitsApplication[] }>('list');
+          all = applications;
+          render();
+        } catch (err) {
+          alert(`Could not refresh applications: ${(err as Error).message}`);
+        }
       }
 
       // -------------------------------------------------------------
@@ -1037,9 +1179,12 @@ const base = import.meta.env.BASE_URL;
         });
 
         document.getElementById('sd-resume')!.addEventListener('click', async () => {
-          const { data, error } = await supabase.storage.from('suits-resumes').createSignedUrl(a.resume_path, 300);
-          if (error || !data) { alert(`Could not open the resume: ${error?.message ?? 'unknown error'}`); return; }
-          window.open(data.signedUrl, '_blank', 'noopener');
+          try {
+            const { url } = await review<{ url: string }>('resume', { resume_path: a.resume_path });
+            window.open(url, '_blank', 'noopener');
+          } catch (err) {
+            alert(`Could not open the resume: ${(err as Error).message}`);
+          }
         });
 
         document.getElementById('sd-copy-discord')!.addEventListener('click', async e => {
@@ -1053,16 +1198,23 @@ const base = import.meta.env.BASE_URL;
           const value = notes.value.trim() || null;
           if (value === (a.reviewer_notes || null)) return;
           notesStatus.textContent = 'Saving…';
-          const { error } = await supabase.from('suits_applications').update({ reviewer_notes: value, updated_at: new Date().toISOString() }).eq('id', a.id);
-          notesStatus.textContent = error ? `Not saved: ${error.message}` : 'Saved.';
-          if (!error) a.reviewer_notes = value;
+          try {
+            await review('update', { id: a.id, reviewer_notes: value });
+            a.reviewer_notes = value;
+            notesStatus.textContent = 'Saved.';
+          } catch (err) {
+            notesStatus.textContent = `Not saved: ${(err as Error).message}`;
+          }
         });
 
         document.getElementById('sd-delete')!.addEventListener('click', async () => {
           if (!confirm(`Delete ${a.full_name}’s application? This also removes their resume and cannot be undone.`)) return;
-          await supabase.storage.from('suits-resumes').remove([a.resume_path]);
-          const { error } = await supabase.from('suits_applications').delete().eq('id', a.id);
-          if (error) { alert(`Could not delete: ${error.message}`); return; }
+          try {
+            await review('delete', { id: a.id });
+          } catch (err) {
+            alert(`Could not delete: ${(err as Error).message}`);
+            return;
+          }
           all = all.filter(x => x.id !== a.id);
           selectedId = null;
           render();
@@ -1075,11 +1227,12 @@ const base = import.meta.env.BASE_URL;
         const previous = a.status;
         a.status = status;
         render();
-        const { error } = await supabase.from('suits_applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
-        if (error) {
+        try {
+          await review('update', { id, status });
+        } catch (err) {
           a.status = previous;
           render();
-          alert(`Could not update status: ${error.message}`);
+          alert(`Could not update status: ${(err as Error).message}`);
         }
       }
 
@@ -1117,8 +1270,9 @@ const base = import.meta.env.BASE_URL;
         URL.revokeObjectURL(url);
       });
 
-      document.getElementById('sd-signout')!.addEventListener('click', async () => {
-        await supabase.auth.signOut();
+      document.getElementById('sd-signout')!.addEventListener('click', () => {
+        password = '';
+        try { sessionStorage.removeItem(PASSWORD_KEY); } catch { /* ignore */ }
         window.location.href = base;
       });
     });

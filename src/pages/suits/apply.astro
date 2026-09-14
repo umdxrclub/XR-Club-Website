@@ -1,5 +1,5 @@
 ---
-import AppLayout from '../layouts/AppLayout.astro';
+import AppLayout from '../../layouts/AppLayout.astro';
 const base = import.meta.env.BASE_URL;
 
 const areas = [
@@ -33,13 +33,19 @@ const hours = ['Less than 3 hours', '3 to 5 hours', '5 to 7 hours', '7 to 10 hou
 const dates = ['Yes', 'No', 'Unsure or I have a potential conflict'];
 const citizen = ['Yes', 'No'];
 
-// Interview calendar: Friday to Monday, September 18 to 21, over Zoom. Hourly start times, Eastern.
+// Interview calendar: Friday, September 18 through Friday, September 25, over Zoom.
+// Hourly start times, Eastern. Shown as two four-day blocks so it fits on a phone.
 const interviewDays = [
   { key: '2026-09-18', dow: 'Fri', date: 'Sep 18' },
   { key: '2026-09-19', dow: 'Sat', date: 'Sep 19' },
   { key: '2026-09-20', dow: 'Sun', date: 'Sep 20' },
   { key: '2026-09-21', dow: 'Mon', date: 'Sep 21' },
+  { key: '2026-09-22', dow: 'Tue', date: 'Sep 22' },
+  { key: '2026-09-23', dow: 'Wed', date: 'Sep 23' },
+  { key: '2026-09-24', dow: 'Thu', date: 'Sep 24' },
+  { key: '2026-09-25', dow: 'Fri', date: 'Sep 25' },
 ];
+const interviewBlocks = [interviewDays.slice(0, 4), interviewDays.slice(4)];
 const interviewHours = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const hourLabel = (h: number) => `${((h + 11) % 12) + 1}:00 ${h < 12 ? 'AM' : 'PM'}`;
 const slotValue = (day: string, h: number) => `${day} ${String(h).padStart(2, '0')}:00`;
@@ -75,6 +81,7 @@ const WORD_LIMIT = 150;
         <p>Please note that this is a year long commitment. The team works together from the fall semester through winter break and the spring semester, ending with onsite testing in Houston in May 2027.</p>
         <p>We’re looking to put together a diverse team with a wide range of experiences and skill sets, so feel free to apply even if you don’t have a ton of prior experience with XR development!</p>
         <p>The application process will have <strong>two rounds</strong>. The first round will be based on your written application. Candidates selected to move forward will be invited to a second round interview. If you are not invited to an interview, it means we have decided to move forward with other applicants. The interview gives us a chance to get to know you better and gives you the opportunity to ask us questions about the challenge and the team.</p>
+        <p><strong>Applications close on September 24.</strong> We review applications on a rolling basis, so if you submit early, choose interview times earlier in the window and we can meet with you sooner.</p>
         <p>This year’s NASA SUITS Challenge focuses on developing spacesuit user interfaces, navigation systems, voice assistants, and AI and ML tools to help astronauts safely and efficiently complete tasks while exploring the lunar surface.</p>
       </div>
     </header>
@@ -118,6 +125,7 @@ const WORD_LIMIT = 150;
 
         <div class="sa__field">
           <label class="sa__label" for="discord_username">Discord Username <span class="sa__req">*</span></label>
+          <p class="sa__help">Discord will be the primary way the team communicates, so make sure this is the account you check.</p>
           <input class="sa__input" id="discord_username" name="discord_username" type="text" autocomplete="off" required />
         </div>
 
@@ -258,7 +266,7 @@ const WORD_LIMIT = 150;
 
         <fieldset class="sa__field" data-group="required_dates">
           <legend class="sa__label">Are you able to attend the required NASA SUITS dates? <span class="sa__req">*</span></legend>
-          <p class="sa__help">NASA requires all participants to attend Orientation on December 10, 2026 at 4:00 PM CST and the Virtual Software Design Review on April 1, 2027.</p>
+          <p class="sa__help"><strong class="sa__help-strong">NASA requires all participants to attend Orientation on December 10, 2026 at 4:00 PM CST and the Virtual Software Design Review on April 1, 2027.</strong></p>
           <div class="sa__options">
             {dates.map(d => (
               <label class="sa__option">
@@ -286,23 +294,28 @@ const WORD_LIMIT = 150;
           <legend class="sa__label">Interview Availability <span class="sa__req">*</span></legend>
           <p class="sa__help">We will be conducting short interviews with applicants. Please let us know when you are free during the listed interview times.</p>
           <p class="sa__help"><strong class="sa__help-strong">Candidates selected from the written application will be invited to a second round interview. The interview gives us a chance to get to know you better and gives you the opportunity to ask us questions about the challenge and the team.</strong></p>
-          <p class="sa__help">Interviews take place Friday to Monday, September 18 to 21, over Zoom. Tap every hour you could make. All times are Eastern.</p>
-          <div class="sa__cal">
-            <div class="sa__cal-row sa__cal-row--head">
-              {interviewDays.map(d => (
-                <button type="button" class="sa__cal-day" data-day={d.key} title="Select the whole day">
-                  <span class="sa__cal-dow">{d.dow}</span>
-                  <span class="sa__cal-date">{d.date}</span>
-                </button>
-              ))}
-            </div>
-            {interviewHours.map(h => (
-              <div class="sa__cal-row">
-                {interviewDays.map(d => (
-                  <label class="sa__slot">
-                    <input type="checkbox" name="interview_slots" value={slotValue(d.key, h)} data-day={d.key} />
-                    <span class="sa__slot-box">{hourLabel(h)}</span>
-                  </label>
+          <p class="sa__help">Interviews take place between Friday, September 18 and Friday, September 25, over Zoom. Tap every hour you could make. All times are Eastern.</p>
+          <p class="sa__help">Applications are reviewed on a rolling basis. If you are submitting early, pick times earlier in the window so we can schedule your interview sooner.</p>
+          <div class="sa__cal-blocks">
+            {interviewBlocks.map(days => (
+              <div class="sa__cal">
+                <div class="sa__cal-row sa__cal-row--head">
+                  {days.map(d => (
+                    <button type="button" class="sa__cal-day" data-day={d.key} title="Select the whole day">
+                      <span class="sa__cal-dow">{d.dow}</span>
+                      <span class="sa__cal-date">{d.date}</span>
+                    </button>
+                  ))}
+                </div>
+                {interviewHours.map(h => (
+                  <div class="sa__cal-row">
+                    {days.map(d => (
+                      <label class="sa__slot">
+                        <input type="checkbox" name="interview_slots" value={slotValue(d.key, h)} data-day={d.key} />
+                        <span class="sa__slot-box">{hourLabel(h)}</span>
+                      </label>
+                    ))}
+                  </div>
                 ))}
               </div>
             ))}
@@ -453,14 +466,14 @@ const WORD_LIMIT = 150;
       margin-bottom: 2.5rem;
     }
 
-    /* The one flourish: the same slow iridescent sweep as the Ideate! link. */
+    /* The one flourish: a slow sweep through NASA reds, like the Ideate! link's rainbow. */
     .sa__title {
       font-size: clamp(2.2rem, 5.2vw, 3.25rem);
       font-weight: 800;
       letter-spacing: -0.035em;
       line-height: 1.05;
       margin: 0;
-      background: linear-gradient(90deg, #3ad6ff, #6d7dff, #b46bff, #ff5fc8, #ffb547, #3ad6ff);
+      background: linear-gradient(90deg, #fc3d21, #ff7a59, #ff3d5a, #b3001b, #fc3d21);
       background-size: 200% 100%;
       -webkit-background-clip: text;
       background-clip: text;
@@ -855,6 +868,11 @@ const WORD_LIMIT = 150;
     /* ------------------------------------------------------------------ */
     /* Calendar                                                            */
     /* ------------------------------------------------------------------ */
+    .sa__cal-blocks {
+      display: grid;
+      gap: 1.5rem;
+    }
+
     .sa__cal {
       display: grid;
       gap: 0.5rem;
@@ -1591,12 +1609,22 @@ const WORD_LIMIT = 150;
       submitBtn.addEventListener('click', async () => {
         if (!confirmCheck.checked) return;
         submitError.hidden = true;
+
+        // The review step already validated, but never trust that: a field could
+        // have been changed since, and the file lives outside the form state.
+        const stillInvalid = validate();
+        if (stillInvalid) {
+          confirmCard.hidden = true;
+          form.hidden = false;
+          stillInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting…';
 
         try {
           // Loaded on demand so the form itself never depends on Supabase being reachable.
-          const { supabase } = await import('../lib/supabase');
+          const { supabase } = await import('../../lib/supabase');
           const id = crypto.randomUUID();
           const safeName = resumeFile!.name.replace(/[^\w.\-]+/g, '_').slice(-80);
           const resumePath = `${id}/${safeName}`;
