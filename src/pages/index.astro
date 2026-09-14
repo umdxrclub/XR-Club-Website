@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
-
 import Footer from '../components/Footer.astro';
-import IntroSequence from '../components/IntroSequence.astro';
 import SplitHero from '../components/SplitHero.astro';
 import AboutSection from '../components/AboutSection.astro';
 import ProjectsSection from '../components/ProjectsSection.astro';
@@ -11,21 +9,18 @@ import LabSection from '../components/LabSection.astro';
 import EventsSection from '../components/EventsSection.astro';
 import BoardSection from '../components/BoardSection.astro';
 import ResourceSection from '../components/ResourceSection.astro';
-import RenderSection from '../components/RenderSection.astro';
 import RecognitionSection from '../components/RecognitionSection.astro';
+
+const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="XR Club">
-  <div class="loader" data-loader>
-    <img src={`${import.meta.env.BASE_URL}Images/XR logo.webp`} alt="XR Club" class="loader__logo" />
-  </div>
-  <IntroSequence />
   <Header />
 
   <section class="hero-section" data-hero-wrapper>
     <SplitHero />
     <div class="hero-title" data-hero-title>
-      <img class="hero-ring" src={`${import.meta.env.BASE_URL}Images/ring.webp`} alt="" />
+      <img class="hero-ring" src={`${base}Images/ring.webp`} alt="" />
       <p class="hero-title__tagline">Design, Engineer, Create</p>
       <h1 class="hero-title__heading">XR Club</h1>
     </div>
@@ -38,45 +33,12 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   <RecognitionSection />
   <BoardSection />
   <ResourceSection />
-  <RenderSection />
   <Footer />
+
+  <img class="watermark" src={`${base}Images/vrlocked.webp`} alt="" loading="lazy" decoding="async" />
 </BaseLayout>
 
 <style>
-  .loader {
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    background: #000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.5s ease;
-  }
-
-  @media (max-width: 768px) {
-    .loader {
-      display: flex;
-    }
-  }
-
-  .loader--hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .loader__logo {
-    height: 72px;
-    width: auto;
-    border-radius: 10px;
-    animation: loaderPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes loaderPulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
-  }
-
   .hero-section {
     position: relative;
     width: 100%;
@@ -132,25 +94,6 @@ import RecognitionSection from '../components/RecognitionSection.astro';
     text-shadow: 0 8px 40px rgba(0, 0, 0, 1), 0 4px 15px rgba(0, 0, 0, 1), 0 0 120px rgba(0, 0, 0, 0.8), 0 0 200px rgba(0, 0, 0, 0.5);
   }
 
-  @media (max-width: 768px) {
-    .hero-ring {
-      width: clamp(18rem, 70vw, 28rem);
-    }
-
-    .hero-title__heading {
-      font-size: clamp(3.5rem, 14vw, 6rem);
-    }
-  }
-
-  @media (max-width: 480px) {
-    .hero-title {
-      padding-left: 5vw;
-      padding-right: 5vw;
-    }
-  }
-</style>
-
-<style is:global>
   .watermark {
     position: fixed;
     bottom: 0;
@@ -163,6 +106,14 @@ import RecognitionSection from '../components/RecognitionSection.astro';
   }
 
   @media (max-width: 768px) {
+    .hero-ring {
+      width: clamp(18rem, 70vw, 28rem);
+    }
+
+    .hero-title__heading {
+      font-size: clamp(3.5rem, 14vw, 6rem);
+    }
+
     .watermark {
       right: auto;
       left: 50%;
@@ -170,50 +121,36 @@ import RecognitionSection from '../components/RecognitionSection.astro';
       height: 60px;
     }
   }
+
+  @media (max-width: 480px) {
+    .hero-title {
+      padding-left: 5vw;
+      padding-right: 5vw;
+    }
+  }
 </style>
 
 <script>
-  import { init as initAnimations } from '../animations/index';
   import { initScrollAnimations } from '../animations/scrollAnimations';
 
   document.addEventListener('astro:page-load', () => {
     if (!document.querySelector('[data-hero-wrapper]')) return;
 
-    initAnimations();
     initScrollAnimations();
 
+    // Deep links like /#events arrive from other pages via the header nav.
     if (window.location.hash) {
       const target = window.location.hash.slice(1);
       if (target === 'home') {
         window.scrollTo(0, 0);
         history.replaceState(null, '', window.location.pathname);
       } else {
-        const section = document.querySelector(`[data-${target}]`) as HTMLElement;
+        const section = document.querySelector(`[data-${target}]`) as HTMLElement | null;
         if (section) {
-          setTimeout(() => {
-            section.scrollIntoView({ behavior: 'instant' });
-            history.replaceState(null, '', window.location.pathname);
-          }, 100);
+          section.scrollIntoView({ behavior: 'instant' });
+          history.replaceState(null, '', window.location.pathname);
         }
       }
-    }
-
-    if (!document.querySelector('.watermark')) {
-      const wm = document.createElement('img');
-      wm.src = `${import.meta.env.BASE_URL}Images/vrlocked.webp`;
-      wm.alt = '';
-      wm.className = 'watermark';
-      wm.style.display = 'none';
-      document.body.appendChild(wm);
-
-      function showWatermark() {
-        if (!document.querySelector('[data-intro]') && !document.querySelector('[data-loader]')) {
-          wm.style.display = '';
-        } else {
-          setTimeout(showWatermark, 500);
-        }
-      }
-      showWatermark();
     }
   });
 </script>

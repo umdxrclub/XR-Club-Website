@@ -368,8 +368,22 @@ const base = import.meta.env.BASE_URL;
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase';
   import { navigate } from 'astro:transitions/client';
+
+  // The Supabase client is only needed to decorate the header for signed-in
+  // users, so it is loaded after the page is idle rather than in the critical
+  // bundle. Anonymous visitors (the vast majority) never wait on it.
+  function whenIdle(fn: () => void) {
+    const schedule = () => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(fn, { timeout: 3000 });
+      } else {
+        setTimeout(fn, 1000);
+      }
+    };
+    if (document.readyState === 'complete') schedule();
+    else window.addEventListener('load', schedule, { once: true });
+  }
 
   document.addEventListener('astro:page-load', () => {
     document.querySelectorAll('[data-scroll-to]').forEach(link => {
@@ -393,7 +407,8 @@ const base = import.meta.env.BASE_URL;
     const signoutBtn = document.getElementById('auth-signout-btn');
     const dashLink = document.getElementById('auth-dash-link');
 
-    (async () => {
+    whenIdle(async () => {
+      const { supabase } = await import('../lib/supabase');
       const { data: { user } } = await supabase.auth.getUser();
       if (user && userInfo && userName) {
         const { data: profile } = await supabase
@@ -409,9 +424,10 @@ const base = import.meta.env.BASE_URL;
           dashLink.style.display = '';
         }
       }
-    })();
+    });
 
     signoutBtn?.addEventListener('click', async () => {
+      const { supabase } = await import('../lib/supabase');
       await supabase.auth.signOut();
       navigate(import.meta.env.BASE_URL);
     });

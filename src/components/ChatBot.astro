@@ -1,23 +1,10 @@
----
-const base = import.meta.env.BASE_URL;
----
+<div class="chat" data-chat>
+  <button class="chat__trigger" type="button" data-chat-toggle aria-expanded="false" aria-controls="chat-panel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span data-chat-trigger-label>Ask XR Club</span>
+  </button>
 
-<div class="chat chat--hidden" data-chat>
-  <div class="chat__trigger" data-chat-toggle>
-    <div class="chat__speech" data-chat-speech>Need help on your application?</div>
-    <model-viewer
-      class="chat__model"
-      src={`${base}Images/stickman.glb`}
-      autoplay
-      camera-orbit="0deg 75deg 2.5m"
-      interaction-prompt="none"
-      shadow-intensity="0"
-      environment-image="neutral"
-      exposure="1.2"
-    ></model-viewer>
-  </div>
-
-  <div class="chat__panel" data-chat-window>
+  <div class="chat__panel" id="chat-panel" data-chat-window>
     <div class="chat__panel-top">
       <span class="chat__panel-title" data-chat-title>Ask XR Club</span>
       <button class="chat__panel-close" data-chat-close aria-label="Close chat">
@@ -36,10 +23,7 @@ const base = import.meta.env.BASE_URL;
   </div>
 </div>
 
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
-
 <script>
-  import { supabase } from '../lib/supabase';
   import { navigate } from 'astro:transitions/client';
 
   let isOpen = false;
@@ -69,41 +53,20 @@ const base = import.meta.env.BASE_URL;
     const form = document.querySelector('[data-chat-form]') as HTMLFormElement;
     const input = document.querySelector('[data-chat-input]') as HTMLInputElement;
     const titleEl = document.querySelector('[data-chat-title]') as HTMLElement;
+    const triggerLabel = document.querySelector('[data-chat-trigger-label]') as HTMLElement;
+    const toggles = Array.from(document.querySelectorAll('[data-chat-toggle]'));
     if (!chatEl || !panel || !feed || !form || !input) return;
-
-    const introEl = document.querySelector('[data-intro]');
-    if (introEl) {
-      const obs = new MutationObserver(() => {
-        if (!document.querySelector('[data-intro]')) {
-          chatEl.classList.remove('chat--hidden');
-          obs.disconnect();
-        }
-      });
-      obs.observe(document.body, { childList: true });
-    } else {
-      chatEl.classList.remove('chat--hidden');
-    }
 
     const isIdeatePage = !!document.querySelector('[data-ideate-page]');
     const isApplyPage = window.location.pathname.includes('/apply');
     const mode = isIdeatePage ? 'ideate' : isApplyPage ? 'apply' : 'chat';
 
-    if (isIdeatePage && titleEl) {
-      titleEl.textContent = 'XR Ideator';
+    const title = isIdeatePage ? 'XR Ideator' : isApplyPage ? 'Application Helper' : 'Ask XR Club';
+    if (titleEl) titleEl.textContent = title;
+    if (triggerLabel) triggerLabel.textContent = title;
+
+    if (isIdeatePage) {
       setTimeout(() => { if (!isOpen) openChat(); }, 800);
-    }
-
-    if (isApplyPage && titleEl) {
-      titleEl.textContent = 'Application Helper';
-    }
-
-    const speechBubble = document.querySelector('[data-chat-speech]') as HTMLElement;
-    if (speechBubble) {
-      if (isApplyPage && !isOpen) {
-        speechBubble.classList.add('chat__speech--visible');
-      } else {
-        speechBubble.classList.remove('chat__speech--visible');
-      }
     }
 
     if (feed.children.length === 0 && history.length === 0) {
@@ -118,28 +81,29 @@ const base = import.meta.env.BASE_URL;
       addMsg(feed, welcomeMsg, 'bot');
     }
 
-    if (isOpen) {
-      panel.classList.add('chat__panel--open');
+    function syncOpenState() {
+      panel.classList.toggle('chat__panel--open', isOpen);
+      for (const btn of toggles) btn.setAttribute('aria-expanded', String(isOpen));
     }
+
+    syncOpenState();
 
     function openChat() {
       isOpen = true;
-      panel.classList.add('chat__panel--open');
-      speechBubble?.classList.remove('chat__speech--visible');
+      syncOpenState();
       input.focus();
     }
 
     function closeChat() {
       isOpen = false;
-      panel.classList.remove('chat__panel--open');
-      if (isApplyPage) speechBubble?.classList.add('chat__speech--visible');
+      syncOpenState();
     }
 
-    document.querySelectorAll('[data-chat-toggle]').forEach(btn => {
+    for (const btn of toggles) {
       btn.addEventListener('click', () => {
         if (isOpen) closeChat(); else openChat();
       }, { signal });
-    });
+    }
 
     document.querySelector('[data-chat-close]')?.addEventListener('click', () => closeChat(), { signal });
 
@@ -169,6 +133,7 @@ const base = import.meta.env.BASE_URL;
       const typing = addMsg(feed, mode === 'ideate' ? 'Ideating...' : 'Thinking...', 'typing');
 
       try {
+        const { supabase } = await import('../lib/supabase');
         const { data, error } = await supabase.functions.invoke('chat', {
           body: { messages: history, mode },
         });
@@ -219,58 +184,46 @@ const base = import.meta.env.BASE_URL;
 <style>
   .chat {
     position: fixed;
-    bottom: 0;
-    left: 0.5rem;
+    bottom: 1rem;
+    left: 1rem;
     z-index: 9990;
     font-family: 'Inter', sans-serif;
   }
 
-  .chat--hidden {
-    display: none !important;
-  }
-
   .chat__trigger {
-    position: relative;
-    width: 180px;
-    height: 180px;
-    cursor: pointer;
-  }
-
-  .chat__model {
-    width: 100%;
-    height: 100%;
-    --poster-color: transparent;
-    background: transparent;
-  }
-
-  .chat__speech {
-    position: absolute;
-    top: -8px;
-    left: 140px;
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
     font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: rgba(255, 255, 255, 0.85);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(12, 12, 12, 0.85);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 0.4rem 0.75rem;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 300ms ease, transform 300ms ease;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 980px;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
   }
 
-  .chat__speech--visible {
-    opacity: 1;
-    transform: translateY(0);
+  .chat__trigger:hover,
+  .chat__trigger[aria-expanded="true"] {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .chat__trigger:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
   }
 
   .chat__panel {
     position: absolute;
-    bottom: 180px;
+    bottom: calc(100% + 0.6rem);
     left: 0;
     width: 320px;
     max-height: 420px;
@@ -427,16 +380,6 @@ const base = import.meta.env.BASE_URL;
   .chat__a:hover { color: #fff; }
 
   @media (max-width: 480px) {
-    .chat__trigger {
-      width: 120px;
-      height: 120px;
-    }
-
-    .chat__speech {
-      left: 100px;
-      font-size: 0.7rem;
-    }
-
     .chat__panel {
       position: fixed;
       bottom: 0;

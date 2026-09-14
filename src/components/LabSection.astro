@@ -2,7 +2,7 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="lab" data-lab>
-  <img class="lab__bg" src={`${base}Images/lab.webp`} alt="" decoding="async" />
+  <img loading="lazy" class="lab__bg" src={`${base}Images/lab.webp`} alt="" decoding="async" />
   <div class="lab__dim"></div>
 
   <div class="lab__layout">
@@ -23,7 +23,7 @@ const base = import.meta.env.BASE_URL;
       <div class="lab__col">
         <div class="lab__section lab__section--lore">
           <h3 class="lab__section-title">History</h3>
-          <img class="lab__lore-img" src={`${base}Images/brenden iribe.webp`} alt="Brendan Iribe" decoding="async" />
+          <img loading="lazy" class="lab__lore-img" src={`${base}Images/brenden iribe.webp`} alt="Brendan Iribe" decoding="async" />
           <p class="lab__section-text">Brendan Iribe, a UMD alum, co founded Oculus, one of the most influential VR companies. He later donated generously to the university's CS program, helping shape our beautiful computer science building but also supporting the rise of XR Club</p>
           <p class="lab__section-text lab__section-text--fun">Fun fact: when our lab space was at risk, a club member reached out to Brendan Iribe who advocated for the club to the CS department!</p>
         </div>
@@ -39,7 +39,7 @@ const base = import.meta.env.BASE_URL;
 
       <div class="lab__col">
         <div class="lab__founder">
-          <img class="lab__founder-photo" src={`${base}Images/people/Galen.webp`} alt="Galen Stetsyuk" decoding="async" />
+          <img loading="lazy" class="lab__founder-photo" src={`${base}Images/people/Galen.webp`} alt="Galen Stetsyuk" decoding="async" />
           <h3 class="lab__founder-name">Galen Stetsyuk '18</h3>
           <p class="lab__founder-role">Founder of XR Club</p>
           <p class="lab__founder-desc">The XR Club was founded in 2015 by Galen Stetsyuk, a computer science major who at the time also founded MPLEX VR, an entertainment virtual reality company. Since then, the club has grown to over 1000 members and earned its own dedicated lab space in AVW. We're continuing to expand, grow our community, and push toward an even bigger future for the lab.</p>

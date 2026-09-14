@@ -105,7 +105,6 @@ ul, ol {
   --z-overlay: 200;
   --z-modal: 300;
   --z-navigation: 400;
-  --z-intro: 500;
 }
 
 ::selection {

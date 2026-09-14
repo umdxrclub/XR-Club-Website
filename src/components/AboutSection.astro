@@ -2,7 +2,7 @@
 const base = import.meta.env.BASE_URL;
 ---
 <section class="about" data-about>
-  <img class="about__bg-img" src={`${base}Images/image8.webp`} alt="" decoding="async" />
+  <img loading="lazy" class="about__bg-img" src={`${base}Images/image8.webp`} alt="" decoding="async" />
   <div class="about__dim"></div>
 
   <div class="about__content" data-about-content>
@@ -21,11 +21,11 @@ const base = import.meta.env.BASE_URL;
       </div>
 
       <div class="about__card about__card--image" data-about-card>
-        <img src={`${base}Images/photo2.webp`} alt="XR Club members" class="about__card-img" decoding="async" />
+        <img loading="lazy" src={`${base}Images/photo2.webp`} alt="XR Club members" class="about__card-img" decoding="async" />
       </div>
 
       <div class="about__card about__card--image" data-about-card>
-        <img src={`${base}Images/photo3.webp`} alt="XR Club project" class="about__card-img" decoding="async" />
+        <img loading="lazy" src={`${base}Images/photo3.webp`} alt="XR Club project" class="about__card-img" decoding="async" />
       </div>
 
       <div class="about__card about__card--levels" data-about-card>
