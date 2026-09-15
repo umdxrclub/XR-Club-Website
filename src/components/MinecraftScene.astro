@@ -16,11 +16,9 @@ const base = import.meta.env.BASE_URL;
     <details class="minecraft-scene__credits">
       <summary>3D credits</summary>
       <div class="minecraft-scene__credit-card">
-        <a href="https://sketchfab.com/3d-models/the-perfect-steve-rigged-0cffc39bdab04551bde4f8cdfbc52eca" target="_blank" rel="noopener noreferrer">The Perfect Steve Rigged</a> by Blender3D<br />
-        Steve: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · Model resized; animation adapted.<br />
-        Star modeled from the supplied homepage artwork.
-        <br /><a href="https://sketchfab.com/3d-models/fantasy-butterfly-animation-0f24b085e8654e4db09c2fe681a79e3f" target="_blank" rel="noopener noreferrer">Fantasy Butterfly Animation</a> by lunequinox · CC BY 4.0.<br />
-        Butterfly textures optimized; flight path adapted.
+        <p>The Minecraft character is <a href="https://sketchfab.com/3d-models/the-perfect-steve-rigged-0cffc39bdab04551bde4f8cdfbc52eca" target="_blank" rel="noopener noreferrer">The Perfect Steve Rigged</a> by Blender3D on Sketchfab, shared under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. We resized the model and adapted its animation for this page.</p>
+        <p>The butterfly is <a href="https://sketchfab.com/3d-models/fantasy-butterfly-animation-0f24b085e8654e4db09c2fe681a79e3f" target="_blank" rel="noopener noreferrer">Fantasy Butterfly Animation</a> by lunequinox on Sketchfab, also under CC BY 4.0. We optimized its textures and changed its flight path.</p>
+        <p>The star was modeled by us from the homepage artwork.</p>
       </div>
     </details>
   </div>
@@ -41,6 +39,8 @@ const base = import.meta.env.BASE_URL;
   summary { cursor: pointer; list-style: none; padding: 8px 4px; text-shadow: 0 1px 4px #000; }
   summary::-webkit-details-marker { display: none; }
   .minecraft-scene__credit-card { position: absolute; bottom: 38px; left: 50%; transform: translateX(-50%); width: min(310px, 80vw); padding: 14px 16px; background: #101219f5; border: 1px solid #ffffff25; border-radius: 12px; font-size: 11px; line-height: 1.8; box-shadow: 0 8px 24px #0008; }
+  .minecraft-scene__credit-card p { margin: 0 0 6px; }
+  .minecraft-scene__credit-card p:last-child { margin-bottom: 0; }
   .minecraft-scene__credit-card a { text-decoration: underline; text-underline-offset: 3px; color: #e5ddff; }
   @media (prefers-reduced-motion: reduce) { .minecraft-scene__viewport { transition: none; } }
 </style>
