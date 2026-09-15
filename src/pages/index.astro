@@ -10,14 +10,15 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="XR Club">
-  <link slot="head" rel="preload" as="image" href={`${base}Images/bubble.png`} fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" href={`${base}Images/homescreen-2560.webp`} imagesrcset={`${base}Images/homescreen-1600.webp 1600w, ${base}Images/homescreen-2560.webp 2560w, ${base}Images/homescreen-3840.webp 3840w`} imagesizes="max(100vw, 200vh)" fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" href={`${base}Images/bubble-1400.webp`} imagesrcset={`${base}Images/bubble-1000.webp 1000w, ${base}Images/bubble-1400.webp 1400w, ${base}Images/bubble-2130.webp 2130w`} imagesizes="62vh" fetchpriority="high" />
   <Header />
 
   <section class="hero-section" data-hero-wrapper data-bubble-intro="pending">
     <SplitHero />
     <div class="hero-bubble" data-hero-bubble>
       <div class="hero-bubble__tilt" data-hero-tilt>
-        <img class="hero-bubble__img" src={`${base}Images/bubble.png`} alt="" fetchpriority="high" decoding="async" />
+        <img class="hero-bubble__img" src={`${base}Images/bubble-1400.webp`} srcset={`${base}Images/bubble-1000.webp 1000w, ${base}Images/bubble-1400.webp 1400w, ${base}Images/bubble-2130.webp 2130w`} sizes="62vh" alt="" fetchpriority="high" decoding="async" />
         <h1 class="hero-bubble__heading">
           <span class="sr-only">XR Club</span>
           <HeroWordmark />
