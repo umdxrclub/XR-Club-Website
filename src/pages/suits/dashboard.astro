@@ -880,7 +880,7 @@ const base = import.meta.env.BASE_URL;
     // Eligibility flags drive the warning badges and the "Has a flag" filter.
     function flagsFor(a: SuitsApplication) {
       const flags: Array<{ text: string; bad: boolean }> = [];
-      if (a.us_citizen_or_pr !== 'Yes') flags.push({ text: 'Not a citizen or PR', bad: true });
+      if (a.us_citizen_or_pr !== 'Yes') flags.push({ text: 'Not a citizen or PR: cannot travel for test week', bad: false });
       if (a.required_dates === 'No') flags.push({ text: 'Cannot attend required dates', bad: true });
       if (a.required_dates.startsWith('Unsure')) flags.push({ text: 'Unsure about required dates', bad: false });
       if (a.hours_per_week === 'Less than 3 hours') flags.push({ text: 'Under 3 hours a week', bad: false });
@@ -1118,7 +1118,7 @@ const base = import.meta.env.BASE_URL;
             <div class="sd__panel">
               <p class="sd__panel-title">Eligibility</p>
               <dl class="sd__kv">
-                ${eligibility('Citizen or PR', a.us_citizen_or_pr, a.us_citizen_or_pr === 'Yes')}
+                ${eligibility('Citizen or PR', a.us_citizen_or_pr, a.us_citizen_or_pr === 'Yes', a.us_citizen_or_pr !== 'Yes')}
                 ${eligibility('Required dates', a.required_dates, a.required_dates === 'Yes', a.required_dates.startsWith('Unsure'))}
                 ${eligibility('Hours per week', a.hours_per_week, HOURS_RANK[a.hours_per_week] >= 3, HOURS_RANK[a.hours_per_week] === 2)}
               </dl>

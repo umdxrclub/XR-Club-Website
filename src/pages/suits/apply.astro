@@ -234,8 +234,9 @@ const WORD_LIMIT = 150;
             ))}
           </div>
           <div class="sa__field sa__field--nested" id="interest-other-wrap" hidden>
-            <label class="sa__label sa__label--small" for="interest_other">Other</label>
-            <input class="sa__input" id="interest_other" name="interest_other" type="text" />
+            <label class="sa__label sa__label--small" for="interest_other">Add your own role <span class="sa__req">*</span></label>
+            <p class="sa__help">Tell us the area or role you would bring that is not listed above.</p>
+            <input class="sa__input" id="interest_other" name="interest_other" type="text" placeholder="For example: audio design, robotics, grant writing" />
           </div>
         </fieldset>
       </section>
@@ -279,7 +280,7 @@ const WORD_LIMIT = 150;
 
         <fieldset class="sa__field" data-group="us_citizen_or_pr">
           <legend class="sa__label">Are you a U.S. Citizen or Legal Permanent Resident? <span class="sa__req">*</span></legend>
-          <p class="sa__help">Unfortunately, this is a hard requirement imposed by NASA for eligibility to participate onsite.</p>
+          <p class="sa__help">NASA requires U.S. citizenship or permanent residency to attend test week onsite at Johnson Space Center. If that does not apply to you, you can still be a full member of the team for the rest of the year. You would just not travel for the onsite testing.</p>
           <div class="sa__options sa__options--row">
             {citizen.map(c => (
               <label class="sa__option">
@@ -1557,7 +1558,7 @@ const WORD_LIMIT = 150;
 
         if (!form.querySelector('input[name="interest_areas"]:checked')) flag(fieldFor('interest_areas'), 'Pick at least one.');
         if (otherCheckbox.checked && !(form.querySelector<HTMLInputElement>('[name="interest_other"]')!.value.trim())) {
-          flag(fieldFor('interest_areas'), 'Tell us what “Other” means for you.');
+          flag(fieldFor('interest_areas'), 'Add the role you have in mind under Other.');
         }
 
         if (!slots.some(s => s.checked)) flag(fieldFor('interview_slots'), 'Pick at least one time.');
