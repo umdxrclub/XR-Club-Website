@@ -40,6 +40,8 @@ export async function mountButterflyScene(host: HTMLElement) {
   const bubble = hero.querySelector<HTMLElement>('[data-hero-bubble]')!;
   const artwork = bubble.querySelector<HTMLImageElement>('.hero-bubble__img')!;
   const replay = hero.querySelector<HTMLButtonElement>('[data-butterfly-replay]')!;
+  const controls = hero.querySelector<HTMLElement>('[data-butterfly-controls]')!;
+  const pause = controls.querySelector<HTMLButtonElement>('[data-butterfly-pause]')!;
   const parameters = new URLSearchParams(location.search);
   const requestedTime = import.meta.env.DEV ? parameters.get('butterfly-time') : null;
   const previewTime = requestedTime !== null && Number.isFinite(Number(requestedTime)) ? Number(requestedTime) : null;
@@ -109,10 +111,19 @@ export async function mountButterflyScene(host: HTMLElement) {
   let width = 1280, height = 720, hostLeft = 0, hostTop = 0;
   let elapsed = 0, lastTime = 0, frame = 0;
   let disposed = false, onScreen = true, finished = false;
-  let paused = hero.querySelector<HTMLElement>('[data-minecraft-scene]')?.dataset.animationPaused === 'true';
+  let paused = false;
+
+  function updateControl() {
+    pause.hidden = finished;
+    pause.setAttribute('aria-label', paused ? 'Play butterfly intro' : 'Pause butterfly intro');
+    pause.title = paused ? 'Play butterfly intro' : 'Pause butterfly intro';
+    controls.querySelector<SVGElement>('[data-pause-icon]')!.toggleAttribute('hidden', paused);
+    controls.querySelector<SVGElement>('[data-play-icon]')!.toggleAttribute('hidden', !paused);
+  }
 
   function begin() {
     finished = false;
+    updateControl();
     hero.dataset.bubbleIntro = 'drawing';
     bubble.classList.remove('is-drawn');
     artwork.style.removeProperty('mask-image');
@@ -122,6 +133,7 @@ export async function mountButterflyScene(host: HTMLElement) {
   function finish() {
     if (finished) return;
     finished = true;
+    updateControl();
     hero.dataset.bubbleIntro = 'complete';
     artwork.style.setProperty('--bubble-reveal', '360deg');
     artwork.style.setProperty('mask-image', 'none');
@@ -229,16 +241,16 @@ export async function mountButterflyScene(host: HTMLElement) {
     lastTime = now;
     const time = previewTime ?? elapsed;
     renderPose(time);
-    if (time < END) frame = requestAnimationFrame(tick);
+    if (time < END && !paused) frame = requestAnimationFrame(tick);
   }
   function schedule() { lastTime = 0; if (!frame && !disposed) frame = requestAnimationFrame(tick); }
   function replayIntro() {
     elapsed = 0;
+    paused = false;
     begin();
-    if (paused) hero.querySelector<HTMLButtonElement>('[data-minecraft-pause]')?.click();
     schedule();
   }
-  function animationState(event: Event) { paused = (event as CustomEvent<{ paused: boolean }>).detail.paused; schedule(); }
+  function togglePause() { paused = !paused; updateControl(); schedule(); }
   function visibility() {
     if (document.hidden) { cancelAnimationFrame(frame); frame = 0; lastTime = 0; }
     else schedule();
@@ -248,9 +260,9 @@ export async function mountButterflyScene(host: HTMLElement) {
   const intersection = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; schedule(); });
   intersection.observe(host);
   replay.addEventListener('click', replayIntro);
-  document.addEventListener('xr:animation-state', animationState);
+  pause.addEventListener('click', togglePause);
   document.addEventListener('visibilitychange', visibility);
-  replay.hidden = false;
+  controls.hidden = false;
   begin();
   resize();
   host.dataset.butterflyReady = 'true';
@@ -260,8 +272,8 @@ export async function mountButterflyScene(host: HTMLElement) {
     cancelAnimationFrame(frame);
     observer.disconnect(); intersection.disconnect();
     replay.removeEventListener('click', replayIntro);
-    replay.hidden = true;
-    document.removeEventListener('xr:animation-state', animationState);
+    pause.removeEventListener('click', togglePause);
+    controls.hidden = true;
     document.removeEventListener('visibilitychange', visibility);
     finish();
     disposeScene(scene);

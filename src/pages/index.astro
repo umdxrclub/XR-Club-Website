@@ -2,7 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import SplitHero from '../components/SplitHero.astro';
-import MinecraftScene from '../components/MinecraftScene.astro';
 import HeroWordmark from '../components/HeroWordmark.astro';
 import ButterflyScene from '../components/ButterflyScene.astro';
 
@@ -25,7 +24,6 @@ const base = import.meta.env.BASE_URL;
         </h1>
       </div>
     </div>
-    <MinecraftScene />
     <ButterflyScene />
   </section>
 </BaseLayout>
@@ -156,7 +154,6 @@ const base = import.meta.env.BASE_URL;
     }
 
     .hero-section :global([data-hero]),
-    .hero-section :global([data-minecraft-scene]),
     .hero-section :global([data-butterfly-scene]) {
       display: none;
     }
