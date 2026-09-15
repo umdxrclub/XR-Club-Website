@@ -17,7 +17,7 @@ CREATE TABLE public.suits_applications (
   organizations TEXT NOT NULL,
 
   -- Your work
-  resume_path TEXT NOT NULL,
+  resume_path TEXT,
   portfolio_url TEXT,
 
   -- Short answers

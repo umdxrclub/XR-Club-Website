@@ -115,7 +115,7 @@ export interface SuitsApplication {
   majors: string;
   minors: string | null;
   organizations: string;
-  resume_path: string;
+  resume_path: string | null;
   portfolio_url: string | null;
   bring_to_table: string;
   why_join: string;

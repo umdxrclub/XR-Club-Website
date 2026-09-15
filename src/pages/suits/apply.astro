@@ -159,8 +159,8 @@ const WORD_LIMIT = 150;
         </div>
 
         <div class="sa__field" data-group="resume">
-          <span class="sa__label">Resume <span class="sa__req">*</span></span>
-          <p class="sa__help">PDF, up to 10 MB.</p>
+          <span class="sa__label">Resume</span>
+          <p class="sa__help">Optional. PDF, up to 10 MB.</p>
           <div class="sa__upload" id="resume-drop">
             <input type="file" id="resume" name="resume" accept="application/pdf,.pdf" hidden />
             <div class="sa__upload-empty" id="resume-empty">
@@ -1562,8 +1562,6 @@ const WORD_LIMIT = 150;
 
         if (!slots.some(s => s.checked)) flag(fieldFor('interview_slots'), 'Pick at least one time.');
 
-        if (!resumeFile) flag(fieldFor('resume'), 'Attach your resume as a PDF.');
-
         return first;
       }
 
@@ -1626,13 +1624,17 @@ const WORD_LIMIT = 150;
           // Loaded on demand so the form itself never depends on Supabase being reachable.
           const { supabase } = await import('../../lib/supabase');
           const id = crypto.randomUUID();
-          const safeName = resumeFile!.name.replace(/[^\w.\-]+/g, '_').slice(-80);
-          const resumePath = `${id}/${safeName}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from('suits-resumes')
-            .upload(resumePath, resumeFile!, { contentType: 'application/pdf', upsert: false });
-          if (uploadError) throw new Error(`Resume upload failed: ${uploadError.message}`);
+          // The resume is optional; upload it only when one was attached.
+          let resumePath: string | null = null;
+          if (resumeFile) {
+            const safeName = resumeFile.name.replace(/[^\w.\-]+/g, '_').slice(-80);
+            resumePath = `${id}/${safeName}`;
+            const { error: uploadError } = await supabase.storage
+              .from('suits-resumes')
+              .upload(resumePath, resumeFile, { contentType: 'application/pdf', upsert: false });
+            if (uploadError) throw new Error(`Resume upload failed: ${uploadError.message}`);
+          }
 
           const interests = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="interest_areas"]:checked')).map(i => i.value);
 

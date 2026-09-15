@@ -1100,7 +1100,7 @@ const base = import.meta.env.BASE_URL;
             <div class="sd__status" id="sd-status">
               ${(['new', 'interview', 'accepted', 'rejected'] as SuitsStatus[]).map(s => `<button type="button" data-status="${s}" class="${a.status === s ? 'is-active' : ''}">${STATUS_LABEL[s]}</button>`).join('')}
             </div>
-            <button type="button" class="sd__btn sd__btn--primary" id="sd-resume">Open resume</button>
+            ${a.resume_path ? '<button type="button" class="sd__btn sd__btn--primary" id="sd-resume">Open resume</button>' : '<span class="sd__btn sd__btn--quiet">No resume attached</span>'}
             <a class="sd__btn" href="mailto:${esc(a.email)}">Email</a>
             <button type="button" class="sd__btn" id="sd-copy-discord">Copy Discord</button>
             ${a.portfolio_url ? `<a class="sd__btn" href="${esc(/^https?:\/\//i.test(a.portfolio_url) ? a.portfolio_url : 'https://' + a.portfolio_url)}" target="_blank" rel="noopener">Portfolio</a>` : ''}
@@ -1178,7 +1178,7 @@ const base = import.meta.env.BASE_URL;
           if (btn) setStatus(a.id, btn.dataset.status as SuitsStatus);
         });
 
-        document.getElementById('sd-resume')!.addEventListener('click', async () => {
+        document.getElementById('sd-resume')?.addEventListener('click', async () => {
           try {
             const { url } = await review<{ url: string }>('resume', { resume_path: a.resume_path });
             window.open(url, '_blank', 'noopener');
