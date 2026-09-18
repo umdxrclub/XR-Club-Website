@@ -1,0 +1,526 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import '../../styles/suits-team.css';
+const base = import.meta.env.BASE_URL;
+
+const roles = [
+  { key: 'technical', name: 'Technical Design and Systems', count: 3, text: 'Defines the software and hardware architecture, TSS integration, navigation, system feasibility, hardware concepts, and how all components connect.' },
+  { key: 'uiux', name: 'UI/UX Design', count: 2, text: 'Creates Figma wireframes for navigation, telemetry, EVA procedures, geology, scientific tasks, warnings, and voice assistance, while mapping how the astronaut interacts with the interface throughout the mission.' },
+  { key: 'aiml', name: 'AI/ML', count: 2, text: 'Defines AI/ML applications, selects and justifies models, designs predictive resource analysis, and establishes safeguards against mission critical hallucination.' },
+  { key: 'hitl', name: 'HITL / Human Factors', count: 1, text: 'Plans test dates, participants, protocols, metrics, safety, low light and telemetry testing, and a full simulated EVA.' },
+  { key: 'pm', name: 'Project Management', count: 2, text: 'Creates the Gantt chart, assigns responsibilities, sets milestones and deadlines, tracks progress, manages technical references, and compiles the final abstract and proposal.' },
+  { key: 'engagement', name: 'Community and Industry Engagement', count: 2, text: 'Plans outreach and industry partnerships while managing funding, endorsements, approvals, and required documentation.' },
+];
+
+const docs = [
+  { file: 'Black Neutral Futuristic Modern Aerospace Presentation.pdf', title: 'Team kickoff slides', meta: 'The deck from the September 18 meeting. Everything in the Mission section comes from it.' },
+  { file: 'fy27-nasa-suits-mission-description.pdf', title: 'NASA SUITS Mission Description 2026 to 2027', meta: 'The EVA scenario, NASA provided equipment, and the display requirements.' },
+  { file: 'fy27-suits-proposal-guidelines (1).pdf', title: 'NASA SUITS Proposal Guidelines 2026 to 2027', meta: 'Every required section, the page limits, the letters, and the scoring rubric.' },
+];
+---
+
+<AppLayout title="SUITS Mission Dashboard" description="Team dashboard for the University of Maryland NASA SUITS proposal." hideChatBot noindex>
+  <div class="st-bg" aria-hidden="true"></div>
+  <div class="st" id="st" data-roles={JSON.stringify(roles.map(r => ({ key: r.key, name: r.name, count: r.count })))} data-base={base}>
+    <script is:inline>
+      try {
+        if (localStorage.getItem('xr-suits-theme') === 'dark') {
+          document.getElementById('st').classList.add('is-dark');
+          document.querySelector('.st-bg')?.classList.add('is-dark');
+        }
+      } catch (e) {}
+    </script>
+
+    <!-- ============================================================ -->
+    <!-- Gate                                                          -->
+    <!-- ============================================================ -->
+    <section class="st-gate" id="st-gate">
+      <div class="st-gate__card">
+        <p class="st-gate__eyebrow">UMD XR Club</p>
+        <h1 class="st-gate__title">SUITS Mission Dashboard</h1>
+        <p class="st-gate__text" id="st-gate-text">Sign in with your UMD Google account to open the team dashboard.</p>
+        <div class="st-gate__error" id="st-gate-error" hidden></div>
+        <button type="button" class="st-btn st-btn--primary st-btn--wide" id="st-google">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.7 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.9c-.3 2.1-1.7 5.3-4.8 7.5l7.4 5.7c4.4-4.1 7-10.1 7-16.9z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.8-6C1 16.5 0 20.1 0 24s1 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.4-8.5 2.4-6.3 0-11.7-4.1-13.6-9.9l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+        <p class="st-help" style="margin-top:1rem;">Only umd.edu and terpmail.umd.edu accounts can enter.</p>
+        <ul class="st-gate__steps" id="st-gate-steps" hidden>
+          <li class="st-gate__step" data-step="account"><span class="st-gate__step-dot"></span><span>Checking your Google account</span></li>
+          <li class="st-gate__step" data-step="domain"><span class="st-gate__step-dot"></span><span>Confirming it is a UMD account</span></li>
+          <li class="st-gate__step" data-step="roster"><span class="st-gate__step-dot"></span><span>Adding you to the team roster</span></li>
+          <li class="st-gate__step" data-step="data"><span class="st-gate__step-dot"></span><span>Loading the mission dashboard</span></li>
+        </ul>
+        <p style="margin-top:1.5rem;"><a href={base} class="st-link">Back to xr.umd.edu</a></p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- App                                                           -->
+    <!-- ============================================================ -->
+    <main class="st-app" id="st-app" hidden>
+      <header class="st-top">
+        <div>
+          <h1 class="st-top__title">SUITS Mission Dashboard</h1>
+          <p class="st-top__sub" id="st-whoami"></p>
+        </div>
+        <div class="st-top__actions">
+          <button type="button" class="st-btn st-btn--small" id="st-theme">Night mode</button>
+          <button type="button" class="st-btn st-btn--small" id="st-signout">Sign out</button>
+        </div>
+      </header>
+
+      <nav class="st-nav" id="st-nav" aria-label="Dashboard sections">
+        <button type="button" class="st-nav__btn" data-nav="overview">Overview</button>
+        <button type="button" class="st-nav__btn" data-nav="mission">Mission</button>
+        <button type="button" class="st-nav__btn" data-nav="proposal">Proposal</button>
+        <button type="button" class="st-nav__btn" data-nav="roles">Roles</button>
+        <button type="button" class="st-nav__btn" data-nav="availability">Availability</button>
+        <button type="button" class="st-nav__btn" data-nav="meetings">Meetings</button>
+        <button type="button" class="st-nav__btn" data-nav="tasks">Tasks</button>
+        <button type="button" class="st-nav__btn" data-nav="announcements">Announcements</button>
+        <button type="button" class="st-nav__btn" data-nav="drive">Drive</button>
+        <button type="button" class="st-nav__btn" data-nav="chat">Discord</button>
+        <button type="button" class="st-nav__btn" data-nav="documents">Documents</button>
+        <button type="button" class="st-nav__btn" data-nav="team">Team</button>
+        <button type="button" class="st-nav__btn" data-nav="guide" data-managers hidden>PM guide</button>
+      </nav>
+
+      <!-- Overview -->
+      <section class="st-view" data-view="overview" hidden>
+        <div id="st-overview"></div>
+      </section>
+
+      <!-- Mission: the kickoff slides -->
+      <section class="st-view" data-view="mission" hidden>
+        <div class="st-section">
+          <p class="st-muted" style="margin:0 0 0.4rem; font-weight:600;">XR Club, September 18, 2026</p>
+          <h2 class="st-h1">NASA SUITS, Team Dreamers challenge</h2>
+          <p class="st-lead">This is the kickoff deck as a page you can come back to. The slides are in the Documents section if you want the original.</p>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">About the challenge</h3>
+          <p class="st-lead">NASA is working toward sustained human presence on the Moon, with increasingly complex lunar missions and eventually crewed Mars missions. Lunar spacewalks (EVAs) need to be reimagined.</p>
+          <p class="st-lead">SUITS focuses on technologies like displays, voice assistants, AI, and ML that give astronauts more autonomy while reducing cognitive load.</p>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Mission outline</h3>
+          <ol class="st-steps">
+            <li class="st-step">
+              <span class="st-step__num">1</span>
+              <div>
+                <h4 class="st-step__title">Egress</h4>
+                <p class="st-step__text">The astronaut leaves the lunar lander and begins the EVA. Our system guides them through the UIA spacesuit and life support procedures using the UI, telemetry, voice assistance, and potentially AI and computer vision.</p>
+              </div>
+            </li>
+            <li class="st-step">
+              <span class="st-step__num">2</span>
+              <div>
+                <h4 class="st-step__title">Navigate points of interest</h4>
+                <p class="st-step__text">The astronaut navigates to Points of Interest (POIs) using a 2D map, POI markers, and route guidance. The system must account for low light conditions and available resources to determine safe and efficient routes.</p>
+              </div>
+            </li>
+            <li class="st-step">
+              <span class="st-step__num">3</span>
+              <div>
+                <h4 class="st-step__title">Predict consumables and safe range</h4>
+                <p class="st-step__text">Throughout the EVA, the system tracks life support usage and predicts the astronaut's maximum safe range. AI and ML can help predict consumable usage so navigation can adjust routes and ensure a safe return.</p>
+              </div>
+            </li>
+            <li class="st-step">
+              <span class="st-step__num">4</span>
+              <div>
+                <h4 class="st-step__title">Complete POI tasks</h4>
+                <p class="st-step__text">At each POI, the astronaut deploys the lunar camera, photographs and collects samples, marks the collection site, uses the XRF spectrometer, and completes a scientific payload task. Data from these systems is received through telemetry and presented through the UI.</p>
+              </div>
+            </li>
+            <li class="st-step">
+              <span class="st-step__num">5</span>
+              <div>
+                <h4 class="st-step__title">Ingress</h4>
+                <p class="st-step__text">When the POIs are completed or time runs out, the astronaut returns to the lander using breadcrumb navigation, ideally taking the shortest safe path rather than simply retracing their steps, completes the final UIA procedures, and ends the EVA.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Proposal roles are not development roles</h3>
+          <p class="st-lead">Proposal roles are temporary and focused on research, design, and planning. If our proposal is selected, roles will shift based on everyone's strengths. For example, members experienced in Unity may focus directly on building the AR system.</p>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Proposal roles</h3>
+          <div class="st-grid st-grid--2">
+            {roles.map(r => (
+              <div class="st-role">
+                <div class="st-role__head">
+                  <h4 class="st-role__name">{r.name}</h4>
+                  <span class="st-role__count">{r.count} {r.count === 1 ? 'person' : 'people'}</span>
+                </div>
+                <p class="st-role__text">{r.text}</p>
+              </div>
+            ))}
+          </div>
+          <p style="margin-top:1.25rem;"><button type="button" class="st-btn st-btn--primary" data-go="roles">Submit your role choices</button></p>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Moving forward</h3>
+          <p class="st-p">Look out for:</p>
+          <ul class="st-list">
+            <li>Instructions to create a NASA Gateway account</li>
+            <li>Discord group chat with the final team</li>
+            <li>First team meeting date, ideally in person so everyone can meet</li>
+            <li>First set of tasks and deadlines</li>
+            <li>Tools and workspace setup (Google Drive, Figma, and so on)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Proposal: what NASA asks for -->
+      <section class="st-view" data-view="proposal" hidden>
+        <div class="st-section">
+          <h2 class="st-h1">The proposal</h2>
+          <p class="st-lead">This page follows NASA's Proposal Guidelines for 2026 to 2027. The full document is in the Documents section; this is the working version with the parts we have to deliver, the rules, and how it is scored.</p>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Dates that matter</h3>
+          <div class="st-dates" id="st-dates"></div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Our checklist</h3>
+          <p class="st-p">Every required component, in one place. Tick items as they are finished; the whole team sees the same list.</p>
+          <div class="st-progress" style="margin-bottom:1rem;"><div class="st-progress__bar" id="st-checklist-bar" style="width:0%"></div></div>
+          <p class="st-muted" id="st-checklist-summary" style="margin:0 0 1rem;"></p>
+          <div id="st-checklist"></div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">The rules</h3>
+          <ul class="st-list">
+            <li>The team lead submits one electronic copy of the proposal through NASA STEM Gateway by Thursday, October 22, 2026.</li>
+            <li>The proposal must contain three sections: Technical, Community and Industry Engagement, and Administrative. No section or component may be skipped.</li>
+            <li>The Technical section may not exceed 12 pages. Other sections and appendices do not count against that limit. Include enough images in those pages to describe the software; extra images can go in an appendix.</li>
+            <li>The report body uses 12 point font. Figures and tables are labeled and referenced in the text.</li>
+            <li>All information on the title page must be complete: team name, institution and address, team contact, every team member with role, email, academic year and major, and the faculty advisor's name, email, phone, and signature.</li>
+            <li>Plagiarism results in a rejected proposal. Cite referenced works in the text and in a References section.</li>
+          </ul>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Technical section</h3>
+          <p class="st-p">Evaluators ranking the proposal for scientific and technical merit read only this section, so it has to address every factor below.</p>
+          <div class="st-stack">
+            <div class="st-card">
+              <h4 class="st-h3">Abstract</h4>
+              <p class="st-p" style="margin:0;">Up to 500 words. A brief summary of the proposed prototype design and how its elements relate to the requirements and the EVA scenario in the Mission Description. Include any planned testing and any hardware or peripheral devices we would bring to onsite testing.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Software and hardware design description</h4>
+              <p class="st-p" style="margin:0;">A detailed description of the proposed software and how we will tackle each aspect of the challenge in the context of the EVA scenario. Written so a practicing engineer can understand the UI design and how the voice assistant will be implemented. Present goals with the expected key components (system architecture plan, hardware concepts, network diagrams). Lay out clearly how AI is integrated into the work and the user experience. Show conceptual UI designs (wireframes, visuals) for navigation, telemetry, geology, EVA task instructions, and scientific payloads, plus any peripheral device mock ups. Highlight the unique solutions we are considering.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Concept of operations (CONOPS)</h4>
+              <p class="st-p" style="margin:0;">The high level concept of how the design meets the expectations and requirements, described from the astronaut's point of view. Address how the application assists the astronaut in each part of the EVA scenario during testing. A flowchart of how the design operates through the mission is a useful visual.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Artificial intelligence and machine learning</h4>
+              <p class="st-p" style="margin:0;">Its own section. An in depth view of how we plan to use AI as a force multiplier for crew members, with a clear description of AI and ML for predictive resource analysis tools. Further use of AI and ML is encouraged where it increases efficiency and reduces cognitive load. Name the AI models we plan to use and how we will control for hallucinations in mission critical areas.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Human in the loop (HITL) testing</h4>
+              <p class="st-p" style="margin:0;">Any pilot, user experience, human in the loop, or human factors studies we plan. The written test plan includes a testing schedule with proposed dates and times, the test protocol, possible metrics and measures, feasible subject pools, expected demographics of test subjects, and all planned safety measures. Explain how the HITL tests inform the development plan (low lighting testing, outdoor testing, network and telemetry testing). A good plan builds toward a full test of the EVA scenario before test week.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Project management</h4>
+              <p class="st-p" style="margin:0;">An outline of the team's development plan with internal key milestones, using a Gantt chart or similar. If we follow an Agile plan, outline the scrum schedule with a feature development and testing plan. Describe how progress is tracked to meet the EVA scenario requirements ahead of test week. NASA expects us to plan time to test in conditions close to the EVA scenario before traveling to Houston, and will hold us to the milestones we provide.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Technical references</h4>
+              <p class="st-p" style="margin:0;">Cite referenced works in the text and in a References section, formatted as a technical paper would. Two or more properly formatted references earn full points on the rubric.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Community and industry engagement</h3>
+          <p class="st-p">Teams are expected to engage their local communities. At least two community engagements and two industry engagements must be planned, with four or more events in total. Teams that submit outreach reports by test week compete for the community engagement and industry engagement awards.</p>
+          <div class="st-grid st-grid--2">
+            <div class="st-card">
+              <h4 class="st-h3">Community engagement</h4>
+              <p class="st-p">A plan is an organized way to achieve a specific objective. Random activities, even good ones, do not constitute a plan. The plan has two parts: the objectives, activities, places, dates, and target audience for the year; and what the team will actually do at each event, what materials it will use, and the main points it will make.</p>
+              <p class="st-p" style="margin-bottom:0.5rem;">For maximum points, include:</p>
+              <ul class="st-list">
+                <li>How the team will engage local civic and community leaders.</li>
+                <li>The outreach audience: K to 12 classes or school groups, undergraduate research symposiums, university outreach to local schools, Scouts, after school clubs, church groups, and similar.</li>
+                <li>Letters or agreements from institutions that accept the invitation.</li>
+                <li>The team's objectives for each activity.</li>
+                <li>Specific activity plans, strengthened by alignment to state or national standards and age appropriate language. Leading an Hour of Code in a classroom is the optimal outreach activity.</li>
+                <li>A press or social media plan.</li>
+                <li>A connection between the activity and NASA SUITS, a NASA mission, or the team's code.</li>
+              </ul>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Industry engagement</h4>
+              <p class="st-p">A list of potential industry partners who align with the project goals: technical expertise, mentorship, skills development, certifications, or resources that advance the project and the team's workforce development.</p>
+              <p class="st-p" style="margin-bottom:0.5rem;">The plan should cover:</p>
+              <ul class="st-list">
+                <li>Mentorship arrangements we plan to target with industry experts and partners.</li>
+                <li>Skills development and certification opportunities team members plan to seek, including short term online certifications.</li>
+                <li>How the team's industry connections support members' career goals.</li>
+                <li>Internship, fellowship, apprenticeship, or career opportunities members plan to seek.</li>
+                <li>How we will raise awareness with industry partners about our NASA challenge participation.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Administrative section</h3>
+          <div class="st-stack">
+            <div class="st-card">
+              <h4 class="st-h3">Institutional letter of endorsement</h4>
+              <p class="st-p" style="margin:0;">On the institution's letterhead, from the president, a dean, or a department chair. It states the institution knows about and endorses the team's participation. Without it the proposal is rejected.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Statement of supervising faculty</h4>
+              <p class="st-p">On institution letterhead, signed by the faculty advisor, who must also sign the proposal cover. Teams without a faculty advisor are not considered. The statement reads:</p>
+              <p class="st-p st-muted" style="margin:0; font-style:italic;">As the faculty advisor for an experiment entitled "________" proposed by a team of higher education students from ________ institution, I concur with the concepts and methods by which the students plan to conduct this project. I will ensure the student team members complete all project requirements and meet deadlines in a timely manner. I understand any default by this team concerning any project requirements (including submission of final report materials) could adversely affect selection opportunities of future teams from their institution.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Certification of original work</h4>
+              <p class="st-p">Signed by the team lead or faculty advisor on institution letterhead. If selected, it extends to everything produced during the activity: GitHub files and code, the software design review presentation, the tested devices, the poster, and the exit pitch. Without it the proposal is rejected. The statement reads:</p>
+              <p class="st-p st-muted" style="margin:0; font-style:italic;">I, ________, team lead (or faculty advisor) of ________ institution, do hereby declare that the document prepared by Team ________ and entitled "________" is our team's original work and contains no material derived from or attributed to any other source. Wherever necessary, we have acknowledged the sources from where we have derived any ideas or extracts.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Statement of rights of use</h4>
+              <p class="st-p" style="margin:0;">Optional, but teams that include it receive greater consideration. It grants the U.S. Government rights to use the team's technical data and software for government purposes, and allows NASA to release designated software as open source. If included, every team member and the faculty advisor signs. The full text is on pages 9 and 10 of the guidelines.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Funding and budget statement</h4>
+              <p class="st-p">A simple columnar layout of expected expenditures (materials, machining, operating, testing, shipping, travel) and potential funding sources such as institutional grants, state Space Grant funds, and corporate sponsors. Participants are responsible for all costs including development, travel, lodging, and food. NASA's example budget:</p>
+              <dl class="st-kv">
+                <dt>Flights</dt><dd>$4,500</dd>
+                <dt>Hotel</dt><dd>$2,000</dd>
+                <dt>Ground transportation</dt><dd>$400</dd>
+                <dt>Operating</dt><dd>$600</dd>
+                <dt>Software</dt><dd>$500</dd>
+                <dt>Miscellaneous</dt><dd>$500</dd>
+                <dt>Total</dt><dd>$8,500</dd>
+              </dl>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">HoloLens 2 loan program</h4>
+              <p class="st-p">NASA can loan a limited number of HoloLens 2 devices under a loan agreement signed by the faculty advisor. The proposal states one of:</p>
+              <ul class="st-list">
+                <li>A: We do not require a loaned device because we already have one or plan to acquire one.</li>
+                <li>B: We need a loaned device from NASA SUITS to participate.</li>
+                <li>C: We have a device but would still like to be considered for a loan to aid development.</li>
+              </ul>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Logo files</h4>
+              <p class="st-p" style="margin:0;">Supply NASA with the institution's logo as JPG or PNG, in a horizontal version and a stacked version, uploaded to the proposal in STEM Gateway or provided as a public link.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Other deliverables if selected</h4>
+              <p class="st-p" style="margin:0;">A first person point of view video of the UI in action, submitted with the code and design elements at the software design review in April 2027, and a draft white paper or paper for publication on the development of the display system when the challenge ends in June 2027.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">How it is scored</h3>
+          <p class="st-p">The technical section is worth 80 points and the engagement section 20. The rubric's highest bands are what we are writing toward.</p>
+          <div class="st-table-wrap">
+            <table class="st-table">
+              <thead><tr><th>Criterion</th><th>Points</th><th>What earns the top band</th></tr></thead>
+              <tbody>
+                <tr><td>Design description</td><td>25</td><td>Goals and expected results clearly and concisely written, substantial evidence of innovative display interaction methods with visuals, and most or all components of the challenge met.</td></tr>
+                <tr><td>Concept of operations</td><td>10</td><td>The user interface explained in full detail from an operational perspective.</td></tr>
+                <tr><td>Feasibility</td><td>10</td><td>High viability, significant contributions to the technical need, and ample evidence of how the concept would be produced.</td></tr>
+                <tr><td>AI integration</td><td>15</td><td>Clear, comprehensive explanation of how and where AI is integrated, the models chosen with a well justified rationale, and a comprehensive plan to mitigate hallucinations.</td></tr>
+                <tr><td>Project schedule</td><td>5</td><td>A highly detailed schedule that shows how each objective and task will be met, with effective use of resources and labor distribution.</td></tr>
+                <tr><td>HITL testing</td><td>10</td><td>A plan that clearly describes every component: schedule of test events, protocol, metrics, subject pools, and how each test evaluates the design against the requirements, all conducted safely.</td></tr>
+                <tr><td>Technical references</td><td>5</td><td>Two or more references cited in the text with a bibliography in a recognized format.</td></tr>
+                <tr><td>Community and industry engagement</td><td>20</td><td>Four or more planned events with a highly descriptive implementation plan, projected audience and numbers, community leaders engaged, and a detailed list of industry partners with a professional development strategy.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Letter of intent</h3>
+          <p class="st-p">Due Thursday, September 24, 2026, written in the body of an email to nasa-suits@mail.nasa.gov. The team lead may still submit a proposal without it.</p>
+          <div class="st-card st-card--soft">
+            <dl class="st-kv">
+              <dt>Subject</dt><dd>NASA SUITS Challenge Letter of Intent</dd>
+              <dt>Body</dt><dd>We are Team Dreamers from the University of Maryland. We intend to submit a proposal for the 2026 NASA SUITS Challenge.</dd>
+              <dt>Include</dt><dd>The student team lead's name, email, academic year, and major, and the institution the team represents.</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="st-section">
+          <h3 class="st-h2">Eligibility</h3>
+          <ul class="st-list">
+            <li>Each onsite team member must be a U.S. citizen or legal permanent resident enrolled at an accredited U.S. institution, and at least 18 before arriving in Houston.</li>
+            <li>Eight badged participants attend the onsite event: the faculty advisor and seven students. There is no limit on team size overall.</li>
+            <li>The faculty advisor, aged 21 or older, must accompany the team onsite.</li>
+            <li>Everyone attends Orientation at 4 p.m. CST on December 10, 2026 and the Virtual Software Design Review on April 1, 2027.</li>
+            <li>No more than two former NASA SUITS team members per team, and members join only one team.</li>
+            <li>Every member and the advisor completes a NASA STEM Gateway profile. Only the team lead completes the Gateway application and sends invites to the rest.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Roles -->
+      <section class="st-view" data-view="roles" hidden>
+        <div id="st-roles"></div>
+      </section>
+
+      <!-- Availability -->
+      <section class="st-view" data-view="availability" hidden>
+        <div id="st-availability"></div>
+      </section>
+
+      <!-- Meetings -->
+      <section class="st-view" data-view="meetings" hidden>
+        <div id="st-meetings"></div>
+      </section>
+
+      <!-- Tasks -->
+      <section class="st-view" data-view="tasks" hidden>
+        <div id="st-tasks"></div>
+      </section>
+
+      <!-- Announcements -->
+      <section class="st-view" data-view="announcements" hidden>
+        <div id="st-announcements"></div>
+      </section>
+
+      <!-- Discord -->
+      <section class="st-view" data-view="chat" hidden>
+        <div id="st-chat"></div>
+      </section>
+
+      <!-- Drive -->
+      <section class="st-view" data-view="drive" hidden>
+        <div id="st-drive"></div>
+      </section>
+
+      <!-- Documents -->
+      <section class="st-view" data-view="documents" hidden>
+        <div class="st-section">
+          <h2 class="st-h1">Documents</h2>
+          <p class="st-lead">The three files everyone should have read, and the team's workspace links. The working files live in the Drive section.</p>
+          <div class="st-stack">
+            {docs.map(d => (
+              <div class="st-doc">
+                <span class="st-doc__icon" aria-hidden="true">PDF</span>
+                <div>
+                  <p class="st-doc__title">{d.title}</p>
+                  <p class="st-doc__meta">{d.meta}</p>
+                </div>
+                <div class="st-doc__actions">
+                  <a class="st-btn st-btn--small" href={`${base}${encodeURIComponent(d.file)}`} target="_blank" rel="noopener">Open</a>
+                  <a class="st-btn st-btn--small" href={`${base}${encodeURIComponent(d.file)}`} download>Download</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="st-section">
+          <h3 class="st-h2">Workspace links</h3>
+          <div id="st-links"></div>
+        </div>
+      </section>
+
+      <!-- Team -->
+      <section class="st-view" data-view="team" hidden>
+        <div id="st-team"></div>
+      </section>
+
+      <!-- PM guide: managers only -->
+      <section class="st-view" data-view="guide" hidden>
+        <div class="st-section">
+          <h2 class="st-h1">Product manager guide</h2>
+          <p class="st-lead">Only product managers and the team lead see this page. It explains the tools in this dashboard and the rhythm that keeps the proposal on schedule.</p>
+        </div>
+        <div class="st-section">
+          <h3 class="st-h2">What you are responsible for</h3>
+          <p class="st-p">The proposal role description says it plainly: create the Gantt chart, assign responsibilities, set milestones and deadlines, track progress, manage technical references, and compile the final abstract and proposal. NASA scores the project schedule and expects to hold the team to the milestones we give them, so the plan you build here is also part of the submission.</p>
+        </div>
+        <div class="st-section">
+          <h3 class="st-h2">The tools</h3>
+          <div class="st-stack">
+            <div class="st-card">
+              <h4 class="st-h3">Availability polls</h4>
+              <p class="st-p" style="margin:0;">Open the Availability section and choose New poll. Give it a title, pick the days, and set the hours. Everyone paints the hours they are free; the grid darkens where more people overlap, and the best times are listed under it. Use a poll before scheduling any recurring meeting, then close it once the meeting is set.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Meetings</h4>
+              <p class="st-p" style="margin:0;">Open Meetings and choose New meeting. Set the title, date, start and end time, where it happens (a Zoom link, a Discord voice channel, or a room), and the agenda. Leave "Post to Discord" on and the bot announces it in the team channel the moment you save. Members RSVP from the dashboard and can add the meeting to their calendar with one tap.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Tasks</h4>
+              <p class="st-p" style="margin:0;">Tasks live under the proposal section they belong to, so the board mirrors the document. Create a task with an owner and a due date. Owners move it from To do to In progress to Done; the Overview shows each person their own open tasks and everyone the section progress bars. Keep tasks small enough to finish in a week.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Announcements</h4>
+              <p class="st-p" style="margin:0;">Short and specific. An announcement posts to the dashboard and, if you leave the switch on, to Discord as the bot. Use it for decisions, deadlines, and anything the whole team must read.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Drive and the proposal document</h4>
+              <p class="st-p" style="margin:0;">The Drive section is the team folder inside the dashboard. Anyone can create a Doc, Sheet, or Slides there, and every member who signs in gets edit access to the folder without you sharing anything by hand. Create the proposal document from that section and it opens with every required section already in place, in NASA's order, with NASA's instructions under each heading. The dashboard then reads the Doc and shows word counts, the estimated technical page count against the 12 page limit, the abstract against its 500 word limit, and which required headings are still missing. Keep the required headings as Heading 1 and Heading 2 so the check stays accurate.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Checklist and links</h4>
+              <p class="st-p" style="margin:0;">The Proposal section carries a checklist of every component NASA requires. Anyone can tick items, but you own keeping it honest. In Documents, add the links the team uses every day: the Google Drive folder, the Figma file, the STEM Gateway page, and the Discord server.</p>
+            </div>
+            <div class="st-card">
+              <h4 class="st-h3">Team roles</h4>
+              <p class="st-p" style="margin:0;">The Roles section shows everyone's first, second, and third choice in one table so you can assign proposal roles against the counts on the slide. The team lead can make someone a product manager from the Team section.</p>
+            </div>
+          </div>
+        </div>
+        <div class="st-section">
+          <h3 class="st-h2">A weekly rhythm that works</h3>
+          <ul class="st-list">
+            <li>One team meeting a week, scheduled from a poll, with the agenda posted a day ahead.</li>
+            <li>Every task has one owner and a due date. If it has two owners it has none.</li>
+            <li>Monday: review the Overview together. What is late, what is blocked, what got done.</li>
+            <li>Thursday: each section lead posts a short progress note in Discord.</li>
+            <li>Two weeks before the deadline, freeze scope. After that only editing and letters.</li>
+          </ul>
+        </div>
+        <div class="st-section">
+          <h3 class="st-h2">Working back from October 22</h3>
+          <ul class="st-list">
+            <li>September 24: letter of intent sent. Faculty advisor confirmed. Roles assigned.</li>
+            <li>October 1: outline of every section agreed. Endorsement and faculty letters requested.</li>
+            <li>October 8: first full draft of the technical section. Engagement plan with named partners and dates.</li>
+            <li>October 15: second draft, figures and wireframes in place, references formatted. Budget done.</li>
+            <li>October 19: final read through, page count checked at 12 point, all signatures collected.</li>
+            <li>October 21: team lead uploads to STEM Gateway a day early.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal host -->
+    <div id="st-modal-host"></div>
+  </div>
+
+  <script>
+    import { boot } from '../../scripts/suits/index';
+    document.addEventListener('astro:page-load', () => {
+      if (document.getElementById('st')) boot();
+    });
+  </script>
+</AppLayout>
