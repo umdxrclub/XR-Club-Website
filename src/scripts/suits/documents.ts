@@ -185,11 +185,14 @@ function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
     <button type="button" data-act="tab">Open in new tab</button>
     ${d.drive_url ? `<button type="button" data-act="drive">Open in Drive</button>` : ''}
     ${canEdit ? `<button type="button" data-act="edit">Edit</button><button type="button" data-act="remove" class="is-danger">Remove</button>` : ''}`;
-  document.body.appendChild(menu);
+  // Inside the dashboard root so the theme tokens apply; positioned relative to it
+  const root = document.getElementById('st') || document.body;
+  root.appendChild(menu);
   const r = button.getBoundingClientRect();
+  const base = root.getBoundingClientRect();
   const w = menu.offsetWidth;
-  menu.style.top = `${r.bottom + 6 + window.scrollY}px`;
-  menu.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) + window.scrollX}px`;
+  menu.style.top = `${r.bottom + 6 - base.top}px`;
+  menu.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) - base.left}px`;
   const close = () => { menu.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); };
   const onDoc = (e: Event) => { if (!menu.contains(e.target as Node)) close(); };
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
