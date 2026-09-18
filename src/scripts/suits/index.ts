@@ -4,15 +4,10 @@ import type { User } from '@supabase/supabase-js';
 import { db, api, state, isManager } from './api';
 import { esc, toast, roleLabel } from './ui';
 import * as overview from './overview';
-import * as proposal from './checklist';
-import * as roles from './roles';
-import * as availability from './availability';
-import * as meetings from './meetings';
+import * as reader from './reader';
 import * as tasks from './tasks';
-import * as announcements from './announcements';
-import * as chat from './chat';
+import * as meetings from './meetings';
 import * as documents from './documents';
-import * as drive from './drive';
 import * as team from './team';
 
 const TEAM_EMAIL = /@(terpmail\.)?umd\.edu$/i;
@@ -25,18 +20,12 @@ interface View {
 
 const VIEWS: Record<string, View> = {
   overview: { render: h => overview.render(h) },
+  proposal: { render: h => reader.render(h), leave: () => reader.leave() },
   mission: { render: () => {} },
-  proposal: { render: () => proposal.render() },
-  roles: { render: h => roles.render(h) },
-  availability: { render: h => availability.render(h) },
-  meetings: { render: h => meetings.render(h) },
   tasks: { render: h => tasks.render(h) },
-  announcements: { render: h => announcements.render(h) },
-  chat: { render: h => chat.render(h), leave: () => chat.stop() },
-  drive: { render: h => drive.render(h) },
+  meetings: { render: h => meetings.render(h) },
   documents: { render: h => documents.render(h) },
   team: { render: h => team.render(h) },
-  guide: { render: () => {} },
 };
 
 let current = '';
@@ -220,7 +209,6 @@ async function authorize(user: User) {
     step('roster', 'active');
     state.me = await api.join();
     state.members = await api.members();
-    await syncDiscordIdentity(user);
     step('roster', 'done');
 
     step('data', 'active');
@@ -241,24 +229,8 @@ async function authorize(user: User) {
   }
 }
 
-/** If the member connected Discord, keep their Discord name and avatar on the roster. */
-async function syncDiscordIdentity(user: User) {
-  const identity = user.identities?.find(i => i.provider === 'discord');
-  if (!identity || !state.me) return;
-  const data = (identity.identity_data || {}) as Record<string, string | undefined>;
-  const id = identity.identity_id || data.provider_id || data.sub;
-  const username = data.custom_claims && (data.custom_claims as unknown as Record<string, string>).global_name || data.full_name || data.name || data.user_name;
-  const avatar = data.avatar_url || data.picture;
-  if (id && (state.me.discord_id !== id || state.me.discord_username !== username || state.me.discord_avatar !== avatar)) {
-    await api.updateProfile({ discord_id: id, discord_username: username || null, discord_avatar: avatar || null });
-    state.me = { ...state.me, discord_id: id, discord_username: username || null, discord_avatar: avatar || null };
-    state.members = await api.members();
-  }
-}
-
 export async function go(view: string, pushHash = true) {
   if (!VIEWS[view]) view = 'overview';
-  if (view === 'guide' && !isManager()) view = 'overview';
   if (current && VIEWS[current].leave) VIEWS[current].leave!();
   current = view;
   document.querySelectorAll<HTMLElement>('.st-nav__btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === view));

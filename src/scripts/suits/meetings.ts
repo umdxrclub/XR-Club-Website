@@ -90,8 +90,7 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
         ${field('end', 'Ends', input('end', `type="time" required value="${hm(end)}"`))}
       </div>
       ${field('location', 'Where', input('location', `type="text" value="${esc(existing?.location || '')}" placeholder="Zoom link, Discord voice, or a room"`))}
-      ${field('agenda', 'Agenda', textarea('agenda', 'rows="4" placeholder="What we will cover"'))}
-      ${existing ? '' : `<label class="st-check"><input type="checkbox" name="discord" checked /><span class="st-check__box"></span><span>Post this meeting to Discord</span></label>`}`,
+      ${field('agenda', 'Agenda', textarea('agenda', 'rows="4" placeholder="What we will cover"'))}`,
     submitLabel: existing ? 'Save changes' : 'Schedule',
     onSubmit: async (form, close) => {
       const title = formValue(form, 'title');
@@ -108,16 +107,8 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
         toast('Meeting updated.');
       } else {
         await api.createMeeting(payload);
-        const notify = formChecked(form, 'discord');
         close();
         toast('Meeting scheduled.');
-        if (notify) {
-          try {
-            await api.discord('announce', { text: `Meeting scheduled: ${title}\n${fmtDate(s.toISOString(), { weekday: 'long', month: 'long', day: 'numeric' })}, ${fmtTime(s.toISOString())} to ${fmtTime(e.toISOString())}${payload.location ? `\nWhere: ${payload.location}` : ''}${payload.agenda ? `\nAgenda: ${payload.agenda}` : ''}\nRSVP on the mission dashboard: ${location.origin}${state.base}suits/team#meetings` });
-          } catch (err) {
-            toast(`Scheduled, but Discord was not notified: ${(err as Error).message}`, 'danger');
-          }
-        }
       }
       await refreshBadges();
       await render(host);
