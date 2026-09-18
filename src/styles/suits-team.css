@@ -2390,7 +2390,7 @@
 }
 
 .st-menu {
-  position: absolute;
+  position: fixed;
   z-index: 900;
   min-width: 180px;
   padding: 0.35rem;
@@ -2440,4 +2440,95 @@
   .st-group__drive {
     font-size: 0.82rem;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Dropdowns drawn in the dashboard style (native select kept hidden)  */
+/* ------------------------------------------------------------------ */
+.st-dd {
+  position: relative;
+  width: 100%;
+}
+
+.st-dd--inline {
+  width: auto;
+  min-width: 180px;
+}
+
+.st-dd__native {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  pointer-events: none;
+}
+
+.st-dd__btn {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem 0.7rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  text-align: left;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.st-dd--inline .st-dd__btn {
+  min-height: 38px;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.85rem;
+  border-radius: 10px;
+}
+
+.st-dd__btn:hover {
+  border-color: var(--ink);
+}
+
+.st-dd__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(128, 128, 136, 0.25);
+}
+
+.st-dd__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-dd__chev {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-right: 1.5px solid var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-2);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.st-dd__list {
+  z-index: 60;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.st-dd__list button.is-selected {
+  background: var(--fill);
+  font-weight: 600;
+}
+
+.st-dd__list button:focus-visible {
+  outline: none;
+  background: var(--fill);
 }

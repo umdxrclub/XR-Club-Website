@@ -21,19 +21,88 @@ let driveStatus: DriveStatus | null = null;
 let roleFolders: Record<string, { id: string; url: string }> = {};
 let pulling = false;
 let lastPull = 0;
+let docsCache: TeamDocument[] | null = null;
+let docsKey = '';
+let refreshing: Promise<boolean> | null = null;
 const signedCache = new Map<string, { url: string; until: number }>();
 const thumbCache = new Map<string, string>();
 
-export async function render(host: HTMLElement) {
-  host.innerHTML = `<p class="st-muted">Loading.</p>`;
-  let docs: TeamDocument[] = [];
-  try {
-    docs = await api.documents();
-  } catch (err) {
-    host.innerHTML = `<p class="st-notice st-notice--danger">${esc((err as Error).message)}</p>`;
-    return;
-  }
+// Remembered on this device so the page paints before the network answers
+const LS_DOCS = 'xr-suits-docs';
+const LS_DRIVE = 'xr-suits-drive';
+const LS_THUMBS = 'xr-suits-thumbs';
+try {
+  const d = localStorage.getItem(LS_DOCS); if (d) { docsCache = JSON.parse(d); docsKey = fingerprint(docsCache!); }
+  const dr = localStorage.getItem(LS_DRIVE); if (dr) { const v = JSON.parse(dr); driveStatus = v.status || null; roleFolders = v.folders || {}; }
+  const t = localStorage.getItem(LS_THUMBS); if (t) for (const [k, v] of Object.entries(JSON.parse(t) as Record<string, string>)) thumbCache.set(k, v);
+} catch { /* first visit, or storage blocked */ }
 
+function fingerprint(docs: TeamDocument[]) {
+  return docs.map(d => `${d.id}:${d.title}:${d.role}:${d.notes}:${d.drive_status}:${d.drive_url}`).join('|');
+}
+
+function remember() {
+  try {
+    if (docsCache) localStorage.setItem(LS_DOCS, JSON.stringify(docsCache));
+    localStorage.setItem(LS_DRIVE, JSON.stringify({ status: driveStatus, folders: roleFolders }));
+  } catch { /* storage full or blocked */ }
+}
+
+function rememberThumb(id: string, data: string) {
+  thumbCache.set(id, data);
+  try {
+    const keep: Record<string, string> = {};
+    let total = 0;
+    for (const [k, v] of thumbCache) { if (total + v.length > 3_000_000) break; keep[k] = v; total += v.length; }
+    localStorage.setItem(LS_THUMBS, JSON.stringify(keep));
+  } catch { /* storage full or blocked */ }
+}
+
+/** Fetch the list once after sign in so the tab is ready before it is opened. */
+export function warm() {
+  void refreshDocs(null);
+  if (!driveStatus) void loadDrive(null);
+}
+
+/** Fetch the list; repaint only if something changed. Resolves true when it did. */
+function refreshDocs(host: HTMLElement | null): Promise<boolean> {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    try {
+      const docs = await api.documents();
+      const key = fingerprint(docs);
+      if (key === docsKey) return false;
+      docsCache = docs;
+      docsKey = key;
+      remember();
+      if (host && host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) paint(host, docs);
+      return true;
+    } catch (err) {
+      if (host && !docsCache) host.innerHTML = `<p class="st-notice st-notice--danger">${esc((err as Error).message)}</p>`;
+      return false;
+    } finally {
+      refreshing = null;
+    }
+  })();
+  return refreshing;
+}
+
+export async function render(host: HTMLElement) {
+  if (docsCache) {
+    paint(host, docsCache);
+    void refreshDocs(host);
+  } else {
+    host.innerHTML = `<p class="st-muted">Loading.</p>`;
+    await refreshDocs(host);
+    if (!docsCache) return;
+    if (!host.querySelector('.st-doccard, .st-group')) paint(host, docsCache);
+  }
+  void loadDrive(host);
+  void pullFromDrive(host);
+}
+
+function paint(host: HTMLElement, docs: TeamDocument[]) {
+  const scrollY = window.scrollY;
   const mine = state.me?.proposal_role || null;
   const order = filter === 'all' ? GROUPS : filter === 'team' ? GROUPS.filter(g => g.key === 'team') : [GROUPS.find(g => g.key === filter)!, GROUPS[0]];
 
@@ -54,7 +123,7 @@ export async function render(host: HTMLElement) {
     </div>
     ${order.map(g => groupHtml(g, docs.filter(d => d.role === g.key))).join('')}`;
 
-  host.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter!; void render(host); }));
+  host.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter!; paint(host, docsCache || docs); }));
   host.querySelector('#st-doc-add')!.addEventListener('click', () => addDocument(host));
   host.querySelectorAll<HTMLElement>('[data-view-doc]').forEach(card => {
     const open = () => { const d = docs.find(x => x.id === card.dataset.viewDoc)!; void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` }); };
@@ -64,8 +133,8 @@ export async function render(host: HTMLElement) {
   host.querySelectorAll<HTMLElement>('[data-doc-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openMenu(host, b, docs.find(x => x.id === b.dataset.docMenu)!); }));
 
   void fillCovers(host, docs);
-  void renderDriveCard(host);
-  void pullFromDrive(host);
+  paintDriveBits(host);
+  if (scrollY) window.scrollTo({ top: scrollY });
 }
 
 function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
@@ -115,11 +184,27 @@ function coverPlaceholder(d: TeamDocument, kind: Kind) {
   return `<span class="st-doccard__type">${esc(label)}</span>`;
 }
 
-/** Real previews, filled in after the grid is on screen: images and first pages of PDFs. */
+/** Real previews: remembered thumbnails paint at once; the rest render as they scroll into view. */
 async function fillCovers(host: HTMLElement, docs: TeamDocument[]) {
   const targets = docs.filter(d => d.kind === 'file' && d.storage_path && ['image', 'pdf'].includes(kindOf(d)));
-  if (!targets.length || !('IntersectionObserver' in window)) return;
+  if (!targets.length) return;
   const byId = new Map(targets.map(d => [d.id, d]));
+  const pending: HTMLElement[] = [];
+  host.querySelectorAll<HTMLElement>('[data-cover]').forEach(el => {
+    const d = byId.get(el.dataset.cover || '');
+    if (!d) return;
+    const cached = thumbCache.get(d.id);
+    if (cached) el.innerHTML = `<img class="st-doccard__img${kindOf(d) === 'pdf' ? ' st-doccard__img--page' : ''}" src="${cached}" alt="" />`;
+    else pending.push(el);
+  });
+  if (!pending.length) return;
+  // One request for every signed link this page needs
+  const paths = pending.map(el => byId.get(el.dataset.cover!)!.storage_path!).filter(p => !(signedCache.get(p)?.until ?? 0 > Date.now()));
+  if (paths.length) {
+    const { data } = await db.storage.from(BUCKET).createSignedUrls(paths, 3600);
+    for (const row of data || []) if (row.signedUrl && row.path) signedCache.set(row.path, { url: row.signedUrl, until: Date.now() + 50 * 60 * 1000 });
+  }
+  if (!('IntersectionObserver' in window)) { for (const el of pending) void drawCover(el, byId.get(el.dataset.cover!)!); return; }
   const io = new IntersectionObserver(entries => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
@@ -127,17 +212,27 @@ async function fillCovers(host: HTMLElement, docs: TeamDocument[]) {
       const d = byId.get((e.target as HTMLElement).dataset.cover || '');
       if (d) void drawCover(e.target as HTMLElement, d);
     }
-  }, { rootMargin: '300px 0px' });
-  host.querySelectorAll<HTMLElement>('[data-cover]').forEach(el => { if (byId.has(el.dataset.cover || '')) io.observe(el); });
+  }, { rootMargin: '400px 0px' });
+  pending.forEach(el => io.observe(el));
 }
 
 async function drawCover(el: HTMLElement, d: TeamDocument) {
   try {
-    const cached = thumbCache.get(d.id);
-    if (cached) { el.innerHTML = `<img class="st-doccard__img" src="${cached}" alt="" />`; return; }
     const url = await signedUrl(d.storage_path!);
     if (kindOf(d) === 'image') {
-      el.innerHTML = `<img class="st-doccard__img" src="${esc(url)}" alt="" loading="lazy" />`;
+      // Show it straight away, then keep a small copy for next time
+      el.innerHTML = `<img class="st-doccard__img" src="${esc(url)}" alt="" />`;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const w = 320, h = Math.max(1, Math.round((img.naturalHeight / img.naturalWidth) * w));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          rememberThumb(d.id, c.toDataURL('image/jpeg', 0.8));
+        } catch { /* cross origin canvas; the live link still shows */ }
+      };
+      img.src = url;
       return;
     }
     // First page of the PDF, fetched in ranges so large files stay cheap
@@ -152,7 +247,7 @@ async function drawCover(el: HTMLElement, d: TeamDocument) {
     canvas.height = Math.round(viewport.height);
     await page.render({ canvasContext: canvas.getContext('2d')!, viewport, canvas }).promise;
     const data = canvas.toDataURL('image/jpeg', 0.8);
-    thumbCache.set(d.id, data);
+    rememberThumb(d.id, data);
     void task.destroy();
     if (el.isConnected) el.innerHTML = `<img class="st-doccard__img st-doccard__img--page" src="${data}" alt="" />`;
   } catch { /* the type label stays */ }
@@ -185,18 +280,19 @@ function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
     <button type="button" data-act="tab">Open in new tab</button>
     ${d.drive_url ? `<button type="button" data-act="drive">Open in Drive</button>` : ''}
     ${canEdit ? `<button type="button" data-act="edit">Edit</button><button type="button" data-act="remove" class="is-danger">Remove</button>` : ''}`;
-  // Inside the dashboard root so the theme tokens apply; positioned relative to it
+  // Inside the dashboard root so the theme tokens apply; fixed to the viewport next to the button
   const root = document.getElementById('st') || document.body;
   root.appendChild(menu);
   const r = button.getBoundingClientRect();
-  const base = root.getBoundingClientRect();
   const w = menu.offsetWidth;
-  menu.style.top = `${r.bottom + 6 - base.top}px`;
-  menu.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) - base.left}px`;
-  const close = () => { menu.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); };
+  const h = menu.offsetHeight;
+  const top = window.innerHeight - r.bottom < h + 12 && r.top > h + 12 ? r.top - h - 6 : r.bottom + 6;
+  menu.style.top = `${top}px`;
+  menu.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w))}px`;
+  const close = () => { menu.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
   const onDoc = (e: Event) => { if (!menu.contains(e.target as Node)) close(); };
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-  setTimeout(() => { document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey); }, 0);
+  setTimeout(() => { document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey); window.addEventListener('scroll', close, true); window.addEventListener('resize', close); }, 0);
   menu.addEventListener('click', async e => {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (!act) return;
@@ -219,7 +315,7 @@ async function removeDocument(host: HTMLElement, d: TeamDocument) {
     if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
     if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
     await api.deleteDocument(d.id);
-    await render(host);
+    await refreshDocs(host);
   } catch (err) {
     toast((err as Error).message, 'danger');
   }
@@ -273,7 +369,7 @@ function addDocument(host: HTMLElement) {
       }
       close();
       toast('Added.');
-      await render(host);
+      await refreshDocs(host);
       void syncToDrive(host, created.id);
     },
   });
@@ -327,7 +423,7 @@ function editDocument(host: HTMLElement, d: TeamDocument) {
       await api.updateDocument(d.id, { title, role, notes });
       close();
       toast('Saved.');
-      await render(host);
+      await refreshDocs(host);
       if (d.drive_file_id) {
         try { await api.drive('update', { documentId: d.id }); } catch { /* Drive copy keeps its old name until next sync */ }
       }
@@ -346,7 +442,7 @@ async function syncToDrive(host: HTMLElement, id: string) {
   } catch (err) {
     toast(`Saved here, but Drive could not be reached: ${(err as Error).message}`, 'danger');
   }
-  if (host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) await render(host);
+  await refreshDocs(host);
 }
 
 /** Pick up anything added, renamed, moved, or removed directly in Drive. At most once a minute. */
@@ -356,32 +452,35 @@ async function pullFromDrive(host: HTMLElement) {
   lastPull = Date.now();
   try {
     const r = await api.drive<{ added: number; updated: number; removed: number }>('pull');
-    if ((r.added || r.updated || r.removed) && host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) {
-      pulling = false;
-      await render(host);
-      return;
-    }
+    if (r.added || r.updated || r.removed) await refreshDocs(host);
   } catch { /* Drive not connected or unreachable; the page still works */ }
   pulling = false;
 }
 
-async function renderDriveCard(host: HTMLElement) {
+/** Refresh what we know about Drive in the background, then apply it to the page. */
+async function loadDrive(host: HTMLElement | null) {
+  try {
+    const st = await api.drive<DriveStatus>('status');
+    if (st.configured && st.folder && !Object.keys(roleFolders).length) {
+      try { roleFolders = (await api.drive<{ folders: Record<string, { id: string; url: string }> }>('folders')).folders || {}; } catch { roleFolders = {}; }
+    }
+    driveStatus = st;
+    remember();
+  } catch {
+    /* keep what we had */
+  }
+  if (host && host.isConnected) paintDriveBits(host);
+}
+
+/** The Drive parts of the page, drawn from whatever is known right now. */
+function paintDriveBits(host: HTMLElement) {
   const card = host.querySelector<HTMLElement>('#st-drive-card');
   if (!card) return;
-  try {
-    driveStatus = await api.drive<DriveStatus>('status');
-  } catch {
-    driveStatus = null;
-  }
-  if (!card.isConnected) return;
   const st = driveStatus;
   if (!st) { card.innerHTML = ''; return; }
   if (st.configured && st.folder) {
     const openSlot = host.querySelector<HTMLElement>('#st-drive-open');
     if (openSlot) openSlot.outerHTML = `<a class="st-btn" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
-    if (!Object.keys(roleFolders).length) {
-      try { roleFolders = (await api.drive<{ folders: Record<string, { id: string; url: string }> }>('folders')).folders || {}; } catch { roleFolders = {}; }
-    }
     host.querySelectorAll<HTMLElement>('[data-role-folder]').forEach(el => {
       const f = roleFolders[el.dataset.roleFolder!];
       if (f && !el.querySelector('a')) el.innerHTML = `<a class="st-link" href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
@@ -393,7 +492,7 @@ async function renderDriveCard(host: HTMLElement) {
       btn.disabled = true;
       const ids = Array.from(host.querySelectorAll<HTMLElement>('.st-doccard__flag')).map(f => f.closest<HTMLElement>('[data-view-doc]')!.dataset.viewDoc!);
       for (const id of ids) { try { await api.drive('sync', { documentId: id }); } catch { /* shown on the card */ } }
-      await render(host);
+      await refreshDocs(host);
     });
     return;
   }
@@ -428,7 +527,8 @@ async function renderDriveCard(host: HTMLElement) {
     try {
       await api.drive('setFolder', { url: formValue(form, 'url') });
       toast('Team folder saved.');
-      await render(host);
+      roleFolders = {};
+      await loadDrive(host);
     } catch (err) {
       toast((err as Error).message, 'danger');
       btn.disabled = false;

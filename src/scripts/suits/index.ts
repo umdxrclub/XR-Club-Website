@@ -82,9 +82,9 @@ export async function boot() {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-go]');
     if (btn) { e.preventDefault(); go(btn.dataset.go!); }
   });
-  window.addEventListener('hashchange', () => {
-    const v = location.hash.slice(1);
-    if (v && VIEWS[v] && v !== current) go(v, false);
+  window.addEventListener('popstate', () => {
+    const v = viewFromLocation();
+    if (v !== current) go(v, false);
   });
 
   db.auth.onAuthStateChange((event, session) => {
@@ -197,21 +197,36 @@ async function authorize(user: User) {
     document.getElementById('st-whoami')!.innerHTML = `${esc(state.me.display_name)}, ${esc(roleLabel(state.me.role))}`;
     document.querySelectorAll<HTMLElement>('[data-managers]').forEach(el => { el.hidden = !isManager(); });
 
-    const initial = location.hash.slice(1);
-    go(initial && VIEWS[initial] ? initial : 'overview', false);
+    documents.warm();
+    const initial = viewFromLocation();
+    if (location.hash) history.replaceState(null, '', pathFor(initial));
+    go(initial, false);
   } catch (err) {
     authorizing = false;
     showGate(`Could not open the dashboard: ${(err as Error).message}`);
   }
 }
 
-export async function go(view: string, pushHash = true) {
+/** Each section has a plain address: /suits/team/ for the overview, /suits/team/documents/ and so on. */
+function pathFor(view: string) {
+  return `${state.base}suits/team/${view === 'overview' ? '' : view + '/'}`;
+}
+
+function viewFromLocation() {
+  const prefix = `${state.base}suits/team`;
+  let rest = location.pathname.startsWith(prefix) ? location.pathname.slice(prefix.length) : '';
+  rest = rest.replace(/^\/+|\/+$/g, '');
+  if (!rest && location.hash && VIEWS[location.hash.slice(1)]) rest = location.hash.slice(1); // older links
+  return VIEWS[rest] ? rest : 'overview';
+}
+
+export async function go(view: string, push = true) {
   if (!VIEWS[view]) view = 'overview';
   if (current && VIEWS[current].leave) VIEWS[current].leave!();
   current = view;
   document.querySelectorAll<HTMLElement>('.st-nav__btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === view));
   document.querySelectorAll<HTMLElement>('.st-view').forEach(v => { v.hidden = v.dataset.view !== view; });
-  if (pushHash && location.hash !== `#${view}`) history.replaceState(null, '', `#${view}`);
+  if (push && location.pathname !== pathFor(view)) history.replaceState({ ...(history.state || {}), view }, '', pathFor(view));
   const host = document.querySelector<HTMLElement>(`.st-view[data-view="${view}"] > div`) || document.querySelector<HTMLElement>(`.st-view[data-view="${view}"]`)!;
   window.scrollTo({ top: 0 });
   try {
