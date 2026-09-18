@@ -63,7 +63,10 @@ export async function boot() {
     applyTheme(dark);
   });
 
-  // Sign in
+  // Sign in. With a Google client id the page uses Google's own button and hands
+  // the id token to Supabase, so Google's screen names xr.umd.edu. Without one it
+  // falls back to the Supabase redirect flow.
+  void setupGoogleButton();
   document.getElementById('st-google')!.addEventListener('click', async () => {
     const btn = document.getElementById('st-google') as HTMLButtonElement;
     btn.disabled = true;
@@ -106,12 +109,72 @@ export async function boot() {
   else showGate();
 }
 
+interface GoogleId {
+  accounts: {
+    id: {
+      initialize(config: Record<string, unknown>): void;
+      renderButton(el: HTMLElement, options: Record<string, unknown>): void;
+    };
+  };
+}
+
+async function setupGoogleButton() {
+  const clientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
+  const host = document.getElementById('st-google-host');
+  if (!clientId || !host) return;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      if ((window as unknown as { google?: GoogleId }).google?.accounts) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Google sign in did not load'));
+      document.head.appendChild(s);
+    });
+    const google = (window as unknown as { google: GoogleId }).google;
+
+    // Supabase checks the token's nonce against the raw value; Google wants the hash.
+    const raw = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hashed = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+
+    google.accounts.id.initialize({
+      client_id: clientId,
+      nonce: hashed,
+      ux_mode: 'popup',
+      itp_support: true,
+      use_fedcm_for_prompt: true,
+      callback: async (resp: { credential: string }) => {
+        document.getElementById('st-gate-error')!.hidden = true;
+        const { error } = await db.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: raw });
+        if (error) showGateError(`Google sign in failed: ${error.message}`);
+      },
+    });
+    google.accounts.id.renderButton(host, { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.min(360, host.parentElement!.clientWidth - 8) });
+    googleButtonReady = true;
+    setSignInVisible(!document.getElementById('st-gate')!.hidden && document.getElementById('st-gate-steps')!.hidden);
+  } catch {
+    // Fallback button stays
+  }
+}
+
+let googleButtonReady = false;
+
+/** Show whichever sign in control is in use, or hide both while authorizing. */
+function setSignInVisible(visible: boolean) {
+  const host = document.getElementById('st-google-host');
+  const fallback = document.getElementById('st-google') as HTMLButtonElement;
+  if (host) host.hidden = !(visible && googleButtonReady);
+  fallback.hidden = !(visible && !googleButtonReady);
+  fallback.disabled = false;
+}
+
 function showGate(message?: string) {
   document.getElementById('st-app')!.hidden = true;
   document.getElementById('st-gate')!.hidden = false;
   document.getElementById('st-gate-steps')!.hidden = true;
-  (document.getElementById('st-google') as HTMLButtonElement).disabled = false;
-  document.getElementById('st-google')!.hidden = false;
+  setSignInVisible(true);
   if (message) showGateError(message);
 }
 
@@ -132,7 +195,7 @@ async function authorize(user: User) {
   authorizing = true;
   const steps = document.getElementById('st-gate-steps')!;
   steps.hidden = false;
-  document.getElementById('st-google')!.hidden = true;
+  setSignInVisible(false);
   document.getElementById('st-gate-error')!.hidden = true;
   document.getElementById('st-gate-text')!.textContent = 'One moment.';
   steps.querySelectorAll('.st-gate__step').forEach(s => s.classList.remove('is-active', 'is-done'));

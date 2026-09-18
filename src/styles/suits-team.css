@@ -1438,6 +1438,17 @@
   }
 }
 
+/* Google's own sign in button, centred in the gate card */
+.st-gate__google {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.st-gate__google iframe {
+  color-scheme: light;
+}
+
 /* ------------------------------------------------------------------ */
 /* Drive                                                               */
 /* ------------------------------------------------------------------ */
