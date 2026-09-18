@@ -270,6 +270,9 @@ export const api = {
   async createDocument(d: Pick<TeamDocument, 'title' | 'kind' | 'url' | 'storage_path' | 'mime' | 'size' | 'role' | 'notes'>): Promise<TeamDocument> {
     return unwrap(await db.from('suits_documents').insert({ ...d, created_by: state.me!.user_id }).select().single());
   },
+  async updateDocument(id: string, patch: Partial<Pick<TeamDocument, 'title' | 'role' | 'notes'>>) {
+    unwrap(await db.from('suits_documents').update(patch).eq('id', id));
+  },
   async deleteDocument(id: string) {
     unwrap(await db.from('suits_documents').delete().eq('id', id));
   },

@@ -1,9 +1,14 @@
-// Documents: everything the team works from, grouped by role. Anyone can add a
-// file or a link; each one is mirrored to the club's Google Drive and shared
-// with the whole team.
+// Documents: everything the team works from, as cards grouped by role. Anyone
+// can add a file or a link; each one is mirrored to the club's Google Drive
+// and anything placed in Drive shows up here too.
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { db, api, state, isManager, isLead, type TeamDocument } from './api';
-import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtDate, fmtRelative } from './ui';
+import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';
+import { openViewer } from './viewer';
+
+GlobalWorkerOptions.workerSrc = workerUrl;
 
 const BUCKET = 'suits-docs';
 const GROUPS = [{ key: 'team', name: 'Everyone' }, ...READER_ROLES.map(r => ({ key: r.key, name: r.name }))];
@@ -13,6 +18,11 @@ interface DriveStatus { configured: boolean; serviceEmail: string | null; folder
 
 let filter = 'all';
 let driveStatus: DriveStatus | null = null;
+let roleFolders: Record<string, { id: string; url: string }> = {};
+let pulling = false;
+let lastPull = 0;
+const signedCache = new Map<string, { url: string; until: number }>();
+const thumbCache = new Map<string, string>();
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
@@ -25,20 +35,19 @@ export async function render(host: HTMLElement) {
   }
 
   const mine = state.me?.proposal_role || null;
-  const counts = new Map<string, number>();
-  for (const g of GROUPS) counts.set(g.key, docs.filter(d => d.role === g.key).length);
-
   const order = filter === 'all' ? GROUPS : filter === 'team' ? GROUPS.filter(g => g.key === 'team') : [GROUPS.find(g => g.key === filter)!, GROUPS[0]];
 
   host.innerHTML = `
-    <div class="st-section">
+    <div class="st-section" style="margin-bottom:1.5rem;">
       <div class="st-toolbar">
         <h2 class="st-h1" style="margin:0;">Documents</h2>
-        <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add a document</button>
+        <div class="st-toolbar__group">
+          ${driveStatus?.folder ? `<a class="st-btn" href="${esc(driveStatus.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>` : `<span id="st-drive-open"></span>`}
+          <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add</button>
+        </div>
       </div>
-      <div class="st-reader__roles" style="margin-top:0.9rem;">
-        <span class="st-reader__roles-label">Show</span>
-        <button type="button" class="st-chip${filter === 'all' ? ' is-active' : ''}" data-filter="all">Everything</button>
+      <div class="st-chips" style="margin-top:0.9rem;">
+        <button type="button" class="st-chip${filter === 'all' ? ' is-active' : ''}" data-filter="all">All</button>
         ${GROUPS.map(g => `<button type="button" class="st-chip${filter === g.key ? ' is-active' : ''}" data-filter="${g.key}">${esc(g.name)}${g.key === mine ? ' (you)' : ''}</button>`).join('')}
       </div>
       <div id="st-drive-card"></div>
@@ -47,54 +56,115 @@ export async function render(host: HTMLElement) {
 
   host.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter!; void render(host); }));
   host.querySelector('#st-doc-add')!.addEventListener('click', () => addDocument(host));
-  host.querySelectorAll<HTMLElement>('[data-open-path]').forEach(b => b.addEventListener('click', () => openStored(b.dataset.openPath!, b as HTMLButtonElement)));
-  host.querySelectorAll<HTMLElement>('[data-remove-doc]').forEach(b => b.addEventListener('click', async () => {
-    const d = docs.find(x => x.id === b.dataset.removeDoc)!;
-    if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard and its copy in Drive goes to the trash.`, 'Remove'))) return;
-    try {
-      if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
-      if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
-      await api.deleteDocument(d.id);
-      await render(host);
-    } catch (err) {
-      toast((err as Error).message, 'danger');
-    }
-  }));
-  host.querySelectorAll<HTMLElement>('[data-retry-doc]').forEach(b => b.addEventListener('click', () => syncToDrive(host, b.dataset.retryDoc!)));
+  host.querySelectorAll<HTMLElement>('[data-view-doc]').forEach(card => {
+    const open = () => { const d = docs.find(x => x.id === card.dataset.viewDoc)!; void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` }); };
+    card.addEventListener('click', e => { if ((e.target as HTMLElement).closest('[data-doc-menu]')) return; open(); });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  });
+  host.querySelectorAll<HTMLElement>('[data-doc-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openMenu(host, b, docs.find(x => x.id === b.dataset.docMenu)!); }));
 
+  void fillCovers(host, docs);
   void renderDriveCard(host);
+  void pullFromDrive(host);
 }
 
 function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
+  const folder = roleFolders[g.key];
   return `
-    <div class="st-list-group">
-      <p class="st-list-group__label"><span>${esc(g.name)}</span><span>${docs.length}</span></p>
-      ${docs.length ? `<div class="st-files">${docs.map(docRow).join('')}</div>` : `<div class="st-empty">Nothing here yet.</div>`}
-    </div>`;
+    <section class="st-group">
+      <div class="st-group__head">
+        <h3 class="st-group__title">${esc(g.name)}</h3>
+        <span class="st-group__count">${docs.length}</span>
+        <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a class="st-link" href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
+      </div>
+      ${docs.length ? `<div class="st-docgrid">${docs.map(cardHtml).join('')}</div>` : `<p class="st-group__empty">Nothing here yet.</p>`}
+    </section>`;
 }
 
-function docRow(d: TeamDocument) {
-  const kind = d.kind === 'link' ? kindOfUrl(d.url || '') : kindOfName(d.storage_path || d.title, d.mime);
-  const who = d.created_by ? esc(memberFirst(d.created_by)) : '';
-  const meta = [who, fmtRelative(d.created_at), d.size ? fmtSize(d.size) : ''].filter(Boolean).join(', ');
-  const drive = d.drive_status === 'synced' && d.drive_url ? `<a class="st-file__drive" href="${esc(d.drive_url)}" target="_blank" rel="noopener">In Drive</a>`
-    : d.drive_status === 'pending' ? `<span class="st-file__drive">Sending to Drive</span>`
-    : d.drive_status === 'error' ? `<button type="button" class="st-file__drive is-error" data-retry-doc="${d.id}" title="${esc(d.drive_error || '')}">Drive failed, retry</button>`
-    : d.drive_status === 'not_connected' && driveStatus?.configured && driveStatus.folder ? `<button type="button" class="st-file__drive" data-retry-doc="${d.id}">Send to Drive</button>`
-    : '';
-  const canRemove = isManager() || d.created_by === state.me?.user_id;
-  const open = d.kind === 'link'
-    ? `<a class="st-btn st-btn--small" href="${esc(d.url || '#')}" target="_blank" rel="noopener">Open</a>`
-    : `<button type="button" class="st-btn st-btn--small" data-open-path="${esc(d.storage_path || '')}">Open</button>`;
+function cardHtml(d: TeamDocument) {
+  const kind = kindOf(d);
+  const who = d.created_by ? memberFirst(d.created_by) : 'From Drive';
+  const meta = `${who}, ${fmtRelative(d.created_at)}`;
+  const status = d.drive_status === 'error' ? `<span class="st-doccard__flag" title="${esc(d.drive_error || '')}">Not in Drive</span>` : '';
   return `
-    <div class="st-file">
-      <span class="st-file__badge" data-kind="${kind}">${esc(badgeLabel(kind))}</span>
-      <span class="st-file__body">
-        <span class="st-file__name">${esc(d.title)}</span>
-        <span class="st-file__meta">${esc(meta)}${d.notes ? `. ${esc(d.notes)}` : ''}${drive ? ` ${drive}` : ''}</span>
-      </span>
-      <span class="st-file__actions">${open}${canRemove ? `<button type="button" class="st-btn st-btn--small st-btn--danger" data-remove-doc="${d.id}">Remove</button>` : ''}</span>
-    </div>`;
+    <article class="st-doccard" data-view-doc="${d.id}" data-kind="${kind}" role="button" tabindex="0" aria-label="${esc(d.title)}">
+      <div class="st-doccard__cover" data-cover="${d.id}">${coverPlaceholder(d, kind)}</div>
+      <div class="st-doccard__body">
+        <p class="st-doccard__title">${esc(d.title)}</p>
+        <p class="st-doccard__meta">${esc(meta)}${status}</p>
+      </div>
+      <button type="button" class="st-doccard__more" data-doc-menu="${d.id}" aria-label="More options"><span></span><span></span><span></span></button>
+    </article>`;
+}
+
+/** What shows on the cover before (or instead of) a real preview. */
+function coverPlaceholder(d: TeamDocument, kind: Kind) {
+  const url = d.kind === 'link' ? d.url || '' : '';
+  if (kind === 'youtube') {
+    const id = youtubeId(url);
+    if (id) return `<img class="st-doccard__img" src="https://img.youtube.com/vi/${esc(id)}/hqdefault.jpg" alt="" loading="lazy" />`;
+  }
+  if (d.kind === 'link' && url) {
+    let host = '';
+    try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+    const label = kind === 'doc' ? 'Google Doc' : kind === 'sheet' ? 'Google Sheet' : kind === 'slides' ? 'Google Slides' : kind === 'drive' ? 'Google Drive' : kind === 'figma' ? 'Figma' : host;
+    return `<span class="st-doccard__site"><img class="st-doccard__favicon" src="https://www.google.com/s2/favicons?domain=${esc(host)}&sz=64" alt="" loading="lazy" /><span>${esc(label)}</span></span>`;
+  }
+  const ext = ((d.storage_path || '').split('.').pop() || '').toUpperCase();
+  const label = kind === 'pdf' ? 'PDF' : kind === 'image' ? 'Image' : kind === 'video' ? 'Video' : kind === 'doc' ? 'Document' : kind === 'sheet' ? 'Spreadsheet' : kind === 'slides' ? 'Slides' : ext || 'File';
+  return `<span class="st-doccard__type">${esc(label)}</span>`;
+}
+
+/** Real previews, filled in after the grid is on screen: images and first pages of PDFs. */
+async function fillCovers(host: HTMLElement, docs: TeamDocument[]) {
+  const targets = docs.filter(d => d.kind === 'file' && d.storage_path && ['image', 'pdf'].includes(kindOf(d)));
+  if (!targets.length || !('IntersectionObserver' in window)) return;
+  const byId = new Map(targets.map(d => [d.id, d]));
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      const d = byId.get((e.target as HTMLElement).dataset.cover || '');
+      if (d) void drawCover(e.target as HTMLElement, d);
+    }
+  }, { rootMargin: '300px 0px' });
+  host.querySelectorAll<HTMLElement>('[data-cover]').forEach(el => { if (byId.has(el.dataset.cover || '')) io.observe(el); });
+}
+
+async function drawCover(el: HTMLElement, d: TeamDocument) {
+  try {
+    const cached = thumbCache.get(d.id);
+    if (cached) { el.innerHTML = `<img class="st-doccard__img" src="${cached}" alt="" />`; return; }
+    const url = await signedUrl(d.storage_path!);
+    if (kindOf(d) === 'image') {
+      el.innerHTML = `<img class="st-doccard__img" src="${esc(url)}" alt="" loading="lazy" />`;
+      return;
+    }
+    // First page of the PDF, fetched in ranges so large files stay cheap
+    const task = getDocument({ url, disableAutoFetch: true, rangeChunkSize: 65536 });
+    const pdf = await task.promise;
+    const page = await pdf.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const scale = 320 / base.width;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvasContext: canvas.getContext('2d')!, viewport, canvas }).promise;
+    const data = canvas.toDataURL('image/jpeg', 0.8);
+    thumbCache.set(d.id, data);
+    void task.destroy();
+    if (el.isConnected) el.innerHTML = `<img class="st-doccard__img st-doccard__img--page" src="${data}" alt="" />`;
+  } catch { /* the type label stays */ }
+}
+
+async function signedUrl(path: string) {
+  const hit = signedCache.get(path);
+  if (hit && hit.until > Date.now()) return hit.url;
+  const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 3600);
+  if (error || !data) throw error || new Error('Could not open the file');
+  signedCache.set(path, { url: data.signedUrl, until: Date.now() + 50 * 60 * 1000 });
+  return data.signedUrl;
 }
 
 function memberFirst(id: string) {
@@ -103,7 +173,57 @@ function memberFirst(id: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Adding
+// Card menu
+// ---------------------------------------------------------------------------
+function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
+  document.querySelector('.st-menu')?.remove();
+  const canEdit = isManager() || d.created_by === state.me?.user_id;
+  const menu = document.createElement('div');
+  menu.className = 'st-menu';
+  menu.innerHTML = `
+    <button type="button" data-act="view">View</button>
+    <button type="button" data-act="tab">Open in new tab</button>
+    ${d.drive_url ? `<button type="button" data-act="drive">Open in Drive</button>` : ''}
+    ${canEdit ? `<button type="button" data-act="edit">Edit</button><button type="button" data-act="remove" class="is-danger">Remove</button>` : ''}`;
+  document.body.appendChild(menu);
+  const r = button.getBoundingClientRect();
+  const w = menu.offsetWidth;
+  menu.style.top = `${r.bottom + 6 + window.scrollY}px`;
+  menu.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) + window.scrollX}px`;
+  const close = () => { menu.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); };
+  const onDoc = (e: Event) => { if (!menu.contains(e.target as Node)) close(); };
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  setTimeout(() => { document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey); }, 0);
+  menu.addEventListener('click', async e => {
+    const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+    if (!act) return;
+    close();
+    if (act === 'view') void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
+    if (act === 'drive' && d.drive_url) window.open(d.drive_url, '_blank', 'noopener');
+    if (act === 'tab') {
+      if (d.kind === 'link') { window.open(d.url || '#', '_blank', 'noopener'); return; }
+      const tab = window.open('', '_blank');
+      try { const url = await signedUrl(d.storage_path!); if (tab) tab.location.href = url; } catch (err) { tab?.close(); toast((err as Error).message, 'danger'); }
+    }
+    if (act === 'edit') editDocument(host, d);
+    if (act === 'remove') void removeDocument(host, d);
+  });
+}
+
+async function removeDocument(host: HTMLElement, d: TeamDocument) {
+  if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard and its copy in Drive goes to the trash.`, 'Remove'))) return;
+  try {
+    if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
+    if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
+    await api.deleteDocument(d.id);
+    await render(host);
+  } catch (err) {
+    toast((err as Error).message, 'danger');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Adding and editing
 // ---------------------------------------------------------------------------
 function addDocument(host: HTMLElement) {
   const defaultRole = state.me?.proposal_role && GROUPS.some(g => g.key === state.me!.proposal_role) ? state.me!.proposal_role! : 'team';
@@ -155,7 +275,6 @@ function addDocument(host: HTMLElement) {
     },
   });
 
-  // Wire the modal after it is in the DOM
   setTimeout(() => {
     const seg = document.getElementById('st-doc-kind');
     const modal = seg?.closest('form');
@@ -188,7 +307,35 @@ function addDocument(host: HTMLElement) {
   }, 0);
 }
 
-/** Mirror one document into the team's Google Drive and refresh its row. */
+function editDocument(host: HTMLElement, d: TeamDocument) {
+  openModal({
+    title: 'Edit document',
+    body: `
+      ${field('title', 'Name', input('title', `type="text" required value="${esc(d.title)}"`))}
+      ${d.kind === 'link' ? `<p class="st-help" style="margin:-0.4rem 0 1rem;">Link: <a class="st-link" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${esc(d.url || '')}</a></p>` : ''}
+      ${field('role', 'For', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === d.role }))))}
+      ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional, one line"'))}`,
+    submitLabel: 'Save',
+    onSubmit: async (form, close) => {
+      const title = formValue(form, 'title');
+      if (!title) throw new Error('Give it a name.');
+      const role = formValue(form, 'role') || 'team';
+      const notes = formValue(form, 'notes') || null;
+      await api.updateDocument(d.id, { title, role, notes });
+      close();
+      toast('Saved.');
+      await render(host);
+      if (d.drive_file_id) {
+        try { await api.drive('update', { documentId: d.id }); } catch { /* Drive copy keeps its old name until next sync */ }
+      }
+    },
+  });
+  setTimeout(() => { const ta = document.querySelector<HTMLTextAreaElement>('#f-notes'); if (ta) ta.value = d.notes || ''; }, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Drive
+// ---------------------------------------------------------------------------
 async function syncToDrive(host: HTMLElement, id: string) {
   try {
     const r = await api.drive<{ drive_status: string; error?: string }>('sync', { documentId: id });
@@ -199,9 +346,22 @@ async function syncToDrive(host: HTMLElement, id: string) {
   if (host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) await render(host);
 }
 
-// ---------------------------------------------------------------------------
-// Drive card: connection state for the lead, folder link for everyone
-// ---------------------------------------------------------------------------
+/** Pick up anything added, renamed, moved, or removed directly in Drive. At most once a minute. */
+async function pullFromDrive(host: HTMLElement) {
+  if (pulling || Date.now() - lastPull < 60 * 1000) return;
+  pulling = true;
+  lastPull = Date.now();
+  try {
+    const r = await api.drive<{ added: number; updated: number; removed: number }>('pull');
+    if ((r.added || r.updated || r.removed) && host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) {
+      pulling = false;
+      await render(host);
+      return;
+    }
+  } catch { /* Drive not connected or unreachable; the page still works */ }
+  pulling = false;
+}
+
 async function renderDriveCard(host: HTMLElement) {
   const card = host.querySelector<HTMLElement>('#st-drive-card');
   if (!card) return;
@@ -214,14 +374,22 @@ async function renderDriveCard(host: HTMLElement) {
   const st = driveStatus;
   if (!st) { card.innerHTML = ''; return; }
   if (st.configured && st.folder) {
-    const waiting = isManager() ? Array.from(host.querySelectorAll<HTMLElement>('[data-retry-doc]')).map(b => b.dataset.retryDoc!) : [];
-    card.innerHTML = `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">Everything added here is copied to the team's Google Drive folder and shared with the whole team. <a class="st-link" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open the folder</a>${waiting.length ? ` <button type="button" class="st-link" id="st-drive-sync-all">Send ${waiting.length} waiting document${waiting.length === 1 ? '' : 's'} to Drive</button>` : ''}</p>`;
+    const openSlot = host.querySelector<HTMLElement>('#st-drive-open');
+    if (openSlot) openSlot.outerHTML = `<a class="st-btn" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
+    if (!Object.keys(roleFolders).length) {
+      try { roleFolders = (await api.drive<{ folders: Record<string, { id: string; url: string }> }>('folders')).folders || {}; } catch { roleFolders = {}; }
+    }
+    host.querySelectorAll<HTMLElement>('[data-role-folder]').forEach(el => {
+      const f = roleFolders[el.dataset.roleFolder!];
+      if (f && !el.querySelector('a')) el.innerHTML = `<a class="st-link" href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
+    });
+    const waiting = isManager() ? host.querySelectorAll('.st-doccard__flag').length : 0;
+    card.innerHTML = waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-link" id="st-drive-sync-all">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '';
     card.querySelector('#st-drive-sync-all')?.addEventListener('click', async () => {
       const btn = card.querySelector('#st-drive-sync-all') as HTMLButtonElement;
       btn.disabled = true;
-      for (const id of waiting) {
-        try { await api.drive('sync', { documentId: id }); } catch { /* shown on the row */ }
-      }
+      const ids = Array.from(host.querySelectorAll<HTMLElement>('.st-doccard__flag')).map(f => f.closest<HTMLElement>('[data-view-doc]')!.dataset.viewDoc!);
+      for (const id of ids) { try { await api.drive('sync', { documentId: id }); } catch { /* shown on the card */ } }
       await render(host);
     });
     return;
@@ -266,58 +434,60 @@ async function renderDriveCard(host: HTMLElement) {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Kinds and helpers
 // ---------------------------------------------------------------------------
-async function openStored(path: string, btn: HTMLButtonElement) {
-  const tab = window.open('', '_blank');
-  btn.disabled = true;
-  try {
-    const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 3600);
-    if (error || !data) throw error || new Error('Could not open the file');
-    if (tab) tab.location.href = data.signedUrl; else location.href = data.signedUrl;
-  } catch (err) {
-    tab?.close();
-    toast((err as Error).message, 'danger');
-  } finally {
-    btn.disabled = false;
+type Kind = 'pdf' | 'doc' | 'sheet' | 'slides' | 'image' | 'video' | 'audio' | 'figma' | 'drive' | 'youtube' | 'link' | 'file';
+
+function kindOf(d: TeamDocument): Kind {
+  if (d.kind === 'link') {
+    const url = d.url || '';
+    if (youtubeId(url)) return 'youtube';
+    if (d.mime) {
+      const m = d.mime;
+      if (m === 'application/vnd.google-apps.document') return 'doc';
+      if (m === 'application/vnd.google-apps.spreadsheet') return 'sheet';
+      if (m === 'application/vnd.google-apps.presentation') return 'slides';
+      if (m === 'application/pdf') return 'pdf';
+      if (m.startsWith('image/')) return 'image';
+      if (m.startsWith('video/')) return 'video';
+      if (/spreadsheet|excel|csv/.test(m)) return 'sheet';
+      if (/presentation|powerpoint/.test(m)) return 'slides';
+      if (/word|text\//.test(m)) return 'doc';
+    }
+    if (/docs\.google\.com\/document/i.test(url)) return 'doc';
+    if (/docs\.google\.com\/spreadsheets/i.test(url)) return 'sheet';
+    if (/docs\.google\.com\/presentation/i.test(url)) return 'slides';
+    if (/drive\.google\.com/i.test(url)) return 'drive';
+    if (/figma\.com/i.test(url)) return 'figma';
+    if (/vimeo\.com|loom\.com|\.mp4($|\?)/i.test(url)) return 'video';
+    if (/\.pdf($|\?)/i.test(url)) return 'pdf';
+    return 'link';
   }
-}
-
-type Kind = 'pdf' | 'doc' | 'sheet' | 'slides' | 'image' | 'video' | 'figma' | 'drive' | 'link' | 'file';
-
-function kindOfName(name: string, mime?: string | null): Kind {
-  const ext = (name.split('.').pop() || '').toLowerCase();
+  const ext = ((d.storage_path || '').split('.').pop() || '').toLowerCase();
+  const mime = d.mime || '';
   if (ext === 'pdf' || mime === 'application/pdf') return 'pdf';
   if (['doc', 'docx', 'txt', 'md', 'rtf', 'pages'].includes(ext)) return 'doc';
   if (['xls', 'xlsx', 'csv', 'numbers'].includes(ext)) return 'sheet';
   if (['ppt', 'pptx', 'key'].includes(ext)) return 'slides';
-  if (mime?.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'heic'].includes(ext)) return 'image';
-  if (mime?.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video';
+  if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'heic', 'avif'].includes(ext)) return 'image';
+  if (mime.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video';
+  if (mime.startsWith('audio/') || ['mp3', 'wav', 'm4a'].includes(ext)) return 'audio';
   return 'file';
 }
 
-function kindOfUrl(url: string): Kind {
-  if (/docs\.google\.com\/document/i.test(url)) return 'doc';
-  if (/docs\.google\.com\/spreadsheets/i.test(url)) return 'sheet';
-  if (/docs\.google\.com\/presentation/i.test(url)) return 'slides';
-  if (/drive\.google\.com/i.test(url)) return 'drive';
-  if (/figma\.com/i.test(url)) return 'figma';
-  if (/youtube\.com|youtu\.be|vimeo\.com|\.mp4($|\?)/i.test(url)) return 'video';
-  if (/\.pdf($|\?)/i.test(url)) return 'pdf';
-  return 'link';
-}
-
-function badgeLabel(kind: Kind) {
-  return { pdf: 'PDF', doc: 'Doc', sheet: 'Sheet', slides: 'Slides', image: 'Image', video: 'Video', figma: 'Figma', drive: 'Drive', link: 'Link', file: 'File' }[kind];
+function youtubeId(url: string) {
+  const m = url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
 }
 
 function titleFromUrl(url: string) {
   try {
     const u = new URL(url);
     const host = u.hostname.replace(/^www\./, '');
-    if (/figma\.com/.test(host)) return 'Figma file';
+    if (/figma\.com/.test(host)) { const seg = u.pathname.split('/').filter(Boolean); return seg[2] ? decodeURIComponent(seg[2]).replace(/[-_]+/g, ' ') : 'Figma file'; }
     if (/docs\.google\.com/.test(host)) return u.pathname.includes('/document/') ? 'Google Doc' : u.pathname.includes('/spreadsheets/') ? 'Google Sheet' : u.pathname.includes('/presentation/') ? 'Google Slides' : 'Google Drive file';
     if (/drive\.google\.com/.test(host)) return 'Google Drive file';
+    if (youtubeId(url)) return 'YouTube video';
     const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '').replace(/[-_]+/g, ' ');
     return last ? `${host}: ${last}` : host;
   } catch {
@@ -329,5 +499,3 @@ function fmtSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-void fmtDate;

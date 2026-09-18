@@ -224,6 +224,22 @@ async function uploadToDrive(token: string, metadata: Record<string, unknown>, b
   return shape(data);
 }
 
+/** The body of a link Doc: title, the link itself (clickable), the note, who added it. */
+async function writeLinkDoc(token: string, docId: string, title: string, url: string, notes: string, who: string) {
+  let text = '';
+  const add = (s: string) => { const start = text.length + 1; text += s + '\n'; return { start, end: start + s.length }; };
+  const t = add(title);
+  const u = add(url);
+  if (notes) add(notes);
+  add(`Added from the SUITS dashboard by ${who}. Open the link above; this page only points to it.`);
+  const requests: unknown[] = [
+    { insertText: { location: { index: 1 }, text } },
+    { updateParagraphStyle: { range: { startIndex: t.start, endIndex: t.end }, paragraphStyle: { namedStyleType: 'HEADING_1' }, fields: 'namedStyleType' } },
+    { updateTextStyle: { range: { startIndex: u.start, endIndex: u.end }, textStyle: { link: { url } }, fields: 'link' } },
+  ];
+  await gapi(token, `${DOCS}/documents/${docId}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
+}
+
 function parseDriveFileId(url: string) {
   const m = url.match(/\/d\/([A-Za-z0-9_-]{10,})/) || url.match(/[?&]id=([A-Za-z0-9_-]{10,})/) || url.match(/folders\/([A-Za-z0-9_-]{10,})/);
   return m ? m[1] : null;
@@ -424,14 +440,21 @@ Deno.serve(async (req) => {
           file = await uploadToDrive(token, { name, parents: [roleFolder] }, blob, docRow.mime || 'application/octet-stream');
         } else if (docRow.kind === 'link' && docRow.url) {
           const targetId = parseDriveFileId(docRow.url);
-          if (!targetId || !/(docs|drive)\.google\.com/.test(docRow.url)) {
-            await mark({ drive_status: 'skipped', drive_error: null });
-            return json({ drive_status: 'skipped' });
+          if (targetId && /(docs|drive)\.google\.com/.test(docRow.url)) {
+            // A Drive item: a shortcut in the role folder
+            file = shape(await gapi(token, `${DRIVE}/files?fields=${encodeURIComponent(FILE_FIELDS)}&supportsAllDrives=true`, {
+              method: 'POST',
+              body: JSON.stringify({ name: docRow.title, mimeType: 'application/vnd.google-apps.shortcut', parents: [roleFolder], shortcutDetails: { targetId } }),
+            }));
+          } else {
+            // Anything else (Figma, a video, a site): a one page Doc in the role folder holding the link
+            const { data: who } = docRow.created_by ? await admin.from('suits_team').select('display_name').eq('user_id', docRow.created_by).single() : { data: null };
+            file = shape(await gapi(token, `${DRIVE}/files?fields=${encodeURIComponent(FILE_FIELDS)}&supportsAllDrives=true`, {
+              method: 'POST',
+              body: JSON.stringify({ name: docRow.title, mimeType: MIME.doc, parents: [roleFolder] }),
+            }));
+            await writeLinkDoc(token, file.id as string, docRow.title, docRow.url, docRow.notes || '', who?.display_name || 'the team');
           }
-          file = shape(await gapi(token, `${DRIVE}/files?fields=${encodeURIComponent(FILE_FIELDS)}&supportsAllDrives=true`, {
-            method: 'POST',
-            body: JSON.stringify({ name: docRow.title, mimeType: 'application/vnd.google-apps.shortcut', parents: [roleFolder], shortcutDetails: { targetId } }),
-          }));
         } else {
           throw new Error('Nothing to send to Drive');
         }
@@ -443,6 +466,134 @@ Deno.serve(async (req) => {
         const message = (err as Error).message || 'Drive sync failed';
         await mark({ drive_status: 'error', drive_error: message });
         return json({ drive_status: 'error', error: message });
+      }
+    }
+
+    // The role folders, created as needed, for links on the Documents page
+    if (action === 'folders') {
+      if (!sa || !folder) return json({ folders: {} });
+      try {
+        const token = await accessToken(sa);
+        const cached = (settings.drive_folders || {}) as Record<string, { id: string; url: string }>;
+        const out: Record<string, { id: string; url: string }> = { ...cached };
+        for (const key of Object.keys(ROLE_FOLDERS)) {
+          if (out[key]) continue;
+          const id = await ensureRoleFolder(token, folder.id, key);
+          out[key] = { id, url: `https://drive.google.com/drive/folders/${id}` };
+        }
+        if (Object.keys(out).length !== Object.keys(cached).length) await saveSetting('drive_folders', out);
+        return json({ folders: out });
+      } catch (err) {
+        return json({ folders: {}, error: (err as Error).message });
+      }
+    }
+
+    // A document was renamed, re-filed, or annotated: rename and move its Drive copy to match
+    if (action === 'update') {
+      const { data: docRow } = await admin.from('suits_documents').select('*').eq('id', String(body.documentId || '')).single();
+      if (!docRow) return json({ error: 'Document not found' }, 404);
+      if (!sa || !folder || !docRow.drive_file_id) return json({ updated: false });
+      try {
+        const token = await accessToken(sa);
+        const current = await gapi(token, `${DRIVE}/files/${docRow.drive_file_id}?fields=parents,name,mimeType&supportsAllDrives=true`);
+        const target = await ensureRoleFolder(token, folder.id, String(docRow.role || 'team'));
+        const ext = docRow.kind === 'file' && docRow.storage_path ? (docRow.storage_path.match(/\.[A-Za-z0-9]{1,6}$/) || [''])[0] : '';
+        const name = docRow.kind === 'file' && ext && !/\.[A-Za-z0-9]{1,6}$/.test(docRow.title) ? docRow.title + ext : docRow.title;
+        const params = new URLSearchParams({ supportsAllDrives: 'true', fields: FILE_FIELDS });
+        const parents = (current?.parents || []) as string[];
+        if (!parents.includes(target)) { params.set('addParents', target); if (parents.length) params.set('removeParents', parents.join(',')); }
+        const file = shape(await gapi(token, `${DRIVE}/files/${docRow.drive_file_id}?${params}`, { method: 'PATCH', body: JSON.stringify({ name }) }));
+        if (docRow.kind === 'link' && current?.mimeType === MIME.doc && docRow.url) {
+          // Rewrite the pointer Doc so the note and title inside it stay current
+          const doc = await gapi(token, `${DOCS}/documents/${docRow.drive_file_id}?fields=body.content.endIndex`);
+          const end = Math.max(...((doc?.body?.content || []) as Array<{ endIndex?: number }>).map(c => c.endIndex || 1));
+          if (end > 2) await gapi(token, `${DOCS}/documents/${docRow.drive_file_id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex: end - 1 } } }] }) });
+          const { data: who } = docRow.created_by ? await admin.from('suits_team').select('display_name').eq('user_id', docRow.created_by).single() : { data: null };
+          await writeLinkDoc(token, docRow.drive_file_id, docRow.title, docRow.url, docRow.notes || '', who?.display_name || 'the team');
+        }
+        await admin.from('suits_documents').update({ drive_url: file.url }).eq('id', docRow.id);
+        return json({ updated: true, drive_url: file.url });
+      } catch (err) {
+        return json({ updated: false, error: (err as Error).message });
+      }
+    }
+
+    // Drive to dashboard: anything placed in the team folder or a role folder shows on the website
+    if (action === 'pull') {
+      if (!sa || !folder) return json({ added: 0, updated: 0, removed: 0 });
+      try {
+        const token = await accessToken(sa);
+        const folders = { ...((settings.drive_folders || {}) as Record<string, { id: string; url: string }>) };
+        let changedFolders = false;
+        for (const key of Object.keys(ROLE_FOLDERS)) {
+          if (folders[key]) continue;
+          const id = await ensureRoleFolder(token, folder.id, key);
+          folders[key] = { id, url: `https://drive.google.com/drive/folders/${id}` };
+          changedFolders = true;
+        }
+        if (changedFolders) await saveSetting('drive_folders', folders);
+        const roleFolderIds = new Set(Object.values(folders).map(f => f.id));
+
+        const seen = new Map<string, { name: string; mime: string; url: string; role: string; kind: string }>();
+        // A file the service account itself created in the last few minutes belongs to a sync still in flight
+        const fresh = Date.now() - 5 * 60 * 1000;
+        const ours = (f: ReturnType<typeof shape>) => (f.editor || '') === sa.client_email && new Date(String(f.createdTime || 0)).getTime() > fresh;
+        const scan = async (parentId: string, role: string) => {
+          const files = await listFiles(token, `'${parentId}' in parents and trashed = false`, 'name');
+          for (const f of files) {
+            if (f.kind === 'folder') {
+              // one level of subfolders inside a role folder counts for that role
+              if (!roleFolderIds.has(f.id as string) && parentId !== folder.id) {
+                const inner = await listFiles(token, `'${f.id}' in parents and trashed = false`, 'name');
+                for (const g of inner) if (g.kind !== 'folder' && !ours(g)) seen.set(g.id as string, { name: g.name as string, mime: String(g.mimeType), url: g.url as string, role, kind: g.kind });
+              }
+              continue;
+            }
+            if (ours(f)) continue;
+            seen.set(f.id as string, { name: f.name as string, mime: String(f.mimeType), url: f.url as string, role, kind: f.kind });
+          }
+        };
+        await scan(folder.id, 'team');
+        for (const [key, f] of Object.entries(folders)) await scan(f.id, key);
+
+        const { data: rows } = await admin.from('suits_documents').select('id, drive_file_id, title, role, created_by, storage_path, drive_status');
+        const known = new Map<string, Record<string, unknown>>();
+        for (const r of rows || []) if (r.drive_file_id) known.set(r.drive_file_id as string, r);
+        const stripExt = (n: string) => n.replace(/\.[A-Za-z0-9]{1,6}$/, '');
+        let added = 0, updated = 0, removed = 0;
+        for (const [fid, f] of seen) {
+          const r = known.get(fid);
+          if (!r) {
+            await admin.from('suits_documents').insert({
+              title: stripExt(f.name), kind: 'link', url: f.url, mime: f.mime, role: f.role, created_by: null,
+              drive_file_id: fid, drive_url: f.url, drive_status: 'synced',
+            });
+            added++;
+            continue;
+          }
+          const fromDrive = !r.storage_path && r.created_by === null;
+          const patch: Record<string, unknown> = {};
+          if (fromDrive && stripExt(f.name) !== r.title) patch.title = stripExt(f.name);
+          if (f.role !== r.role) patch.role = f.role;
+          if (fromDrive) { patch.url = f.url; patch.drive_url = f.url; }
+          if (r.drive_status !== 'synced') patch.drive_status = 'synced';
+          if (Object.keys(patch).length) { await admin.from('suits_documents').update(patch).eq('id', r.id); updated++; }
+        }
+        const skipped = new Set<string>();
+        for (const f of await listFiles(token, `'${folder.id}' in parents and trashed = false`, 'name')) if (ours(f)) skipped.add(f.id as string);
+        for (const [fid, r] of known) {
+          if (seen.has(fid) || skipped.has(fid)) continue;
+          if (!r.storage_path && r.created_by === null) {
+            await admin.from('suits_documents').delete().eq('id', r.id);
+            removed++;
+          } else if (r.drive_status === 'synced') {
+            await admin.from('suits_documents').update({ drive_status: 'error', drive_error: 'The Drive copy was removed. Retry to send it again.' }).eq('id', r.id);
+            updated++;
+          }
+        }
+        return json({ added, updated, removed });
+      } catch (err) {
+        return json({ added: 0, updated: 0, removed: 0, error: (err as Error).message });
       }
     }
 
