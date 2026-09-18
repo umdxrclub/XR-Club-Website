@@ -197,7 +197,7 @@ const ROLE_FOLDERS: Record<string, string> = {
   engagement: 'Community and Industry Engagement',
 };
 
-/** Team folder / Dashboard uploads / <role>, created on first use. */
+/** Team folder / <role folder>, created on first use. */
 async function ensureRoleFolder(token: string, rootId: string, roleKey: string) {
   const find = async (parent: string, name: string) => {
     const q = `'${parent}' in parents and name = '${name.replace(/'/g, "\\'")}' and mimeType = '${MIME.folder}' and trashed = false`;
@@ -207,8 +207,7 @@ async function ensureRoleFolder(token: string, rootId: string, roleKey: string) 
     const made = await gapi(token, `${DRIVE}/files?fields=id&supportsAllDrives=true`, { method: 'POST', body: JSON.stringify({ name, mimeType: MIME.folder, parents: [parent] }) });
     return made.id as string;
   };
-  const uploads = await find(rootId, 'Dashboard uploads');
-  return find(uploads, ROLE_FOLDERS[roleKey] || ROLE_FOLDERS.team);
+  return find(rootId, ROLE_FOLDERS[roleKey] || ROLE_FOLDERS.team);
 }
 
 async function uploadToDrive(token: string, metadata: Record<string, unknown>, blob: Blob, mime: string) {

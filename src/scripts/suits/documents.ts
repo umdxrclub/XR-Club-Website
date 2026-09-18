@@ -9,20 +9,16 @@ const BUCKET = 'suits-docs';
 const GROUPS = [{ key: 'team', name: 'Everyone' }, ...READER_ROLES.map(r => ({ key: r.key, name: r.name }))];
 const groupName = (key: string) => GROUPS.find(g => g.key === key)?.name ?? 'Everyone';
 
-interface NasaDoc { file: string; title: string; meta: string }
-interface StoredFile { name: string; id: string | null; metadata?: { size?: number } | null }
 interface DriveStatus { configured: boolean; serviceEmail: string | null; folder: { id: string; name: string; url: string } | null }
 
 let filter = 'all';
 let driveStatus: DriveStatus | null = null;
 
 export async function render(host: HTMLElement) {
-  const nasa: NasaDoc[] = JSON.parse(host.dataset.nasa || '[]');
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
   let docs: TeamDocument[] = [];
-  let past: Array<{ name: string; files: StoredFile[] }> = [];
   try {
-    [docs, past] = await Promise.all([api.documents(), listPast()]);
+    docs = await api.documents();
   } catch (err) {
     host.innerHTML = `<p class="st-notice st-notice--danger">${esc((err as Error).message)}</p>`;
     return;
@@ -31,7 +27,6 @@ export async function render(host: HTMLElement) {
   const mine = state.me?.proposal_role || null;
   const counts = new Map<string, number>();
   for (const g of GROUPS) counts.set(g.key, docs.filter(d => d.role === g.key).length);
-  counts.set('team', (counts.get('team') || 0) + nasa.length + past.reduce((n, f) => n + f.files.length, 0));
 
   const order = filter === 'all' ? GROUPS : filter === 'team' ? GROUPS.filter(g => g.key === 'team') : [GROUPS.find(g => g.key === filter)!, GROUPS[0]];
 
@@ -48,7 +43,7 @@ export async function render(host: HTMLElement) {
       </div>
       <div id="st-drive-card"></div>
     </div>
-    ${order.map(g => groupHtml(g, docs.filter(d => d.role === g.key), g.key === 'team' ? nasa : [], g.key === 'team' ? past : [])).join('')}`;
+    ${order.map(g => groupHtml(g, docs.filter(d => d.role === g.key))).join('')}`;
 
   host.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter!; void render(host); }));
   host.querySelector('#st-doc-add')!.addEventListener('click', () => addDocument(host));
@@ -57,7 +52,7 @@ export async function render(host: HTMLElement) {
     const d = docs.find(x => x.id === b.dataset.removeDoc)!;
     if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard. A copy already sent to Drive stays there.`, 'Remove'))) return;
     try {
-      if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]);
+      if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
       await api.deleteDocument(d.id);
       await render(host);
     } catch (err) {
@@ -69,26 +64,11 @@ export async function render(host: HTMLElement) {
   void renderDriveCard(host);
 }
 
-function groupHtml(g: { key: string; name: string }, docs: TeamDocument[], nasa: NasaDoc[], past: Array<{ name: string; files: StoredFile[] }>) {
-  const base = state.base;
-  const nasaRows = nasa.map(d => `
-    <div class="st-file">
-      <span class="st-file__badge" data-kind="pdf">PDF</span>
-      <span class="st-file__body"><span class="st-file__name">${esc(d.title)}</span><span class="st-file__meta">${esc(d.meta)}</span></span>
-      <span class="st-file__actions"><a class="st-btn st-btn--small" href="${base}${encodeURIComponent(d.file)}" target="_blank" rel="noopener">Open</a></span>
-    </div>`).join('');
-  const pastRows = past.map(f => f.files.map(x => `
-    <div class="st-file">
-      <span class="st-file__badge" data-kind="${kindOfName(x.name)}">${esc(badgeLabel(kindOfName(x.name)))}</span>
-      <span class="st-file__body"><span class="st-file__name">${esc(x.name.replace(/\.[^.]+$/, ''))}</span><span class="st-file__meta">${esc(f.name)}${x.metadata?.size ? `, ${fmtSize(x.metadata.size)}` : ''}</span></span>
-      <span class="st-file__actions"><button type="button" class="st-btn st-btn--small" data-open-path="${esc(`${f.name}/${x.name}`)}">Open</button></span>
-    </div>`).join('')).join('');
-  const rows = docs.map(docRow).join('');
-  const total = docs.length + nasa.length + past.reduce((n, f) => n + f.files.length, 0);
+function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
   return `
     <div class="st-list-group">
-      <p class="st-list-group__label"><span>${esc(g.name)}</span><span>${total}</span></p>
-      ${total ? `<div class="st-files">${rows}${nasaRows}${pastRows}</div>` : `<div class="st-empty">Nothing here yet.</div>`}
+      <p class="st-list-group__label"><span>${esc(g.name)}</span><span>${docs.length}</span></p>
+      ${docs.length ? `<div class="st-files">${docs.map(docRow).join('')}</div>` : `<div class="st-empty">Nothing here yet.</div>`}
     </div>`;
 }
 
@@ -99,6 +79,7 @@ function docRow(d: TeamDocument) {
   const drive = d.drive_status === 'synced' && d.drive_url ? `<a class="st-file__drive" href="${esc(d.drive_url)}" target="_blank" rel="noopener">In Drive</a>`
     : d.drive_status === 'pending' ? `<span class="st-file__drive">Sending to Drive</span>`
     : d.drive_status === 'error' ? `<button type="button" class="st-file__drive is-error" data-retry-doc="${d.id}" title="${esc(d.drive_error || '')}">Drive failed, retry</button>`
+    : d.drive_status === 'not_connected' && driveStatus?.configured && driveStatus.folder ? `<button type="button" class="st-file__drive" data-retry-doc="${d.id}">Send to Drive</button>`
     : '';
   const canRemove = isManager() || d.created_by === state.me?.user_id;
   const open = d.kind === 'link'
@@ -232,7 +213,16 @@ async function renderDriveCard(host: HTMLElement) {
   const st = driveStatus;
   if (!st) { card.innerHTML = ''; return; }
   if (st.configured && st.folder) {
-    card.innerHTML = `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">Everything added here is copied to the team's Google Drive folder and shared with the whole team. <a class="st-link" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open the folder</a></p>`;
+    const waiting = isManager() ? Array.from(host.querySelectorAll<HTMLElement>('[data-retry-doc]')).map(b => b.dataset.retryDoc!) : [];
+    card.innerHTML = `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">Everything added here is copied to the team's Google Drive folder and shared with the whole team. <a class="st-link" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open the folder</a>${waiting.length ? ` <button type="button" class="st-link" id="st-drive-sync-all">Send ${waiting.length} waiting document${waiting.length === 1 ? '' : 's'} to Drive</button>` : ''}</p>`;
+    card.querySelector('#st-drive-sync-all')?.addEventListener('click', async () => {
+      const btn = card.querySelector('#st-drive-sync-all') as HTMLButtonElement;
+      btn.disabled = true;
+      for (const id of waiting) {
+        try { await api.drive('sync', { documentId: id }); } catch { /* shown on the row */ }
+      }
+      await render(host);
+    });
     return;
   }
   if (!isLead()) { card.innerHTML = ''; return; }
@@ -277,16 +267,6 @@ async function renderDriveCard(host: HTMLElement) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-async function listPast() {
-  const { data: top, error } = await db.storage.from(BUCKET).list('', { sortBy: { column: 'name', order: 'desc' } });
-  if (error) throw error;
-  const folders = (top as StoredFile[]).filter(f => f.id === null && f.name !== 'uploads');
-  return (await Promise.all(folders.map(async f => {
-    const { data } = await db.storage.from(BUCKET).list(f.name, { sortBy: { column: 'name', order: 'asc' } });
-    return { name: f.name, files: ((data || []) as StoredFile[]).filter(x => x.id !== null && !x.name.startsWith('.')) };
-  }))).filter(g => g.files.length);
-}
-
 async function openStored(path: string, btn: HTMLButtonElement) {
   const tab = window.open('', '_blank');
   btn.disabled = true;

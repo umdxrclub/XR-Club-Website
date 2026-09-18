@@ -3,11 +3,6 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/suits-team.css';
 const base = import.meta.env.BASE_URL;
 
-const docs = [
-  { file: 'Black Neutral Futuristic Modern Aerospace Presentation.pdf', title: 'Team kickoff slides', meta: 'The deck from the September 18 meeting. Everything in the Mission section comes from it.' },
-  { file: 'fy27-nasa-suits-mission-description.pdf', title: 'NASA SUITS Mission Description 2026 to 2027', meta: 'The EVA scenario, NASA provided equipment, and the display requirements.' },
-  { file: 'fy27-suits-proposal-guidelines (1).pdf', title: 'NASA SUITS Proposal Guidelines 2026 to 2027', meta: 'Every required section, the page limits, the letters, and the scoring rubric.' },
-];
 ---
 
 <AppLayout title="SUITS Mission Dashboard" description="Team dashboard for the University of Maryland NASA SUITS proposal." hideChatBot noindex>
@@ -77,7 +72,7 @@ const docs = [
 
       <!-- Documents -->
       <section class="st-view" data-view="documents" hidden>
-        <div id="st-documents" data-nasa={JSON.stringify(docs)}></div>
+        <div id="st-documents"></div>
       </section>
 
       <section class="st-view" data-view="team" hidden>
