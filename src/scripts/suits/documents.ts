@@ -144,7 +144,7 @@ function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
       <div class="st-group__head">
         <h3 class="st-group__title">${esc(g.name)}</h3>
         <span class="st-group__count">${docs.length}</span>
-        <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a class="st-link" href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
+        <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
       </div>
       ${docs.length ? `<div class="st-docgrid">${docs.map(cardHtml).join('')}</div>` : `<p class="st-group__empty">Nothing here yet.</p>`}
     </section>`;
@@ -411,7 +411,7 @@ function editDocument(host: HTMLElement, d: TeamDocument) {
     title: 'Edit document',
     body: `
       ${field('title', 'Name', input('title', `type="text" required value="${esc(d.title)}"`))}
-      ${d.kind === 'link' ? `<p class="st-help" style="margin:-0.4rem 0 1rem;">Link: <a class="st-link" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${esc(d.url || '')}</a></p>` : ''}
+      ${d.kind === 'link' ? `<p class="st-help" style="margin:-0.4rem 0 1rem; word-break:break-all;">Link: <a href="${esc(d.url || '#')}" target="_blank" rel="noopener" style="color:inherit;">${esc(d.url || '')}</a></p>` : ''}
       ${field('role', 'For', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === d.role }))))}
       ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional, one line"'))}`,
     submitLabel: 'Save',
@@ -483,10 +483,10 @@ function paintDriveBits(host: HTMLElement) {
     if (openSlot) openSlot.outerHTML = `<a class="st-btn" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
     host.querySelectorAll<HTMLElement>('[data-role-folder]').forEach(el => {
       const f = roleFolders[el.dataset.roleFolder!];
-      if (f && !el.querySelector('a')) el.innerHTML = `<a class="st-link" href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
+      if (f && !el.querySelector('a')) el.innerHTML = `<a href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
     });
     const waiting = isManager() ? host.querySelectorAll('.st-doccard__flag').length : 0;
-    card.innerHTML = waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-link" id="st-drive-sync-all">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '';
+    card.innerHTML = waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '';
     card.querySelector('#st-drive-sync-all')?.addEventListener('click', async () => {
       const btn = card.querySelector('#st-drive-sync-all') as HTMLButtonElement;
       btn.disabled = true;

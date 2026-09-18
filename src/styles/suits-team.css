@@ -2224,6 +2224,17 @@
   font-size: 0.88rem;
 }
 
+.st-group__drive a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.st-group__drive a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
 .st-group__empty {
   margin: 0;
   padding: 1.4rem 1rem;
@@ -2300,11 +2311,6 @@
   background: var(--surface);
 }
 
-.st-doccard[data-kind="pdf"] .st-doccard__cover { background: #fbeeee; }
-.st-doccard[data-kind="doc"] .st-doccard__cover { background: #eaf1fc; }
-.st-doccard[data-kind="sheet"] .st-doccard__cover { background: #e9f5ee; }
-.st-doccard[data-kind="slides"] .st-doccard__cover { background: #fdf3e2; }
-.st-doccard[data-kind="figma"] .st-doccard__cover { background: #f2ecfc; }
 .st-doccard[data-kind="video"] .st-doccard__cover,
 .st-doccard[data-kind="youtube"] .st-doccard__cover { background: #1d1d1f; }
 
