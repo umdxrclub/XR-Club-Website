@@ -43,7 +43,7 @@ function meetingHtml(m: Meeting, rsvps: Rsvp[], past: boolean) {
       <div class="st-meeting__date"><span class="st-meeting__month">${esc(start.toLocaleDateString(undefined, { month: 'short' }))}</span><span class="st-meeting__day">${start.getDate()}</span></div>
       <div>
         <h3 class="st-meeting__title">${esc(m.title)}</h3>
-        <p class="st-meeting__meta">${esc(start.toLocaleDateString(undefined, { weekday: 'long' }))}, ${esc(fmtTime(m.starts_at))} to ${esc(fmtTime(m.ends_at))}${m.location ? ` · ${linkify(m.location)}` : ''}</p>
+        <p class="st-meeting__meta">${esc(start.toLocaleDateString(undefined, { weekday: 'long' }))}, ${esc(fmtTime(m.starts_at))} to ${esc(fmtTime(m.ends_at))}${m.location ? `, ${linkify(m.location)}` : ''}</p>
         ${m.agenda ? `<p class="st-meeting__agenda">${esc(m.agenda)}</p>` : ''}
         <div class="st-meeting__actions">
           ${past ? '' : rsvpControlHtml(m, rsvps)}

@@ -2,7 +2,7 @@
 // matter for the reader's chosen role marked on the page.
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy, type RenderTask } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { state } from './api';
+import { api, state } from './api';
 import { esc } from './ui';
 import { READER_DOCS, READER_ROLES, type DocKey, type Highlight } from './reader-content';
 
@@ -69,12 +69,14 @@ export function leave() {
 export async function render(host: HTMLElement) {
   leave();
   mounted = host;
+  // Start from the role on the member's profile when nothing was picked on this device
+  if (!roleKey && state.me?.proposal_role && READER_ROLES.some(r => r.key === state.me!.proposal_role)) roleKey = state.me.proposal_role;
   host.innerHTML = `
     <div class="st-reader">
       <div class="st-reader__head">
         <div>
           <h2 class="st-h1">Proposal</h2>
-          <p class="st-lead" style="margin:0;">Both NASA documents, a page at a time. Pick your role and the parts written for you are marked on each page.</p>
+          <p class="st-lead" style="margin:0;">Go through both NASA documents one page at a time. Pick a role and read the parts marked for you on each page.</p>
         </div>
       </div>
       <div class="st-reader__roles" id="st-reader-roles"></div>
@@ -97,7 +99,6 @@ export async function render(host: HTMLElement) {
           <span class="st-reader__count" id="st-reader-count"></span>
           <button type="button" class="st-btn st-btn--small" data-flip="1">Next</button>
         </div>
-        <div class="st-reader__dots" id="st-reader-dots"></div>
       </div>
       <div class="st-reader__sections" id="st-reader-sections"></div>
     </div>`;
@@ -113,6 +114,11 @@ export async function render(host: HTMLElement) {
     if (!b) return;
     roleKey = b.dataset.role === roleKey ? null : b.dataset.role!;
     try { roleKey ? localStorage.setItem(ROLE_KEY, roleKey) : localStorage.removeItem(ROLE_KEY); } catch { /* ignore */ }
+    // The pick is also the member's proposal role on the Team page
+    if (state.me && state.me.proposal_role !== roleKey) {
+      state.me.proposal_role = roleKey;
+      void api.updateProfile({ proposal_role: roleKey }).catch(() => { /* shown on the Team page next time */ });
+    }
     drawRoles();
     if (onlyMine && roleKey && !pagesFor(docKey).includes(pageNo)) pageNo = pagesFor(docKey)[0] || 1;
     void show();
@@ -207,12 +213,6 @@ async function show() {
   (host.querySelector('#st-reader-prev') as HTMLButtonElement).disabled = idx <= 0;
   (host.querySelector('#st-reader-next') as HTMLButtonElement).disabled = idx < 0 || idx >= order.length - 1;
   host.querySelectorAll<HTMLButtonElement>('[data-flip]').forEach(b => { b.disabled = Number(b.dataset.flip) < 0 ? idx <= 0 : idx < 0 || idx >= order.length - 1; });
-
-  // Dots
-  const mine = new Set(pagesFor(docKey));
-  const dots = host.querySelector<HTMLElement>('#st-reader-dots')!;
-  dots.innerHTML = Array.from({ length: d.pages }, (_, i) => i + 1).map(p => `<button type="button" class="st-reader__dot${p === pageNo ? ' is-current' : ''}${mine.has(p) ? ' is-mine' : ''}" data-page="${p}" aria-label="Page ${p}"></button>`).join('');
-  dots.querySelectorAll<HTMLElement>('[data-page]').forEach(b => b.addEventListener('click', () => { pageNo = Number(b.dataset.page); void show(); }));
 
   // Sections list
   const list = host.querySelector<HTMLElement>('#st-reader-sections')!;

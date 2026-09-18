@@ -12,7 +12,7 @@ export async function render(host: HTMLElement) {
 
   const dates = [
     ...meetings.filter(m => new Date(m.ends_at).getTime() > now).map(m => ({ when: new Date(m.starts_at).getTime(), label: m.title, detail: `${fmtDateTime(m.starts_at)}, ${fmtRelative(m.starts_at)}`, go: 'meetings' })),
-    ...tasks.filter(t => t.due_date && t.status !== 'done').map(t => ({ when: new Date(t.due_date + 'T23:59:59').getTime(), label: `${t.title} due`, detail: `${fmtDate(t.due_date + 'T12:00:00', { weekday: 'short', month: 'short', day: 'numeric' })} · ${sectionName(t.section)}`, go: 'tasks' })),
+    ...tasks.filter(t => t.due_date && t.status !== 'done').map(t => ({ when: new Date(t.due_date + 'T23:59:59').getTime(), label: `${t.title} due`, detail: `${fmtDate(t.due_date + 'T12:00:00', { weekday: 'short', month: 'short', day: 'numeric' })}, ${sectionName(t.section)}`, go: 'tasks' })),
   ].sort((a, b) => a.when - b.when).slice(0, 8);
 
   host.innerHTML = `
@@ -24,7 +24,7 @@ export async function render(host: HTMLElement) {
         <h3 class="st-h3">Your tasks</h3>
         ${myTasks.length ? myTasks.slice(0, 6).map(t => {
           const late = t.due_date && new Date(t.due_date + 'T23:59:59').getTime() < now;
-          return `<div class="st-task" style="margin-bottom:0.4rem;"><span class="st-task__status" data-status="${t.status}" style="cursor:default;"></span><div><p class="st-task__title">${esc(t.title)}</p><p class="st-task__meta${late ? ' is-late' : ''}">${esc(sectionName(t.section))}${t.due_date ? ` · due ${esc(fmtDate(t.due_date + 'T12:00:00'))}` : ''}</p></div></div>`;
+          return `<div class="st-task" style="margin-bottom:0.4rem;"><span class="st-task__status" data-status="${t.status}" style="cursor:default;"></span><div><p class="st-task__title">${esc(t.title)}</p><p class="st-task__meta${late ? ' is-late' : ''}">${esc(sectionName(t.section))}${t.due_date ? `, due ${esc(fmtDate(t.due_date + 'T12:00:00'))}` : ''}</p></div></div>`;
         }).join('') : `<p class="st-muted" style="margin:0;">Nothing yet.</p>`}
         ${myTasks.length ? `<p style="margin:0.9rem 0 0;"><button type="button" class="st-link" data-go="tasks">All tasks</button></p>` : ''}
       </div>

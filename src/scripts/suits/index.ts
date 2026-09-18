@@ -21,7 +21,6 @@ interface View {
 const VIEWS: Record<string, View> = {
   overview: { render: h => overview.render(h) },
   proposal: { render: h => reader.render(h), leave: () => reader.leave() },
-  mission: { render: () => {} },
   tasks: { render: h => tasks.render(h) },
   meetings: { render: h => meetings.render(h) },
   documents: { render: h => documents.render(h) },
@@ -142,7 +141,7 @@ async function setupGoogleButton() {
     });
     google.accounts.id.renderButton(host, { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.min(360, host.parentElement!.clientWidth - 8) });
     googleButtonReady = true;
-    setSignInVisible(!document.getElementById('st-gate')!.hidden && document.getElementById('st-gate-steps')!.hidden);
+    setSignInVisible(!document.getElementById('st-gate')!.hidden && !authorizing);
   } catch {
     // Fallback button stays
   }
@@ -162,7 +161,6 @@ function setSignInVisible(visible: boolean) {
 function showGate(message?: string) {
   document.getElementById('st-app')!.hidden = true;
   document.getElementById('st-gate')!.hidden = false;
-  document.getElementById('st-gate-steps')!.hidden = true;
   setSignInVisible(true);
   if (message) showGateError(message);
 }
@@ -173,28 +171,14 @@ function showGateError(message: string) {
   el.hidden = false;
 }
 
-function step(name: string, status: 'active' | 'done') {
-  const li = document.querySelector<HTMLElement>(`.st-gate__step[data-step="${name}"]`)!;
-  li.classList.remove('is-active', 'is-done');
-  li.classList.add(status === 'active' ? 'is-active' : 'is-done');
-}
-
 async function authorize(user: User) {
   if (authorizing) return;
   authorizing = true;
-  const steps = document.getElementById('st-gate-steps')!;
-  steps.hidden = false;
   setSignInVisible(false);
   document.getElementById('st-gate-error')!.hidden = true;
   document.getElementById('st-gate-text')!.textContent = 'One moment.';
-  steps.querySelectorAll('.st-gate__step').forEach(s => s.classList.remove('is-active', 'is-done'));
 
   try {
-    step('account', 'active');
-    await pause(250);
-    step('account', 'done');
-
-    step('domain', 'active');
     const email = user.email || '';
     if (!TEAM_EMAIL.test(email)) {
       await db.auth.signOut();
@@ -203,22 +187,14 @@ async function authorize(user: User) {
       document.getElementById('st-gate-text')!.textContent = 'Sign in with your UMD account.';
       return;
     }
-    await pause(250);
-    step('domain', 'done');
 
-    step('roster', 'active');
     state.me = await api.join();
     state.members = await api.members();
-    step('roster', 'done');
-
-    step('data', 'active');
     await refreshBadges();
-    step('data', 'done');
-    await pause(300);
 
     document.getElementById('st-gate')!.hidden = true;
     document.getElementById('st-app')!.hidden = false;
-    document.getElementById('st-whoami')!.innerHTML = `${esc(state.me.display_name)} · ${esc(roleLabel(state.me.role))}`;
+    document.getElementById('st-whoami')!.innerHTML = `${esc(state.me.display_name)}, ${esc(roleLabel(state.me.role))}`;
     document.querySelectorAll<HTMLElement>('[data-managers]').forEach(el => { el.hidden = !isManager(); });
 
     const initial = location.hash.slice(1);
@@ -263,6 +239,3 @@ function setBadge(view: string, n: number) {
   if (n > 0) btn.insertAdjacentHTML('beforeend', `<span class="st-nav__count">${n}</span>`);
 }
 
-function pause(ms: number) {
-  return new Promise(r => setTimeout(r, ms));
-}

@@ -370,7 +370,7 @@
 .st-app {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 6.5rem 1.5rem 5rem;
+  padding: 9rem 1.5rem 5rem;
 }
 
 .st-top {
@@ -1232,75 +1232,6 @@
   margin: 0 0.25rem 0.5rem;
 }
 
-.st-inset {
-  border: 1px solid var(--hair);
-  border-radius: 16px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.st-row {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  min-height: 54px;
-  padding: 0.7rem 1rem;
-  cursor: pointer;
-  position: relative;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.st-row + .st-row {
-  border-top: 1px solid var(--hair);
-}
-
-.st-row:active {
-  background: var(--fill);
-}
-
-.st-row input {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-}
-
-.st-row__circle {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 1.5px solid var(--ink-3);
-  transition: background 150ms ease, border-color 150ms ease;
-}
-
-.st-row.is-done .st-row__circle {
-  background: var(--check-icon) center / 12px no-repeat, var(--ink);
-  border-color: var(--ink);
-}
-
-.st-row input:focus-visible ~ .st-row__circle {
-  box-shadow: 0 0 0 4px rgba(128, 128, 136, 0.25);
-}
-
-.st-row__title {
-  flex: 1;
-  min-width: 0;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.st-row.is-done .st-row__title {
-  color: var(--ink-2);
-}
-
-.st-row__meta {
-  flex-shrink: 0;
-  font-size: 0.82rem;
-  color: var(--ink-3);
-}
-
 /* ------------------------------------------------------------------ */
 /* Documents                                                           */
 /* ------------------------------------------------------------------ */
@@ -1402,7 +1333,7 @@
   }
 
   .st-app {
-    padding: 5.5rem 1rem 4rem;
+    padding: 7rem 1rem 4rem;
   }
 
   .st-row {
@@ -1873,33 +1804,6 @@
   text-align: center;
 }
 
-.st-reader__dots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.st-reader__dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid var(--ink-3);
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
-.st-reader__dot.is-mine {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-.st-reader__dot.is-current {
-  border-color: var(--ink);
-  background: var(--ink);
-  transform: scale(1.25);
-}
-
 .st-reader__sections {
   margin-top: 1.5rem;
 }
@@ -1978,5 +1882,92 @@
 
   .st-reader__seclist {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Documents                                                           */
+/* ------------------------------------------------------------------ */
+.st-file__actions {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.st-file__drive {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.st-file__drive.is-error {
+  color: var(--danger);
+}
+
+.st-file__badge[data-kind="link"] { background: var(--ink-2); }
+.st-file__badge[data-kind="figma"] { background: #a259ff; }
+.st-file__badge[data-kind="drive"] { background: #1e8e4a; }
+.st-file__badge[data-kind="file"] { background: var(--ink-3); }
+
+.st-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 110px;
+  padding: 1rem;
+  border: 1.5px dashed var(--ink-3);
+  border-radius: 14px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.st-drop.is-over {
+  border-color: var(--ink);
+  background: var(--fill);
+}
+
+.st-drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.st-drop__text {
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.st-select--inline {
+  min-height: 38px;
+  font-size: 0.9rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  padding-right: 2.2rem;
+  min-width: 160px;
+}
+
+@media (max-width: 720px) {
+  .st-file {
+    flex-wrap: wrap;
+  }
+
+  .st-file__body {
+    flex: 1 1 200px;
+  }
+
+  .st-file__actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
   }
 }

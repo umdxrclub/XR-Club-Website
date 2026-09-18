@@ -164,6 +164,72 @@ async function getFile(token: string, id: string) {
   return shape(await gapi(token, `${DRIVE}/files/${id}?fields=${encodeURIComponent(FILE_FIELDS)}&supportsAllDrives=true`));
 }
 
+/** Everyone on the roster gets edit access to the team folder; files inside inherit it. */
+async function shareFolderWithTeam(token: string, folderId: string, emails: string[]) {
+  const data = await gapi(token, `${DRIVE}/files/${folderId}/permissions?fields=permissions(emailAddress,role,type,domain)&supportsAllDrives=true&pageSize=100`);
+  const perms = (data?.permissions || []) as Array<Record<string, string>>;
+  const has = (email: string) => {
+    const lower = email.toLowerCase();
+    return perms.some(p => (p.emailAddress || '').toLowerCase() === lower && ['writer', 'owner', 'organizer', 'fileOrganizer'].includes(p.role))
+      || perms.some(p => p.type === 'domain' && lower.endsWith('@' + (p.domain || '').toLowerCase()) && ['writer', 'owner'].includes(p.role));
+  };
+  const added: string[] = [];
+  for (const email of emails) {
+    if (has(email)) continue;
+    try {
+      await gapi(token, `${DRIVE}/files/${folderId}/permissions?sendNotificationEmail=false&supportsAllDrives=true`, {
+        method: 'POST',
+        body: JSON.stringify({ role: 'writer', type: 'user', emailAddress: email }),
+      });
+      added.push(email);
+    } catch { /* an address Google will not accept; the rest still get access */ }
+  }
+  return added;
+}
+
+const ROLE_FOLDERS: Record<string, string> = {
+  team: 'Everyone',
+  technical: 'Technical Design and Systems',
+  uiux: 'UI UX Design',
+  aiml: 'AI ML',
+  hitl: 'HITL and Human Factors',
+  pm: 'Project Management',
+  engagement: 'Community and Industry Engagement',
+};
+
+/** Team folder / Dashboard uploads / <role>, created on first use. */
+async function ensureRoleFolder(token: string, rootId: string, roleKey: string) {
+  const find = async (parent: string, name: string) => {
+    const q = `'${parent}' in parents and name = '${name.replace(/'/g, "\\'")}' and mimeType = '${MIME.folder}' and trashed = false`;
+    const p = new URLSearchParams({ q, fields: 'files(id)', supportsAllDrives: 'true', includeItemsFromAllDrives: 'true', pageSize: '1' });
+    const data = await gapi(token, `${DRIVE}/files?${p}`);
+    if (data?.files?.[0]?.id) return data.files[0].id as string;
+    const made = await gapi(token, `${DRIVE}/files?fields=id&supportsAllDrives=true`, { method: 'POST', body: JSON.stringify({ name, mimeType: MIME.folder, parents: [parent] }) });
+    return made.id as string;
+  };
+  const uploads = await find(rootId, 'Dashboard uploads');
+  return find(uploads, ROLE_FOLDERS[roleKey] || ROLE_FOLDERS.team);
+}
+
+async function uploadToDrive(token: string, metadata: Record<string, unknown>, blob: Blob, mime: string) {
+  const boundary = 'suits' + crypto.randomUUID().replace(/-/g, '');
+  const head = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${mime}\r\n\r\n`;
+  const body = new Blob([head, blob, `\r\n--${boundary}--`]);
+  const r = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=${encodeURIComponent(FILE_FIELDS)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new GoogleError(data?.error?.message || `Google returned ${r.status}`, r.status);
+  return shape(data);
+}
+
+function parseDriveFileId(url: string) {
+  const m = url.match(/\/d\/([A-Za-z0-9_-]{10,})/) || url.match(/[?&]id=([A-Za-z0-9_-]{10,})/) || url.match(/folders\/([A-Za-z0-9_-]{10,})/);
+  return m ? m[1] : null;
+}
+
 /** Give a team member edit access to the folder if they do not have it yet. */
 async function ensureAccess(token: string, folderId: string, email: string) {
   const data = await gapi(token, `${DRIVE}/files/${folderId}/permissions?fields=permissions(emailAddress,role,type,domain)&supportsAllDrives=true&pageSize=100`);
@@ -336,6 +402,49 @@ Deno.serve(async (req) => {
         }
       }
       return json({ configured: true, serviceEmail: sa.client_email, folder, proposal, access, accessError, isManager });
+    }
+
+    // Mirror a dashboard document into the team folder and make sure the whole team can edit it
+    if (action === 'sync') {
+      const { data: docRow } = await admin.from('suits_documents').select('*').eq('id', String(body.documentId || '')).single();
+      if (!docRow) return json({ error: 'Document not found' }, 404);
+      const mark = (patch: Record<string, unknown>) => admin.from('suits_documents').update(patch).eq('id', docRow.id);
+      if (!sa || !folder) {
+        await mark({ drive_status: 'not_connected', drive_error: null });
+        return json({ drive_status: 'not_connected' });
+      }
+      try {
+        const token = await accessToken(sa);
+        const roleFolder = await ensureRoleFolder(token, folder.id, String(docRow.role || 'team'));
+        let file: ReturnType<typeof shape> | null = null;
+        if (docRow.kind === 'file' && docRow.storage_path) {
+          const { data: blob, error } = await admin.storage.from('suits-docs').download(docRow.storage_path);
+          if (error || !blob) throw new Error(error?.message || 'Could not read the uploaded file');
+          const ext = (docRow.storage_path.match(/\.[A-Za-z0-9]{1,6}$/) || [''])[0];
+          const name = /\.[A-Za-z0-9]{1,6}$/.test(docRow.title) ? docRow.title : docRow.title + ext;
+          file = await uploadToDrive(token, { name, parents: [roleFolder] }, blob, docRow.mime || 'application/octet-stream');
+        } else if (docRow.kind === 'link' && docRow.url) {
+          const targetId = parseDriveFileId(docRow.url);
+          if (!targetId || !/(docs|drive)\.google\.com/.test(docRow.url)) {
+            await mark({ drive_status: 'skipped', drive_error: null });
+            return json({ drive_status: 'skipped' });
+          }
+          file = shape(await gapi(token, `${DRIVE}/files?fields=${encodeURIComponent(FILE_FIELDS)}&supportsAllDrives=true`, {
+            method: 'POST',
+            body: JSON.stringify({ name: docRow.title, mimeType: 'application/vnd.google-apps.shortcut', parents: [roleFolder], shortcutDetails: { targetId } }),
+          }));
+        } else {
+          throw new Error('Nothing to send to Drive');
+        }
+        const { data: roster } = await admin.from('suits_team').select('email');
+        const added = await shareFolderWithTeam(token, folder.id, (roster || []).map((r: { email: string }) => r.email));
+        await mark({ drive_file_id: file.id, drive_url: file.url, drive_status: 'synced', drive_error: null });
+        return json({ drive_status: 'synced', drive_url: file.url, shared_with: added });
+      } catch (err) {
+        const message = (err as Error).message || 'Drive sync failed';
+        await mark({ drive_status: 'error', drive_error: message });
+        return json({ drive_status: 'error', error: message });
+      }
     }
 
     if (!sa) return json({ error: 'Google Drive is not connected yet. The team lead adds the service account key first.' }, 500);

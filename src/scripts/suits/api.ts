@@ -17,6 +17,7 @@ export interface Member {
   discord_username: string | null;
   discord_id: string | null;
   discord_avatar: string | null;
+  proposal_role: string | null;
   created_at: string;
   last_seen: string;
 }
@@ -96,6 +97,24 @@ export interface Link {
   position: number;
 }
 
+export interface TeamDocument {
+  id: string;
+  title: string;
+  kind: 'file' | 'link';
+  url: string | null;
+  storage_path: string | null;
+  mime: string | null;
+  size: number | null;
+  role: string;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  drive_file_id: string | null;
+  drive_url: string | null;
+  drive_status: 'pending' | 'synced' | 'skipped' | 'not_connected' | 'error';
+  drive_error: string | null;
+}
+
 export interface ChecklistRow {
   item_key: string;
   done: boolean;
@@ -149,8 +168,12 @@ export const api = {
   async setRole(userId: string, role: Role) {
     unwrap(await db.rpc('suits_set_role', { target: userId, new_role: role }));
   },
-  async updateProfile(patch: Partial<Pick<Member, 'display_name' | 'discord_username' | 'discord_id' | 'discord_avatar'>>) {
+  async updateProfile(patch: Partial<Pick<Member, 'display_name' | 'discord_username' | 'discord_id' | 'discord_avatar' | 'proposal_role'>>) {
     unwrap(await db.from('suits_team').update(patch).eq('user_id', state.me!.user_id));
+  },
+  /** The lead can set anyone's proposal role; members set their own through updateProfile. */
+  async setProposalRole(userId: string, proposalRole: string | null) {
+    unwrap(await db.from('suits_team').update({ proposal_role: proposalRole }).eq('user_id', userId));
   },
   async removeMember(userId: string) {
     unwrap(await db.from('suits_team').delete().eq('user_id', userId));
@@ -238,6 +261,17 @@ export const api = {
   },
   async deleteLink(id: string) {
     unwrap(await db.from('suits_links').delete().eq('id', id));
+  },
+
+  // Team documents
+  async documents(): Promise<TeamDocument[]> {
+    return unwrap(await db.from('suits_documents').select('*').order('created_at', { ascending: false }));
+  },
+  async createDocument(d: Pick<TeamDocument, 'title' | 'kind' | 'url' | 'storage_path' | 'mime' | 'size' | 'role' | 'notes'>): Promise<TeamDocument> {
+    return unwrap(await db.from('suits_documents').insert({ ...d, created_by: state.me!.user_id }).select().single());
+  },
+  async deleteDocument(id: string) {
+    unwrap(await db.from('suits_documents').delete().eq('id', id));
   },
 
   // Checklist

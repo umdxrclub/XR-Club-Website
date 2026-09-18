@@ -1,27 +1,31 @@
-// Team: the roster, your profile, and (for the lead) who is a product manager.
+// Team: the roster with everyone's proposal role, your profile, and (for the
+// lead) who has product manager or lead access.
 import { db, api, state, isLead, type Role } from './api';
 import { esc, toast, confirmModal, avatarHtml, roleLabel, fmtDate } from './ui';
+import { READER_ROLES } from './reader-content';
+
+const roleName = (key: string | null) => READER_ROLES.find(r => r.key === key)?.name ?? '';
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
   state.members = await api.members();
   const me = state.me!;
+  const canEditRole = (userId: string) => isLead() || userId === me.user_id;
+  const roleSelect = (userId: string, current: string | null) => `<select class="st-select st-select--inline" data-proposal-for="${userId}"><option value=""${current ? '' : ' selected'}>Not set</option>${READER_ROLES.map(r => `<option value="${r.key}"${r.key === current ? ' selected' : ''}>${esc(r.name)}</option>`).join('')}</select>`;
 
   host.innerHTML = `
     <div class="st-section">
       <h2 class="st-h1">Team</h2>
-      <p class="st-lead">${state.members.length} ${state.members.length === 1 ? 'person has' : 'people have'} joined the dashboard. Anyone with a UMD Google account can sign in; the team lead decides who is a product manager.</p>
       <div class="st-table-wrap">
         <table class="st-table">
-          <thead><tr><th></th><th>Name</th><th>Email</th><th>Discord</th><th>Role</th><th>Joined</th>${isLead() ? '<th></th>' : ''}</tr></thead>
+          <thead><tr><th></th><th>Name</th><th>Proposal role</th><th>Access</th><th>Joined</th>${isLead() ? '<th></th>' : ''}</tr></thead>
           <tbody>
             ${state.members.map(m => `
               <tr>
                 <td>${avatarHtml(m.display_name, m.avatar_url)}</td>
-                <td><strong>${esc(m.display_name)}</strong>${m.user_id === me.user_id ? ' <span class="st-muted">(you)</span>' : ''}</td>
-                <td>${esc(m.email)}</td>
-                <td>${esc(m.discord_username || '')}</td>
-                <td>${isLead() && m.user_id !== me.user_id ? `<select class="st-select" style="min-height:38px; font-size:0.9rem; padding-right:2.2rem;" data-role-for="${m.user_id}">${(['member', 'product_manager', 'lead'] as Role[]).map(r => `<option value="${r}"${m.role === r ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>` : esc(roleLabel(m.role))}</td>
+                <td><strong>${esc(m.display_name)}</strong>${m.user_id === me.user_id ? ' <span class="st-muted">(you)</span>' : ''}<br><span class="st-muted" style="font-size:0.85rem;">${esc(m.email)}</span></td>
+                <td>${canEditRole(m.user_id) ? roleSelect(m.user_id, m.proposal_role) : (esc(roleName(m.proposal_role)) || '<span class="st-muted">Not set</span>')}</td>
+                <td>${isLead() && m.user_id !== me.user_id ? `<select class="st-select st-select--inline" data-role-for="${m.user_id}">${(['member', 'product_manager', 'lead'] as Role[]).map(r => `<option value="${r}"${m.role === r ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>` : esc(roleLabel(m.role))}</td>
                 <td>${esc(fmtDate(m.created_at))}</td>
                 ${isLead() ? `<td>${m.user_id !== me.user_id ? `<button type="button" class="st-btn st-btn--small st-btn--danger" data-remove="${m.user_id}">Remove</button>` : ''}</td>` : ''}
               </tr>`).join('')}
@@ -38,11 +42,8 @@ export async function render(host: HTMLElement) {
           <div class="st-field"><label class="st-label" for="f-discord">Discord username</label><input class="st-input" id="f-discord" name="discord_username" value="${esc(me.discord_username || '')}" placeholder="How you appear in Discord" /></div>
         </div>
         <div class="st-toolbar" style="margin:0;">
-          <span class="st-muted" style="font-size:0.9rem;">${me.discord_id ? 'Discord account connected.' : 'Connect your Discord account so chat messages from the dashboard use your Discord name and avatar.'}</span>
-          <div class="st-toolbar__group">
-            ${me.discord_id ? '' : `<button type="button" class="st-btn" id="st-link-discord">Connect Discord</button>`}
-            <button type="submit" class="st-btn st-btn--primary">Save</button>
-          </div>
+          <span></span>
+          <button type="submit" class="st-btn st-btn--primary">Save</button>
         </div>
       </form>
     </div>`;
@@ -56,7 +57,7 @@ export async function render(host: HTMLElement) {
     try {
       await api.updateProfile({ display_name: name, discord_username: discord || null });
       state.me = { ...me, display_name: name, discord_username: discord || null };
-      document.getElementById('st-whoami')!.innerHTML = `${esc(name)} · ${esc(roleLabel(me.role))}`;
+      document.getElementById('st-whoami')!.innerHTML = `${esc(name)}, ${esc(roleLabel(me.role))}`;
       toast('Profile saved.');
       await render(host);
     } catch (err) {
@@ -64,15 +65,29 @@ export async function render(host: HTMLElement) {
     }
   });
 
-  host.querySelector('#st-link-discord')?.addEventListener('click', async () => {
-    const { error } = await db.auth.linkIdentity({ provider: 'discord', options: { redirectTo: `${location.origin}${state.base}suits/team#team` } });
-    if (error) toast(`Could not start Discord sign in: ${error.message}`, 'danger');
-  });
+  host.querySelectorAll<HTMLSelectElement>('[data-proposal-for]').forEach(sel => sel.addEventListener('change', async () => {
+    const userId = sel.dataset.proposalFor!;
+    const value = sel.value || null;
+    try {
+      if (userId === me.user_id) {
+        await api.updateProfile({ proposal_role: value });
+        state.me = { ...state.me!, proposal_role: value };
+        try { value ? localStorage.setItem('xr-suits-role', value) : localStorage.removeItem('xr-suits-role'); } catch { /* ignore */ }
+      } else {
+        await api.setProposalRole(userId, value);
+      }
+      toast('Proposal role saved.');
+      await render(host);
+    } catch (err) {
+      toast((err as Error).message, 'danger');
+      await render(host);
+    }
+  }));
 
   host.querySelectorAll<HTMLSelectElement>('[data-role-for]').forEach(sel => sel.addEventListener('change', async () => {
     try {
       await api.setRole(sel.dataset.roleFor!, sel.value as Role);
-      toast('Role updated.');
+      toast('Access updated.');
       await render(host);
     } catch (err) {
       toast((err as Error).message, 'danger');
@@ -90,4 +105,6 @@ export async function render(host: HTMLElement) {
       toast((err as Error).message, 'danger');
     }
   }));
+
+  void db;
 }

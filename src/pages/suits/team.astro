@@ -3,15 +3,6 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/suits-team.css';
 const base = import.meta.env.BASE_URL;
 
-const roles = [
-  { key: 'technical', name: 'Technical Design and Systems', count: 3, text: 'Defines the software and hardware architecture, TSS integration, navigation, system feasibility, hardware concepts, and how all components connect.' },
-  { key: 'uiux', name: 'UI/UX Design', count: 2, text: 'Creates Figma wireframes for navigation, telemetry, EVA procedures, geology, scientific tasks, warnings, and voice assistance, while mapping how the astronaut interacts with the interface throughout the mission.' },
-  { key: 'aiml', name: 'AI/ML', count: 2, text: 'Defines AI/ML applications, selects and justifies models, designs predictive resource analysis, and establishes safeguards against mission critical hallucination.' },
-  { key: 'hitl', name: 'HITL / Human Factors', count: 1, text: 'Plans test dates, participants, protocols, metrics, safety, low light and telemetry testing, and a full simulated EVA.' },
-  { key: 'pm', name: 'Project Management', count: 2, text: 'Creates the Gantt chart, assigns responsibilities, sets milestones and deadlines, tracks progress, manages technical references, and compiles the final abstract and proposal.' },
-  { key: 'engagement', name: 'Community and Industry Engagement', count: 2, text: 'Plans outreach and industry partnerships while managing funding, endorsements, approvals, and required documentation.' },
-];
-
 const docs = [
   { file: 'Black Neutral Futuristic Modern Aerospace Presentation.pdf', title: 'Team kickoff slides', meta: 'The deck from the September 18 meeting. Everything in the Mission section comes from it.' },
   { file: 'fy27-nasa-suits-mission-description.pdf', title: 'NASA SUITS Mission Description 2026 to 2027', meta: 'The EVA scenario, NASA provided equipment, and the display requirements.' },
@@ -42,12 +33,6 @@ const docs = [
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.7 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.9c-.3 2.1-1.7 5.3-4.8 7.5l7.4 5.7c4.4-4.1 7-10.1 7-16.9z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.8-6C1 16.5 0 20.1 0 24s1 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.4-8.5 2.4-6.3 0-11.7-4.1-13.6-9.9l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>
           <span>Continue with Google</span>
         </button>
-        <ul class="st-gate__steps" id="st-gate-steps" hidden>
-          <li class="st-gate__step" data-step="account"><span class="st-gate__step-dot"></span><span>Checking your Google account</span></li>
-          <li class="st-gate__step" data-step="domain"><span class="st-gate__step-dot"></span><span>Confirming it is a UMD account</span></li>
-          <li class="st-gate__step" data-step="roster"><span class="st-gate__step-dot"></span><span>Adding you to the team roster</span></li>
-          <li class="st-gate__step" data-step="data"><span class="st-gate__step-dot"></span><span>Loading the mission dashboard</span></li>
-        </ul>
       </div>
     </section>
 
@@ -67,7 +52,6 @@ const docs = [
       <nav class="st-nav" id="st-nav" aria-label="Dashboard sections">
         <button type="button" class="st-nav__btn" data-nav="overview">Overview</button>
         <button type="button" class="st-nav__btn" data-nav="proposal">Proposal</button>
-        <button type="button" class="st-nav__btn" data-nav="mission">Mission</button>
         <button type="button" class="st-nav__btn" data-nav="tasks">Tasks</button>
         <button type="button" class="st-nav__btn" data-nav="meetings">Meetings</button>
         <button type="button" class="st-nav__btn" data-nav="documents">Documents</button>
@@ -83,94 +67,6 @@ const docs = [
         <div id="st-reader"></div>
       </section>
 
-      <!-- Mission: the kickoff slides -->
-      <section class="st-view" data-view="mission" hidden>
-        <div class="st-section">
-          <p class="st-muted" style="margin:0 0 0.4rem; font-weight:600;">XR Club, September 18, 2026</p>
-          <h2 class="st-h1">NASA SUITS, Team Dreamers challenge</h2>
-          <p class="st-lead">This is the kickoff deck as a page you can come back to. The slides are in the Documents section if you want the original.</p>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">About the challenge</h3>
-          <p class="st-lead">NASA is working toward sustained human presence on the Moon, with increasingly complex lunar missions and eventually crewed Mars missions. Lunar spacewalks (EVAs) need to be reimagined.</p>
-          <p class="st-lead">SUITS focuses on technologies like displays, voice assistants, AI, and ML that give astronauts more autonomy while reducing cognitive load.</p>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">Mission outline</h3>
-          <ol class="st-steps">
-            <li class="st-step">
-              <span class="st-step__num">1</span>
-              <div>
-                <h4 class="st-step__title">Egress</h4>
-                <p class="st-step__text">The astronaut leaves the lunar lander and begins the EVA. Our system guides them through the UIA spacesuit and life support procedures using the UI, telemetry, voice assistance, and potentially AI and computer vision.</p>
-              </div>
-            </li>
-            <li class="st-step">
-              <span class="st-step__num">2</span>
-              <div>
-                <h4 class="st-step__title">Navigate points of interest</h4>
-                <p class="st-step__text">The astronaut navigates to Points of Interest (POIs) using a 2D map, POI markers, and route guidance. The system must account for low light conditions and available resources to determine safe and efficient routes.</p>
-              </div>
-            </li>
-            <li class="st-step">
-              <span class="st-step__num">3</span>
-              <div>
-                <h4 class="st-step__title">Predict consumables and safe range</h4>
-                <p class="st-step__text">Throughout the EVA, the system tracks life support usage and predicts the astronaut's maximum safe range. AI and ML can help predict consumable usage so navigation can adjust routes and ensure a safe return.</p>
-              </div>
-            </li>
-            <li class="st-step">
-              <span class="st-step__num">4</span>
-              <div>
-                <h4 class="st-step__title">Complete POI tasks</h4>
-                <p class="st-step__text">At each POI, the astronaut deploys the lunar camera, photographs and collects samples, marks the collection site, uses the XRF spectrometer, and completes a scientific payload task. Data from these systems is received through telemetry and presented through the UI.</p>
-              </div>
-            </li>
-            <li class="st-step">
-              <span class="st-step__num">5</span>
-              <div>
-                <h4 class="st-step__title">Ingress</h4>
-                <p class="st-step__text">When the POIs are completed or time runs out, the astronaut returns to the lander using breadcrumb navigation, ideally taking the shortest safe path rather than simply retracing their steps, completes the final UIA procedures, and ends the EVA.</p>
-              </div>
-            </li>
-          </ol>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">Proposal roles are not development roles</h3>
-          <p class="st-lead">Proposal roles are temporary and focused on research, design, and planning. If our proposal is selected, roles will shift based on everyone's strengths. For example, members experienced in Unity may focus directly on building the AR system.</p>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">Proposal roles</h3>
-          <div class="st-grid st-grid--2">
-            {roles.map(r => (
-              <div class="st-role">
-                <div class="st-role__head">
-                  <h4 class="st-role__name">{r.name}</h4>
-                  <span class="st-role__count">{r.count} {r.count === 1 ? 'person' : 'people'}</span>
-                </div>
-                <p class="st-role__text">{r.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">Moving forward</h3>
-          <p class="st-p">Look out for:</p>
-          <ul class="st-list">
-            <li>Instructions to create a NASA Gateway account</li>
-            <li>Discord group chat with the final team</li>
-            <li>First team meeting date, ideally in person so everyone can meet</li>
-            <li>First set of tasks and deadlines</li>
-            <li>Tools and workspace setup (Google Drive, Figma, and so on)</li>
-          </ul>
-        </div>
-      </section>
-
       <section class="st-view" data-view="tasks" hidden>
         <div id="st-tasks"></div>
       </section>
@@ -181,35 +77,7 @@ const docs = [
 
       <!-- Documents -->
       <section class="st-view" data-view="documents" hidden>
-        <div class="st-section">
-          <h2 class="st-h1">Documents</h2>
-          <p class="st-lead">The three files everyone should have read, and the team's workspace links.</p>
-          <div class="st-stack">
-            {docs.map(d => (
-              <div class="st-doc">
-                <span class="st-doc__icon" aria-hidden="true">PDF</span>
-                <div>
-                  <p class="st-doc__title">{d.title}</p>
-                  <p class="st-doc__meta">{d.meta}</p>
-                </div>
-                <div class="st-doc__actions">
-                  <a class="st-btn st-btn--small" href={`${base}${encodeURIComponent(d.file)}`} target="_blank" rel="noopener">Open</a>
-                  <a class="st-btn st-btn--small" href={`${base}${encodeURIComponent(d.file)}`} download>Download</a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div class="st-section">
-          <h3 class="st-h2">Past proposals, letters, and feedback</h3>
-          <p class="st-p">From the club's shared drive. Only signed in members can open these.</p>
-          <div id="st-docs-store"></div>
-        </div>
-
-        <div class="st-section">
-          <h3 class="st-h2">Workspace links</h3>
-          <div id="st-links"></div>
-        </div>
+        <div id="st-documents" data-nasa={JSON.stringify(docs)}></div>
       </section>
 
       <section class="st-view" data-view="team" hidden>

@@ -17,7 +17,7 @@ export async function render(host: HTMLElement) {
   host.innerHTML = `
     <div class="st-section">
       <div class="st-toolbar">
-        <div><h2 class="st-h1">Tasks</h2><p class="st-lead" style="margin:0;">Every task belongs to a section of the proposal and to one person.</p></div>
+        <div><h2 class="st-h1">Tasks</h2><p class="st-lead" style="margin:0;">Each task is tied to a proposal section and assigned to one team member.</p></div>
         ${isManager() ? `<button type="button" class="st-btn st-btn--primary" id="st-new-task">New task</button>` : ''}
       </div>
       <div class="st-segment" id="st-task-filter">
@@ -75,7 +75,7 @@ function taskHtml(t: Task, now: number) {
       <button type="button" class="st-task__status" data-status="${t.status}" ${canMove ? `data-cycle="${t.id}"` : 'disabled'} title="${t.status === 'todo' ? 'To do' : t.status === 'doing' ? 'In progress' : 'Done'}" aria-label="Change status"></button>
       <div>
         <p class="st-task__title">${esc(t.title)}</p>
-        <p class="st-task__meta${late ? ' is-late' : ''}">${esc(memberName(t.assignee_id))}${t.due_date ? ` · due ${esc(fmtDate(t.due_date + 'T12:00:00'))}${late ? ', past due' : ''}` : ''}${t.status === 'doing' ? ' · in progress' : ''}</p>
+        <p class="st-task__meta${late ? ' is-late' : ''}">${esc(memberName(t.assignee_id))}${t.due_date ? `, due ${esc(fmtDate(t.due_date + 'T12:00:00'))}${late ? ', past due' : ''}` : ''}${t.status === 'doing' ? ', in progress' : ''}</p>
         ${t.details ? `<p class="st-muted" style="font-size:0.92rem; margin:0.3rem 0 0; white-space:pre-wrap;">${esc(t.details)}</p>` : ''}
         ${t.link ? `<p style="margin:0.4rem 0 0;"><a class="st-btn st-btn--small" href="${esc(t.link)}" target="_blank" rel="noopener">${esc(linkLabel(t.link))}</a></p>` : ''}
       </div>
