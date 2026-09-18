@@ -419,7 +419,6 @@
   padding-bottom: 0.4rem;
   margin-bottom: 1.75rem;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--hair);
 }
 
 .st-nav::-webkit-scrollbar {
@@ -2011,7 +2010,6 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.25rem;
-  border-bottom: 1px solid #d2d2d7;
   background: #fff;
   flex-shrink: 0;
 }
@@ -2283,7 +2281,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-bottom: 1px solid var(--hair);
 }
 
 .st-doccard__img {
