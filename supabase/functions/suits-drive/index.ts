@@ -389,7 +389,7 @@ Deno.serve(async (req) => {
 
   try {
     if (action === 'status') {
-      if (!sa) return json({ configured: false, serviceEmail: null, folder: null, proposal: null, access: null, isManager });
+      if (!sa) return json({ configured: false, reason: raw ? 'key could not be parsed' : 'key not set', serviceEmail: null, folder, proposal: null, access: null, isManager });
       let access: string | null = null;
       let accessError: string | null = null;
       if (folder) {
