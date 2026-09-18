@@ -50,9 +50,10 @@ export async function render(host: HTMLElement) {
   host.querySelectorAll<HTMLElement>('[data-open-path]').forEach(b => b.addEventListener('click', () => openStored(b.dataset.openPath!, b as HTMLButtonElement)));
   host.querySelectorAll<HTMLElement>('[data-remove-doc]').forEach(b => b.addEventListener('click', async () => {
     const d = docs.find(x => x.id === b.dataset.removeDoc)!;
-    if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard. A copy already sent to Drive stays there.`, 'Remove'))) return;
+    if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard and its copy in Drive goes to the trash.`, 'Remove'))) return;
     try {
       if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
+      if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
       await api.deleteDocument(d.id);
       await render(host);
     } catch (err) {

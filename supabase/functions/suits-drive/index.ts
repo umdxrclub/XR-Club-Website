@@ -446,6 +446,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Trash the Drive copy of a document that was removed from the dashboard
+    if (action === 'remove') {
+      const fileId = String(body.driveFileId || '');
+      if (!sa || !fileId) return json({ removed: false });
+      try {
+        const token = await accessToken(sa);
+        await gapi(token, `${DRIVE}/files/${fileId}?supportsAllDrives=true`, { method: 'PATCH', body: JSON.stringify({ trashed: true }) });
+        return json({ removed: true });
+      } catch (err) {
+        return json({ removed: false, error: (err as Error).message });
+      }
+    }
+
     if (!sa) return json({ error: 'Google Drive is not connected yet. The team lead adds the service account key first.' }, 500);
     const token = await accessToken(sa);
 
