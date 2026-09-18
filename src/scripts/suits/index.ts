@@ -211,7 +211,7 @@ async function authorize(user: User) {
       await db.auth.signOut();
       authorizing = false;
       showGate(`${email || 'That account'} is not a UMD account. Sign in with your umd.edu or terpmail.umd.edu Google account.`);
-      document.getElementById('st-gate-text')!.textContent = 'Sign in with your UMD Google account to open the team dashboard.';
+      document.getElementById('st-gate-text')!.textContent = 'Sign in with your UMD account.';
       return;
     }
     await pause(250);
