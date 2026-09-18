@@ -55,7 +55,6 @@
 
 .st {
   position: relative;
-  z-index: 1;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--ink);
@@ -717,6 +716,7 @@
 
 .st-segment {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
   padding: 0.25rem;
   border: 1px solid var(--line);
@@ -964,170 +964,522 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Meetings and tasks                                                  */
+/* Tasks                                                               */
 /* ------------------------------------------------------------------ */
-.st-meeting {
-  display: grid;
-  grid-template-columns: 84px 1fr;
-  gap: 1.1rem;
-  padding: 1.1rem 1.2rem;
+.st-quickadd {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.9rem;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--surface);
 }
 
-.st-meeting.is-past {
-  border-color: var(--hair);
-  opacity: 0.7;
+.st-quickadd:focus-within {
+  border-color: var(--ink);
 }
 
-.st-meeting__date {
-  text-align: center;
+.st-quickadd .st-tcheck {
+  flex: none;
+  cursor: default;
+}
+
+.st-quickadd__input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0.45rem 0;
+}
+
+.st-quickadd__input::placeholder {
+  color: var(--ink-2);
+}
+
+.st-quickadd__section {
+  flex: none;
+}
+
+.st-tcheck {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.st-tcheck:not(:disabled):hover {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.st-tcheck[data-status="doing"] {
+  background: conic-gradient(var(--ink) 0 50%, transparent 50% 100%);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.st-tcheck[data-status="done"] {
+  background: var(--check-icon) center / 12px no-repeat, var(--ink);
+  box-shadow: none;
+}
+
+.st-tcheck:disabled {
+  cursor: default;
+}
+
+.st-tgroup {
+  margin-bottom: 1.75rem;
+}
+
+.st-tgroup .st-group__count {
+  white-space: nowrap;
+}
+
+.st-tlist {
+  display: grid;
+  gap: 2px;
+}
+
+.st-trow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.7rem 0.8rem;
   border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.st-trow:hover,
+.st-trow:focus-visible {
   background: var(--fill);
-  padding: 0.6rem 0.2rem;
+  outline: 0;
 }
 
-.st-meeting__month {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.st-tlist--tight .st-trow {
+  padding: 0.55rem 0.6rem;
+  margin: 0 -0.6rem;
+}
+
+.st-trow__main {
+  min-width: 0;
+}
+
+.st-trow__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-trow.is-done .st-trow__title {
   color: var(--ink-2);
+  text-decoration: line-through;
 }
 
-.st-meeting__day {
-  display: block;
-  font-size: 1.7rem;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.st-meeting__title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0 0 0.25rem;
-}
-
-.st-meeting__meta {
-  font-size: 0.95rem;
+.st-trow__sub {
+  font-size: 0.85rem;
   color: var(--ink-2);
-  margin: 0 0 0.6rem;
+  margin: 0.1rem 0 0;
 }
 
-.st-meeting__agenda {
-  font-size: 0.98rem;
-  white-space: pre-wrap;
-  margin: 0 0 0.75rem;
+.st-trow__sub.is-late,
+.st-trow__due.is-late {
+  color: var(--danger);
 }
 
-.st-meeting__actions {
+.st-trow__side {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.st-trow__due {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.st-trow__link {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+.st-trow__link:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.st-trow__link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.st-avatar-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ink-2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.st-avatar-sm.is-empty {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+.st-trow:hover .st-avatar-sm:not(.is-empty) {
+  background: var(--surface);
+}
+
+/* ------------------------------------------------------------------ */
+/* Meetings                                                            */
+/* ------------------------------------------------------------------ */
+.st-callayout {
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.st-month {
+  position: sticky;
+  top: 6.5rem;
+}
+
+.st-month__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.st-month__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.st-month__nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+.st-month__nav:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.st-month__nav span {
+  width: 8px;
+  height: 8px;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateX(2px) rotate(45deg);
+}
+
+.st-month__nav--next span {
+  transform: translateX(-2px) rotate(-135deg);
+}
+
+.st-month__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.st-month__dow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: center;
+  padding-bottom: 0.35rem;
+}
+
+.st-month__cell {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+}
+
+.st-month__cell.is-pad {
+  cursor: default;
+}
+
+.st-month__cell:not(.is-pad):hover {
+  background: var(--fill);
+}
+
+.st-month__cell.has-meeting {
+  font-weight: 700;
+  background: var(--fill);
+}
+
+.st-month__cell.is-today {
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.st-month__cell.is-selected,
+.st-month__cell.is-selected:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.st-agenda__filter {
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  margin: 0 0 1rem;
+}
+
+.st-agenda__clear,
+.st-agenda__past {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.st-agenda__clear:hover,
+.st-agenda__past:hover {
+  color: var(--ink);
+}
+
+.st-agenda__past {
+  display: block;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.st-agenda__day {
+  margin-bottom: 1.6rem;
+}
+
+.st-agenda__day.is-past {
+  opacity: 0.65;
+}
+
+.st-agenda__date {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.st-agenda__dow {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.st-agenda__md {
+  font-size: 1rem;
+  color: var(--ink-2);
+}
+
+.st-agenda__rel {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.st-mrow {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem 0.9rem 1rem 1.1rem;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.st-mrow + .st-mrow {
+  margin-top: 0.6rem;
+}
+
+.st-mrow__time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-top: 0.1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.st-mrow__end {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.st-mrow__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.st-mrow__where {
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.st-mrow__where a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.st-mrow__agenda {
+  font-size: 0.95rem;
+  margin: 0.55rem 0 0;
+  white-space: pre-wrap;
+}
+
+.st-mrow__foot {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 0.85rem;
+}
+
+.st-mrow__people {
+  display: inline-flex;
+  align-items: center;
+}
+
+.st-mrow__people .st-avatar-sm {
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.st-mrow__people .st-avatar-sm + .st-avatar-sm {
+  margin-left: -7px;
+}
+
+.st-mrow__count {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  margin-left: 0.5rem;
+}
+
+.st-mrow > .st-mrow__more {
+  position: static;
+  margin: -0.2rem -0.2rem 0 0;
 }
 
 .st-rsvp {
   display: inline-flex;
-  gap: 0.25rem;
+  gap: 0.2rem;
   padding: 0.2rem;
-  border: 1px solid var(--hair);
   border-radius: 10px;
+  background: var(--fill);
 }
 
 .st-rsvp button {
   min-height: 30px;
-  padding: 0 0.7rem;
+  padding: 0 0.75rem;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--ink-2);
   background: transparent;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   cursor: pointer;
+}
+
+.st-rsvp button:hover {
+  color: var(--ink);
 }
 
 .st-rsvp button.is-active {
-  color: var(--surface);
-  background: var(--ink);
-}
-
-.st-task-section {
-  margin-bottom: 1.5rem;
-}
-
-.st-task-section__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.6rem;
-}
-
-.st-task-section__title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.st-task {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.9rem;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--hair);
-  border-radius: 14px;
+  color: var(--ink);
   background: var(--surface);
-  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.st-task.is-done {
-  opacity: 0.6;
-}
+@media (max-width: 860px) {
+  .st-callayout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 
-.st-task.is-done .st-task__title {
-  text-decoration: line-through;
-}
+  .st-month {
+    position: static;
+    max-width: 360px;
+  }
 
-.st-task__status {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 0;
-  cursor: pointer;
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1.5px var(--line);
-  padding: 0;
-}
+  .st-mrow {
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    padding: 0.9rem 0.6rem 0.9rem 0.9rem;
+  }
 
-.st-task__status[data-status="doing"] {
-  background: conic-gradient(var(--ink) 0 50%, transparent 50% 100%);
-}
+  .st-trow {
+    padding: 0.65rem 0.6rem;
+    gap: 0.7rem;
+  }
 
-.st-task__status[data-status="done"] {
-  background: var(--check-icon) center / 13px no-repeat, var(--ink);
-  box-shadow: none;
-}
+  .st-trow__title {
+    white-space: normal;
+  }
 
-.st-task__title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
+  .st-quickadd {
+    flex-wrap: wrap;
+    padding: 0.5rem 0.6rem 0.5rem 0.9rem;
+  }
 
-.st-task__meta {
-  font-size: 0.88rem;
-  color: var(--ink-2);
-  margin: 0.15rem 0 0;
-}
-
-.st-task__meta.is-late {
-  color: var(--danger);
-  font-weight: 600;
+  .st-quickadd__section {
+    width: 100%;
+    padding-left: 34px;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1284,7 +1636,7 @@
 .st-modal {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 950;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1351,12 +1703,6 @@
     font-size: 1.15rem;
   }
 
-  .st-meeting {
-    grid-template-columns: 64px 1fr;
-    gap: 0.8rem;
-    padding: 0.9rem;
-  }
-
   .st-date {
     grid-template-columns: 78px 1fr;
   }
@@ -1372,14 +1718,6 @@
 
   .st-doc__actions .st-btn {
     flex: 1;
-  }
-
-  .st-task {
-    grid-template-columns: auto 1fr;
-  }
-
-  .st-task__actions {
-    grid-column: 1 / -1;
   }
 
   .st-chat {
@@ -2521,7 +2859,7 @@
 }
 
 .st-dd__list {
-  z-index: 60;
+  z-index: 960;
   max-height: 320px;
   overflow: auto;
 }

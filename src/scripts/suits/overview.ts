@@ -2,6 +2,7 @@
 import { api, state } from './api';
 import { esc, fmtDate, fmtDateTime, fmtRelative } from './ui';
 import { sectionName } from './content';
+import { taskRowHtml, bindRows } from './tasks';
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
@@ -22,10 +23,7 @@ export async function render(host: HTMLElement) {
     <div class="st-grid st-grid--2">
       <div class="st-card">
         <h3 class="st-h3">Your tasks</h3>
-        ${myTasks.length ? myTasks.slice(0, 6).map(t => {
-          const late = t.due_date && new Date(t.due_date + 'T23:59:59').getTime() < now;
-          return `<div class="st-task" style="margin-bottom:0.4rem;"><span class="st-task__status" data-status="${t.status}" style="cursor:default;"></span><div><p class="st-task__title">${esc(t.title)}</p><p class="st-task__meta${late ? ' is-late' : ''}">${esc(sectionName(t.section))}${t.due_date ? `, due ${esc(fmtDate(t.due_date + 'T12:00:00'))}` : ''}</p></div></div>`;
-        }).join('') : `<p class="st-muted" style="margin:0;">Nothing yet.</p>`}
+        ${myTasks.length ? `<div class="st-tlist st-tlist--tight">${myTasks.slice(0, 6).map(t => taskRowHtml(t, now, true)).join('')}</div>` : `<p class="st-muted" style="margin:0;">Nothing yet.</p>`}
         ${myTasks.length ? `<p style="margin:0.9rem 0 0;"><button type="button" class="st-link" data-go="tasks">All tasks</button></p>` : ''}
       </div>
       <div class="st-card">
@@ -33,4 +31,5 @@ export async function render(host: HTMLElement) {
         ${dates.length ? `<div class="st-stack" style="gap:0.6rem;">${dates.map(d => `<button type="button" class="st-datebtn" data-go="${d.go}"><span class="st-datebtn__label">${esc(d.label)}</span><span class="st-datebtn__detail">${esc(d.detail)}</span></button>`).join('')}</div>` : `<p class="st-muted" style="margin:0;">Nothing yet.</p>`}
       </div>
     </div>`;
+  bindRows(host, tasks, () => render(host));
 }
