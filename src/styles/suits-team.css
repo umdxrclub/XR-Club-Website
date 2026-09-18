@@ -1209,41 +1209,96 @@
 /* ------------------------------------------------------------------ */
 /* Checklist                                                           */
 /* ------------------------------------------------------------------ */
-.st-checklist {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.st-checkitem {
+.st-listhead {
   display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--hair);
-  border-radius: 14px;
-  cursor: pointer;
-  background: var(--surface);
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
 }
 
-.st-checkitem.is-done {
-  border-color: transparent;
+.st-list-group {
+  margin-bottom: 1.6rem;
+}
+
+.st-list-group__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0.25rem 0.5rem;
+}
+
+.st-inset {
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 54px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.st-row + .st-row {
+  border-top: 1px solid var(--hair);
+}
+
+.st-row:active {
   background: var(--fill);
 }
 
-.st-checkitem.is-done .st-checkitem__title {
-  text-decoration: line-through;
-  color: var(--ink-2);
+.st-row input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
 }
 
-.st-checkitem__title {
+.st-row__circle {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-3);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.st-row.is-done .st-row__circle {
+  background: var(--check-icon) center / 12px no-repeat, var(--ink);
+  border-color: var(--ink);
+}
+
+.st-row input:focus-visible ~ .st-row__circle {
+  box-shadow: 0 0 0 4px rgba(128, 128, 136, 0.25);
+}
+
+.st-row__title {
+  flex: 1;
+  min-width: 0;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
-.st-checkitem__text {
-  font-size: 0.92rem;
+.st-row.is-done .st-row__title {
   color: var(--ink-2);
-  margin-top: 0.15rem;
+}
+
+.st-row__meta {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--ink-3);
 }
 
 /* ------------------------------------------------------------------ */

@@ -45,21 +45,27 @@ async function renderChecklist() {
   summary.textContent = `${count} of ${total} done`;
 
   const groups = [...new Set(CHECKLIST.map(i => i.group))];
-  host.innerHTML = groups.map(g => `
-    <div class="st-section" style="margin-bottom:2rem;">
-      <h4 class="st-h3" style="margin-bottom:0.7rem;">${esc(g)}</h4>
-      <div class="st-checklist">
-        ${CHECKLIST.filter(i => i.group === g).map(i => {
+  host.innerHTML = groups.map(g => {
+    const items = CHECKLIST.filter(i => i.group === g);
+    const groupDone = items.filter(i => done.has(i.key)).length;
+    return `
+    <div class="st-list-group">
+      <p class="st-list-group__label"><span>${esc(g)}</span><span>${groupDone} of ${items.length}</span></p>
+      <div class="st-inset">
+        ${items.map(i => {
           const row = byKey.get(i.key);
           const isDone = done.has(i.key);
-          const who = isDone && row?.done_by ? ` · ${esc(memberName(row.done_by))}${row.done_at ? `, ${esc(fmtDate(row.done_at))}` : ''}` : '';
-          return `<label class="st-checkitem${isDone ? ' is-done' : ''}" data-item="${i.key}">
-            <span class="st-check" style="margin-top:2px;"><input type="checkbox" ${isDone ? 'checked' : ''} /><span class="st-check__box"></span></span>
-            <span><span class="st-checkitem__title">${esc(i.title)}</span><span class="st-checkitem__text">${esc(i.text)}${who}</span></span>
+          const who = isDone && row?.done_by ? `${esc(memberName(row.done_by).split(' ')[0])}${row.done_at ? ` · ${esc(fmtDate(row.done_at, { month: 'short', day: 'numeric' }))}` : ''}` : '';
+          return `<label class="st-row${isDone ? ' is-done' : ''}" data-item="${i.key}" title="${esc(i.text)}">
+            <input type="checkbox" ${isDone ? 'checked' : ''} />
+            <span class="st-row__circle"></span>
+            <span class="st-row__title">${esc(i.title)}</span>
+            ${who ? `<span class="st-row__meta">${who}</span>` : ''}
           </label>`;
         }).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(box => {
     box.addEventListener('change', async () => {
