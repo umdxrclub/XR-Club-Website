@@ -67,7 +67,7 @@ export async function render(host: HTMLElement) {
       if (!title) return;
       inputEl.disabled = true;
       try {
-        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null, ping: ['owner'] });
+        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null, ping: [] });
         await refreshBadges();
         await render(host);
         host.querySelector<HTMLInputElement>('#st-quickadd input')?.focus();
@@ -143,7 +143,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
       </div>
       ${field('details', 'Details', textarea('details', 'rows="3" placeholder="What done looks like"'))}
       ${field('link', 'Link', input('link', `type="url" value="${esc(existing?.link || '')}" placeholder="The Doc, Sheet, or Figma file this task lives in"`))}
-      ${pingPicker(existing?.ping || ['owner'], { owner: true })}
+      ${pingPicker(existing?.ping || [], { owner: true })}
       ${existing ? `<p style="margin:0.25rem 0 0;"><button type="button" class="st-btn st-btn--small st-btn--danger" data-task-delete>Delete task</button></p>` : ''}`
     : `
       <dl class="st-kv" style="margin:0 0 1rem;">

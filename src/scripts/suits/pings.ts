@@ -11,18 +11,13 @@ const GROUPS: Array<{ value: string; label: string }> = [
   ...READER_ROLES.map(r => ({ value: `role:${r.key}`, label: r.name })),
 ];
 
-/** The chips. `owner` adds an Owner chip for tasks. */
+/** The chips: Everyone, or any mix of the six role groups. A task's owner is always pinged. */
 export function pingPicker(selected: PingList, opts: { owner?: boolean } = {}) {
   const chosen = new Set(selected);
-  const chips = [
-    ...(opts.owner ? [{ value: 'owner', label: 'Owner' }] : []),
-    ...GROUPS,
-    ...state.members.map(m => ({ value: `user:${m.user_id}`, label: m.display_name })),
-    { value: 'none', label: 'Nobody' },
-  ];
+  const chips = GROUPS;
   return `
     <div class="st-field">
-      <span class="st-label">Ping on Discord</span>
+      <span class="st-label">Ping on Discord${opts.owner ? ' (the owner always is)' : ''}</span>
       <div class="st-pings" data-pings>
         <input type="hidden" name="ping" value="${esc(selected.join(','))}" />
         ${chips.map(c => `<button type="button" class="st-chip st-chip--small${chosen.has(c.value) ? ' is-active' : ''}" data-ping="${esc(c.value)}">${esc(c.label)}</button>`).join('')}
@@ -40,8 +35,8 @@ export function bindPingPicker(root: ParentNode) {
       const value = chip.dataset.ping!;
       let list: PingList = parsePing(hidden.value);
       if (list.includes(value)) list = list.filter(v => v !== value);
-      else if (value === 'everyone' || value === 'none') list = [value];
-      else list = [...list.filter(v => v !== 'everyone' && v !== 'none'), value];
+      else if (value === 'everyone') list = [value];
+      else list = [...list.filter(v => v !== 'everyone'), value];
       hidden.value = list.join(',');
       box.querySelectorAll<HTMLElement>('[data-ping]').forEach(c => c.classList.toggle('is-active', list.includes(c.dataset.ping!)));
     });

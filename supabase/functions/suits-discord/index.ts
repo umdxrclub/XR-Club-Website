@@ -368,7 +368,7 @@ async function announceTask(ctx: Ctx, t: Task, event: string, actor: Member | nu
   const dueText = t.due_date ? `, due ${tsDate(t.due_date)}` : '';
 
   if (event === 'created') {
-    const pings = await pingsFor(ctx, t.ping, ['owner'], owner);
+    const pings = await pingsFor(ctx, [...(t.ping || []), 'owner'], ['owner'], owner);
     const content = `${pings.text}${who} added a task${owner ? ` for ${ownerName}` : ''}.`;
     const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t), ...pings.allowed });
     await remember(ctx, 'task', t.id, channel, msg.id);
@@ -691,8 +691,7 @@ const COMMANDS = [
         { type: STRING, name: 'due', description: 'When it is due, like 9/24, friday, or tomorrow' },
         { type: STRING, name: 'link', description: 'The Doc, Sheet, or Figma file it lives in' },
         { type: STRING, name: 'details', description: 'What done looks like' },
-        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'The owner', value: 'owner' }, { name: 'Everyone', value: 'everyone' }, { name: 'Nobody', value: 'none' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name: `${name} group`, value: `role:${value}` }))] },
-        { type: MENTIONABLE, name: 'person', description: 'Someone else to ping, or a server role' },
+        { type: STRING, name: 'ping', description: 'Who gets pinged, besides the owner', choices: [{ name: 'Everyone', value: 'everyone' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name, value: `role:${value}` }))] },
       ] },
       { type: SUB, name: 'list', description: 'See tasks', options: [
         { type: STRING, name: 'show', description: 'Which tasks', choices: [{ name: 'Open', value: 'open' }, { name: 'Mine', value: 'mine' }, { name: 'Done', value: 'done' }, { name: 'All', value: 'all' }] },
@@ -716,8 +715,7 @@ const COMMANDS = [
         { type: STRING, name: 'length', description: 'How long', choices: [{ name: '30 minutes', value: '30' }, { name: '1 hour', value: '60' }, { name: '1.5 hours', value: '90' }, { name: '2 hours', value: '120' }] },
         { type: STRING, name: 'where', description: 'Zoom link, Discord voice, or a room' },
         { type: STRING, name: 'agenda', description: 'What you will cover' },
-        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'Everyone', value: 'everyone' }, { name: 'Nobody', value: 'none' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name: `${name} group`, value: `role:${value}` }))] },
-        { type: MENTIONABLE, name: 'person', description: 'Someone else to ping, or a server role' },
+        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'Everyone', value: 'everyone' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name, value: `role:${value}` }))] },
       ] },
       { type: SUB, name: 'list', description: 'What is coming up' },
       { type: SUB, name: 'cancel', description: 'Cancel a meeting', options: [
@@ -775,18 +773,10 @@ function optionsOf(data: { options?: Opt[] }) {
 
 const reply = (content: string, extra: Record<string, unknown> = {}) => ({ type: 4, data: { content, flags: 64, allowed_mentions: NO_PINGS, ...extra } });
 
-/** The ping list from a command's ping choice and person option. */
-function pingFromOptions(ctx: Ctx, data: Record<string, any>, get: (name: string) => string | undefined, fallback: string[]) {
-  const list: string[] = [];
+/** The ping list from a command's ping choice. */
+function pingFromOptions(_ctx: Ctx, _data: Record<string, any>, get: (name: string) => string | undefined, fallback: string[]) {
   const choice = get('ping');
-  if (choice) list.push(choice);
-  const person = get('person');
-  if (person) {
-    if (data.resolved?.roles?.[person]) list.push(`drole:${person}`);
-    else { const m = byDiscord(ctx, person); list.push(m ? `user:${m.user_id}` : `duser:${person}`); }
-  }
-  if (list.includes('none')) return ['none'];
-  return list.length ? list : fallback;
+  return choice ? [choice] : fallback;
 }
 const publicReply = (payload: Record<string, unknown>) => ({ type: 4, data: { allowed_mentions: NO_PINGS, ...payload } });
 const LINK_FIRST = 'The dashboard does not know who you are yet. Run /link with your UMD email, then try again.';
@@ -880,7 +870,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       if (get('due')) { due = parseDate(String(get('due'))); if (!due) return reply('I could not read that date. Try 9/24, friday, or tomorrow.'); }
       let link = get('link') ? String(get('link')).trim() : null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
-      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, ping: pingFromOptions(ctx, data, get, ['owner']), created_by: me.user_id }).select().single();
+      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, ping: pingFromOptions(ctx, data, get, []), created_by: me.user_id }).select().single();
       if (error || !row) return reply(`Could not add the task. ${error?.message || ''}`);
       await announceTask(ctx, row as Task, 'created', me);
       return reply(`Added ${title}${assignee ? ` for ${assignee.display_name}` : ''}.`);
