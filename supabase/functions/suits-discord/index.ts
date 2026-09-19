@@ -265,6 +265,14 @@ async function nameOf(ctx: Ctx, m: Member | null) {
   return id ? `<@${id}>` : m.display_name;
 }
 
+/** The team mention for meeting posts: a role if one was chosen, otherwise everyone in the server. */
+function teamPing(ctx: Ctx) {
+  const role = ctx.settings.role_id;
+  if (!role) return { text: '', allowed: {} };
+  if (role === 'everyone') return { text: '@everyone ', allowed: { allowed_mentions: { parse: ['everyone'] } } };
+  return { text: `<@&${role}> `, allowed: { allowed_mentions: { roles: [role] } } };
+}
+
 // ---------------------------------------------------------------------------
 // Messages the bot has posted
 // ---------------------------------------------------------------------------
@@ -379,8 +387,7 @@ async function announceMeeting(ctx: Ctx, m: Meeting, event: string, actor: Membe
   const channel = ctx.settings.channel_id;
   if (!channel) return;
   const who = actor ? actor.display_name : 'Someone';
-  const role = ctx.settings.role_id ? `<@&${ctx.settings.role_id}> ` : '';
-  const pingRole = ctx.settings.role_id ? { allowed_mentions: { roles: [ctx.settings.role_id] } } : {};
+  const { text: role, allowed: pingRole } = teamPing(ctx);
   const saved = await remembered(ctx, 'meeting', m.id);
 
   if (event === 'created') {
@@ -579,12 +586,13 @@ async function reminders(ctx: Ctx) {
       const id = mem ? await resolveDiscordId(ctx, mem) : null;
       if (id) ids.push(id);
     }
-    const role = ctx.settings.role_id ? `<@&${ctx.settings.role_id}> ` : '';
+    const { text: role } = teamPing(ctx);
     const mentions = ids.map(id => `<@${id}>`).join(' ');
     const where = m.location ? ` Where: ${m.location}` : '';
+    const everyone = ctx.settings.role_id === 'everyone';
     const msg = await post(channel, {
       content: `${role}${m.title} starts ${ts(m.starts_at, 'R')}.${where} ${mentions}`.trim(),
-      allowed_mentions: { users: ids, roles: ctx.settings.role_id ? [ctx.settings.role_id] : [] },
+      allowed_mentions: { users: ids, roles: ctx.settings.role_id && !everyone ? [ctx.settings.role_id] : [], parse: everyone ? ['everyone'] : [] },
     });
     await remember(ctx, 'meeting_reminder', m.id, channel, msg.id);
     sent++;
@@ -748,12 +756,12 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       guild_id: body.guild_id,
       channel_id: get('announcements') || ctx.settings.channel_id,
       log_channel_id: get('log') || get('announcements') || ctx.settings.log_channel_id,
-      role_id: get('role') || ctx.settings.role_id,
+      role_id: get('role') || ctx.settings.role_id || 'everyone',
     };
     await ctx.saveSettings(s);
     ctx.settings = s;
     await post(s.channel_id!, { content: 'The SUITS dashboard is connected. Tasks, meetings, and reminders will show up here. Run /link with your UMD email so the bot can ping you.' }).catch(() => {});
-    return reply(`Set. Announcements go to <#${s.channel_id}>${s.log_channel_id && s.log_channel_id !== s.channel_id ? `, Drive activity goes to <#${s.log_channel_id}>` : ''}${s.role_id ? `, and meetings ping <@&${s.role_id}>` : ''}.`);
+    return reply(`Set. Announcements go to <#${s.channel_id}>${s.log_channel_id && s.log_channel_id !== s.channel_id ? `, Drive activity goes to <#${s.log_channel_id}>` : ''}${s.role_id === 'everyone' ? ', and meetings ping everyone' : s.role_id ? `, and meetings ping <@&${s.role_id}>` : ''}.`);
   }
 
   if (name === 'team') {
