@@ -2051,6 +2051,17 @@
   color: var(--surface);
 }
 
+.st-pings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.st-chip--small {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+}
+
 .st-reader__tools {
   display: flex;
   flex-wrap: wrap;

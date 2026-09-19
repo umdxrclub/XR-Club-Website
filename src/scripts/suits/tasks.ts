@@ -4,6 +4,7 @@ import { api, state, isManager, memberName, type Task } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtDate, initials } from './ui';
 import { SECTIONS, sectionName } from './content';
 import { refreshBadges } from './index';
+import { pingPicker, bindPingPicker, parsePing } from './pings';
 
 type Filter = 'all' | 'mine' | 'open' | 'done';
 let filter: Filter = 'all';
@@ -66,7 +67,7 @@ export async function render(host: HTMLElement) {
       if (!title) return;
       inputEl.disabled = true;
       try {
-        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null });
+        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null, ping: ['owner'] });
         await refreshBadges();
         await render(host);
         host.querySelector<HTMLInputElement>('#st-quickadd input')?.focus();
@@ -142,6 +143,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
       </div>
       ${field('details', 'Details', textarea('details', 'rows="3" placeholder="What done looks like"'))}
       ${field('link', 'Link', input('link', `type="url" value="${esc(existing?.link || '')}" placeholder="The Doc, Sheet, or Figma file this task lives in"`))}
+      ${pingPicker(existing?.ping || ['owner'], { owner: true })}
       ${existing ? `<p style="margin:0.25rem 0 0;"><button type="button" class="st-btn st-btn--small st-btn--danger" data-task-delete>Delete task</button></p>` : ''}`
     : `
       <dl class="st-kv" style="margin:0 0 1rem;">
@@ -166,7 +168,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
       if (!title) throw new Error('Give the task a name.');
       let link = formValue(form, 'link') || null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
-      const payload = { title, section: formValue(form, 'section'), assignee_id: formValue(form, 'assignee') || null, due_date: formValue(form, 'due') || null, details: formValue(form, 'details') || null, link };
+      const payload = { title, section: formValue(form, 'section'), assignee_id: formValue(form, 'assignee') || null, due_date: formValue(form, 'due') || null, details: formValue(form, 'details') || null, link, ping: parsePing(formValue(form, 'ping')) };
       if (existing) await api.updateTask(existing.id, { ...payload, status: (formValue(form, 'status') as Task['status']) || existing.status }, existing);
       else await api.createTask(payload);
       close();
@@ -178,6 +180,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
   setTimeout(() => {
     const ta = document.querySelector<HTMLTextAreaElement>('#f-details');
     if (ta && existing) ta.value = existing.details || '';
+    bindPingPicker(document.querySelector('.st-modal') || document);
     document.querySelector('[data-task-delete]')?.addEventListener('click', async () => {
       if (!existing || !(await confirmModal('Delete this task?', `"${existing.title}" will be removed.`, 'Delete task'))) return;
       await api.deleteTask(existing.id, existing);
