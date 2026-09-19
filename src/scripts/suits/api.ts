@@ -244,6 +244,7 @@ export const api = {
   async updateTask(id: string, t: Partial<Task>, before?: Task) {
     unwrap(await db.from('suits_tasks').update({ ...t, updated_at: new Date().toISOString() }).eq('id', id));
     const event = t.status === 'done' && before?.status !== 'done' ? 'completed'
+      : t.status === 'doing' && before?.status !== 'doing' ? 'started'
       : 'assignee_id' in t && t.assignee_id && t.assignee_id !== before?.assignee_id ? 'assigned'
       : 'updated';
     notify('task', id, event);

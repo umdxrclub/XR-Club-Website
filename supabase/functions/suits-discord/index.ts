@@ -273,6 +273,18 @@ function teamPing(ctx: Ctx) {
   return { text: `<@&${role}> `, allowed: { allowed_mentions: { roles: [role] } } };
 }
 
+/**
+ * One line in the activity channel, starting with when it happened. When the
+ * activity channel is the same as the announcements channel, only events that
+ * did not already post go there.
+ */
+async function logActivity(ctx: Ctx, text: string, alreadyAnnounced = false, when?: string) {
+  const log = ctx.settings.log_channel_id;
+  if (!log) return;
+  if (log === ctx.settings.channel_id && alreadyAnnounced) return;
+  await post(log, { content: `${ts(when || new Date().toISOString(), 'f')}  ${text}` }).catch(() => {});
+}
+
 // ---------------------------------------------------------------------------
 // Messages the bot has posted
 // ---------------------------------------------------------------------------
@@ -327,19 +339,30 @@ async function announceTask(ctx: Ctx, t: Task, event: string, actor: Member | nu
   const saved = await remembered(ctx, 'task', t.id);
   const pingOwner = ownerId ? { allowed_mentions: { users: [ownerId] } } : {};
 
+  const ownerName = owner ? owner.display_name : 'nobody yet';
+  const dueText = t.due_date ? `, due ${tsDate(t.due_date)}` : '';
+
   if (event === 'created') {
     const content = ownerId ? `<@${ownerId}>, ${who} gave you a task.` : `${who} added a task.`;
     const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t), ...pingOwner });
     await remember(ctx, 'task', t.id, channel, msg.id);
+    await logActivity(ctx, `${who} added the task ${t.title} in ${sectionName(t.section)}. Owner: ${ownerName}${dueText}.`, true);
     return;
   }
   if (saved) await edit(saved.channel_id, saved.message_id, { embeds: [embed], components: taskButtons(t) }).catch(() => {});
   if (event === 'assigned' && ownerId) {
     await post(channel, { content: `<@${ownerId}>, ${who} handed you ${t.title}.`, ...pingOwner });
+    await logActivity(ctx, `${who} handed ${t.title} to ${ownerName}.`, true);
   } else if (event === 'completed') {
     await post(channel, { content: `${who} finished ${t.title}.` });
+    await logActivity(ctx, `${who} finished ${t.title}.`, true);
+  } else if (event === 'started') {
+    await logActivity(ctx, `${who} started ${t.title}.`);
   } else if (event === 'deleted') {
     if (saved) await edit(saved.channel_id, saved.message_id, { embeds: [{ ...embed, title: `Removed: ${t.title}`, color: GREY, footer: { text: 'Removed' } }], components: [] }).catch(() => {});
+    await logActivity(ctx, `${who} removed the task ${t.title}.`);
+  } else if (event === 'updated') {
+    await logActivity(ctx, `${who} changed ${t.title}. Owner: ${ownerName}${dueText}.`);
   }
 }
 
@@ -393,16 +416,23 @@ async function announceMeeting(ctx: Ctx, m: Meeting, event: string, actor: Membe
   if (event === 'created') {
     const msg = await post(channel, { content: `${role}${who} scheduled a meeting.`, embeds: [await meetingEmbed(ctx, m)], components: meetingButtons(m), ...pingRole });
     await remember(ctx, 'meeting', m.id, channel, msg.id);
+    await logActivity(ctx, `${who} scheduled ${m.title} for ${ts(m.starts_at, 'F')}.`, true);
     return;
   }
   if (event === 'deleted') {
     if (saved) await edit(saved.channel_id, saved.message_id, { embeds: [await meetingEmbed(ctx, m, true)], components: [] }).catch(() => {});
     await post(channel, { content: `${role}${who} cancelled ${m.title}.`, ...pingRole });
+    await logActivity(ctx, `${who} cancelled ${m.title}.`, true);
     return;
   }
   if (saved) await edit(saved.channel_id, saved.message_id, { embeds: [await meetingEmbed(ctx, m)], components: meetingButtons(m) }).catch(() => {});
-  if (event === 'updated') await post(channel, { content: `${role}${who} changed ${m.title}. It is now ${ts(m.starts_at, 'F')}.`, ...pingRole });
+  if (event === 'updated') {
+    await post(channel, { content: `${role}${who} changed ${m.title}. It is now ${ts(m.starts_at, 'F')}.`, ...pingRole });
+    await logActivity(ctx, `${who} changed ${m.title} to ${ts(m.starts_at, 'F')}.`, true);
+  }
 }
+
+const RSVP_WORDS: Record<string, string> = { yes: 'is going to', maybe: 'might come to', no: 'cannot make' };
 
 async function refreshMeetingMessage(ctx: Ctx, m: Meeting) {
   const saved = await remembered(ctx, 'meeting', m.id);
@@ -419,9 +449,10 @@ function docLink(d: Doc) {
 async function announceDocument(ctx: Ctx, d: Doc, event: string, actor: Member | null) {
   const channel = ctx.settings.log_channel_id || ctx.settings.channel_id;
   if (!channel) return;
-  const who = actor ? await nameOf(ctx, actor) : 'Someone';
-  if (event === 'created') await post(channel, { content: `${who} added [${d.title}](${docLink(d)}) to ${roleName(d.role)}.` });
-  if (event === 'deleted') await post(channel, { content: `${who} removed ${d.title} from ${roleName(d.role)}.` });
+  const who = actor ? actor.display_name : 'Someone';
+  const stamp = ts(new Date().toISOString(), 'f');
+  if (event === 'created') await post(channel, { content: `${stamp}  ${who} added [${d.title}](${docLink(d)}) to ${roleName(d.role)}.` });
+  if (event === 'deleted') await post(channel, { content: `${stamp}  ${who} removed ${d.title} from ${roleName(d.role)}.` });
 }
 
 // ---------------------------------------------------------------------------
@@ -557,10 +588,11 @@ async function driveActivity(ctx: Ctx) {
 
   const lines = worth.slice(0, 15).map(c => {
     const link = c.file.webViewLink ? `[${c.file.name}](${c.file.webViewLink})` : c.file.name;
-    return `${c.actor} ${c.verb} ${link} in ${c.folder}.`;
+    const when = c.verb === 'trashed' && c.file.trashedTime ? c.file.trashedTime : c.file.modifiedTime;
+    return `${ts(when, 'f')}  ${c.actor} ${c.verb} ${link} in ${c.folder}.`;
   });
   if (worth.length > 15) lines.push(`and ${worth.length - 15} more.`);
-  lines.push(...goneLines.slice(0, 5));
+  lines.push(...goneLines.slice(0, 5).map(l => `${ts(new Date().toISOString(), 'f')}  ${l}`));
   await post(channel, { embeds: [{ description: lines.join('\n'), color: INK, footer: { text: 'Google Drive' } }] });
   return { changes: worth.length + goneLines.length };
 }
@@ -949,6 +981,7 @@ async function handleComponent(ctx: Ctx, body: Record<string, any>) {
     const { data: m } = await ctx.admin.from('suits_meetings').select('*').eq('id', id).maybeSingle();
     if (!m) return reply('That meeting is gone.');
     await ctx.admin.from('suits_meeting_rsvps').upsert({ meeting_id: id, user_id: me.user_id, response: value, updated_at: new Date().toISOString() });
+    await logActivity(ctx, `${me.display_name} ${RSVP_WORDS[value] || 'answered about'} ${m.title}.`);
     return { type: 7, data: { embeds: [await meetingEmbed(ctx, m as Meeting)], components: meetingButtons(m as Meeting), allowed_mentions: NO_PINGS } };
   }
 
@@ -960,8 +993,10 @@ async function handleComponent(ctx: Ctx, body: Record<string, any>) {
     await ctx.admin.from('suits_tasks').update({ status: value, updated_at: new Date().toISOString() }).eq('id', id);
     const updated = { ...task, status: value };
     if (value === 'done') {
-      const saved = await remembered(ctx, 'task', id);
-      if (ctx.settings.channel_id && saved) await post(ctx.settings.channel_id, { content: `${me.display_name} finished ${task.title}.` }).catch(() => {});
+      if (ctx.settings.channel_id) await post(ctx.settings.channel_id, { content: `${me.display_name} finished ${task.title}.` }).catch(() => {});
+      await logActivity(ctx, `${me.display_name} finished ${task.title}.`, true);
+    } else {
+      await logActivity(ctx, `${me.display_name} started ${task.title}.`);
     }
     return { type: 7, data: { embeds: [await taskEmbed(ctx, updated)], components: taskButtons(updated), allowed_mentions: NO_PINGS } };
   }
@@ -1062,8 +1097,11 @@ Deno.serve(async (req) => {
         const { data: m } = await ctx.admin.from('suits_meetings').select('*').eq('id', id).maybeSingle();
         const meeting = (m || body.snapshot) as Meeting | undefined;
         if (!meeting) return json({ posted: false, reason: 'no meeting' });
-        if (event === 'rsvp') await refreshMeetingMessage(ctx, meeting);
-        else await announceMeeting(ctx, meeting, event, me);
+        if (event === 'rsvp') {
+          await refreshMeetingMessage(ctx, meeting);
+          const { data: mine } = await ctx.admin.from('suits_meeting_rsvps').select('response').eq('meeting_id', meeting.id).eq('user_id', me.user_id).maybeSingle();
+          if (mine?.response) await logActivity(ctx, `${me.display_name} ${RSVP_WORDS[mine.response] || 'answered about'} ${meeting.title}.`);
+        } else await announceMeeting(ctx, meeting, event, me);
       } else if (kind === 'document') {
         const { data: d } = await ctx.admin.from('suits_documents').select('*').eq('id', id).maybeSingle();
         const doc = (d || body.snapshot) as Doc | undefined;
