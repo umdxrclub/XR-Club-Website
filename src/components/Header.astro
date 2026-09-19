@@ -24,7 +24,7 @@ const base = import.meta.env.BASE_URL;
           </div>
         </div>
         <a href={`${base}projects`} class="header__link header__link--hide-mobile">Projects</a>
-        <a href={`${base}sponsors`} class="header__link">Sponsors</a>
+        <a href={`${base}sponsors`} class="header__link header__link--sponsors">Sponsors</a>
         <div class="header__join">
           <span class="header__link header__join-trigger">Join Us</span>
           <div class="header__join-dropdown header__socials-dropdown">
@@ -417,6 +417,12 @@ const base = import.meta.env.BASE_URL;
     .header.is-signed-in .header__btn--suits > span:first-child {
       display: none;
     }
+
+    /* With a Dashboard link too, Sponsors and Sign Out give way; the dashboard has its own sign out */
+    .header.has-dash .header__link--sponsors,
+    .header.has-dash .header__user {
+      display: none !important;
+    }
   }
 
   /* Keep the full application label inside the pill on 320px phones. */
@@ -487,8 +493,11 @@ const base = import.meta.env.BASE_URL;
         userInfo.style.display = 'inline-flex';
         document.querySelector('[data-header]')?.classList.add('is-signed-in');
 
-        if (dashLink && (profile?.role === 'board' || profile?.role === 'admin')) {
+        // Anyone on the SUITS roster gets the Dashboard link, as do board members
+        const { data: onTeam } = await supabase.from('suits_team').select('user_id').eq('user_id', user.id).maybeSingle();
+        if (dashLink && (onTeam || profile?.role === 'board' || profile?.role === 'admin')) {
           dashLink.style.display = '';
+          document.querySelector('[data-header]')?.classList.add('has-dash');
         }
       }
     });
