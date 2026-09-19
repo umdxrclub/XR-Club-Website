@@ -3,7 +3,7 @@
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy, type RenderTask } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { api, state } from './api';
-import { esc } from './ui';
+import { esc, select, enhanceSelects } from './ui';
 import { READER_DOCS, READER_ROLES, type DocKey, type Highlight } from './reader-content';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -106,13 +106,14 @@ export async function render(host: HTMLElement) {
   // Roles
   const rolesEl = host.querySelector<HTMLElement>('#st-reader-roles')!;
   const drawRoles = () => {
-    rolesEl.innerHTML = `<span class="st-reader__roles-label">${role() ? 'Your role' : 'Choose your role'}</span>` + READER_ROLES.map(r => `<button type="button" class="st-chip${r.key === roleKey ? ' is-active' : ''}" data-role="${r.key}">${esc(r.name)}</button>`).join('');
+    rolesEl.innerHTML = `<span class="st-reader__roles-label">${role() ? 'Your role' : 'Choose your role'}</span>`
+      + READER_ROLES.map(r => `<button type="button" class="st-chip${r.key === roleKey ? ' is-active' : ''}" data-role="${r.key}">${esc(r.name)}</button>`).join('')
+      + `<div class="st-reader__roledd">${select('reader_role', [{ value: '', label: 'Pick a role', selected: !roleKey }, ...READER_ROLES.map(r => ({ value: r.key, label: r.name, selected: r.key === roleKey }))])}</div>`;
+    enhanceSelects(rolesEl);
+    rolesEl.querySelector<HTMLSelectElement>('select')!.addEventListener('change', e => pickRole((e.target as HTMLSelectElement).value || null));
   };
-  drawRoles();
-  rolesEl.addEventListener('click', e => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-role]');
-    if (!b) return;
-    roleKey = b.dataset.role === roleKey ? null : b.dataset.role!;
+  const pickRole = (key: string | null) => {
+    roleKey = key;
     try { roleKey ? localStorage.setItem(ROLE_KEY, roleKey) : localStorage.removeItem(ROLE_KEY); } catch { /* ignore */ }
     // The pick is also the member's proposal role on the Team page
     if (state.me && state.me.proposal_role !== roleKey) {
@@ -122,6 +123,12 @@ export async function render(host: HTMLElement) {
     drawRoles();
     if (onlyMine && roleKey && !pagesFor(docKey).includes(pageNo)) pageNo = pagesFor(docKey)[0] || 1;
     void show();
+  };
+  drawRoles();
+  rolesEl.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-role]');
+    if (!b) return;
+    pickRole(b.dataset.role === roleKey ? null : b.dataset.role!);
   });
 
   // Document switch
@@ -245,7 +252,7 @@ async function show() {
     const base = page.getViewport({ scale: 1 });
     const scale = width / base.width;
     const viewport = page.getViewport({ scale });
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(viewport.width * dpr);
     canvas.height = Math.round(viewport.height * dpr);
     canvas.style.width = `${viewport.width}px`;

@@ -16,21 +16,20 @@ export async function render(host: HTMLElement) {
   host.innerHTML = `
     <div class="st-section">
       <h2 class="st-h1">Team</h2>
-      <div class="st-table-wrap">
-        <table class="st-table">
-          <thead><tr><th></th><th>Name</th><th>Proposal role</th><th>Access</th><th>Joined</th>${isLead() ? '<th></th>' : ''}</tr></thead>
-          <tbody>
-            ${state.members.map(m => `
-              <tr>
-                <td>${avatarHtml(m.display_name, m.avatar_url)}</td>
-                <td><strong>${esc(m.display_name)}</strong>${m.user_id === me.user_id ? ' <span class="st-muted">(you)</span>' : ''}<br><span class="st-muted" style="font-size:0.85rem;">${esc(m.email)}</span></td>
-                <td>${canEditRole(m.user_id) ? roleSelect(m.user_id, m.proposal_role) : (esc(roleName(m.proposal_role)) || '<span class="st-muted">Not set</span>')}</td>
-                <td>${isLead() && m.user_id !== me.user_id ? `<select class="st-select st-select--inline" data-role-for="${m.user_id}">${(['member', 'product_manager', 'lead'] as Role[]).map(r => `<option value="${r}"${m.role === r ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>` : esc(roleLabel(m.role))}</td>
-                <td>${esc(fmtDate(m.created_at))}</td>
-                ${isLead() ? `<td>${m.user_id !== me.user_id ? `<button type="button" class="st-btn st-btn--small st-btn--danger" data-remove="${m.user_id}">Remove</button>` : ''}</td>` : ''}
-              </tr>`).join('')}
-          </tbody>
-        </table>
+      <p class="st-muted" style="margin:0 0 1rem;">${state.members.length} on the team. Each person picks their own proposal role.</p>
+      <div class="st-roster">
+        ${state.members.map(m => `
+          <div class="st-member">
+            ${avatarHtml(m.display_name, m.avatar_url)}
+            <div class="st-member__who">
+              <p class="st-member__name">${esc(m.display_name)}${m.user_id === me.user_id ? ' <span class="st-muted">(you)</span>' : ''}</p>
+              <p class="st-member__email">${esc(m.email)}</p>
+            </div>
+            <div class="st-member__role">${canEditRole(m.user_id) ? roleSelect(m.user_id, m.proposal_role) : `<span class="st-member__pill">${esc(roleName(m.proposal_role)) || 'No role yet'}</span>`}</div>
+            <div class="st-member__access">${isLead() && m.user_id !== me.user_id ? `<select class="st-select st-select--inline" data-role-for="${m.user_id}">${(['member', 'product_manager', 'lead'] as Role[]).map(r => `<option value="${r}"${m.role === r ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>` : `<span class="st-member__pill">${esc(roleLabel(m.role))}</span>`}</div>
+            <span class="st-member__joined">Joined ${esc(fmtDate(m.created_at, { month: 'short', day: 'numeric' }))}</span>
+            ${isLead() && m.user_id !== me.user_id ? `<button type="button" class="st-btn st-btn--small st-btn--danger st-member__remove" data-remove="${m.user_id}">Remove</button>` : ''}
+          </div>`).join('')}
       </div>
     </div>
 

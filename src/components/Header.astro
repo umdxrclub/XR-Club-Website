@@ -408,7 +408,13 @@ const base = import.meta.env.BASE_URL;
     }
 
 
-    .header__link--hide-small {
+    .header__link--hide-small,
+    .header__user-name {
+      display: none;
+    }
+
+    /* With Sign Out in the bar there is no room for "Apply to" on a phone */
+    .header.is-signed-in .header__btn--suits > span:first-child {
       display: none;
     }
   }
@@ -479,6 +485,7 @@ const base = import.meta.env.BASE_URL;
 
         userName.textContent = profile?.full_name || user.email || 'User';
         userInfo.style.display = 'inline-flex';
+        document.querySelector('[data-header]')?.classList.add('is-signed-in');
 
         if (dashLink && (profile?.role === 'board' || profile?.role === 'admin')) {
           dashLink.style.display = '';

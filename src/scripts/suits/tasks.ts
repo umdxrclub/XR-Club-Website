@@ -85,7 +85,7 @@ export function taskRowHtml(t: Task, now: number, compact = false) {
   const late = t.status !== 'done' && t.due_date && new Date(t.due_date + 'T23:59:59').getTime() < now;
   const owner = t.assignee_id ? memberName(t.assignee_id) : '';
   const canMove = isManager() || t.assignee_id === state.me?.user_id;
-  const sub = [compact ? sectionName(t.section) : '', t.status === 'doing' ? 'In progress' : '', late ? 'Past due' : ''].filter(Boolean).join(', ');
+  const sub = compact ? sectionName(t.section) : '';
   return `
     <div class="st-trow${t.status === 'done' ? ' is-done' : ''}" data-task="${t.id}" role="button" tabindex="0">
       <button type="button" class="st-tcheck" data-status="${t.status}" ${canMove ? `data-cycle="${t.id}"` : 'disabled'} aria-label="${t.status === 'todo' ? 'Mark in progress' : t.status === 'doing' ? 'Mark done' : 'Mark to do'}"></button>
@@ -95,7 +95,7 @@ export function taskRowHtml(t: Task, now: number, compact = false) {
       </div>
       <div class="st-trow__side">
         ${t.link ? `<a class="st-trow__link" href="${esc(t.link)}" target="_blank" rel="noopener" data-stop title="Open link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>` : ''}
-        ${t.due_date ? `<span class="st-trow__due${late ? ' is-late' : ''}">${esc(fmtDate(t.due_date + 'T12:00:00', { month: 'short', day: 'numeric' }))}</span>` : ''}
+        ${t.due_date ? `<span class="st-trow__due${late ? ' is-late' : ''}" title="${late ? 'Past due' : 'Due'}">${esc(fmtDate(t.due_date + 'T12:00:00', { month: 'short', day: 'numeric' }))}</span>` : ''}
         ${owner ? `<span class="st-avatar-sm" title="${esc(owner)}">${esc(initials(owner))}</span>` : ''}
       </div>
     </div>`;
