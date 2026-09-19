@@ -69,8 +69,8 @@ const accessLabel = (role: string) => role === 'lead' ? 'Team lead' : role === '
 // Types
 // ---------------------------------------------------------------------------
 interface Member { user_id: string; email: string; display_name: string; role: string; proposal_role: string | null; discord_id: string | null; discord_username: string | null }
-interface Task { id: string; title: string; details: string | null; section: string; assignee_id: string | null; due_date: string | null; status: string; link: string | null; created_by: string | null }
-interface Meeting { id: string; title: string; starts_at: string; ends_at: string; location: string | null; agenda: string | null; created_by: string | null }
+interface Task { id: string; title: string; details: string | null; section: string; assignee_id: string | null; due_date: string | null; status: string; link: string | null; ping: string[] | null; created_by: string | null }
+interface Meeting { id: string; title: string; starts_at: string; ends_at: string; location: string | null; agenda: string | null; ping: string[] | null; created_by: string | null }
 interface Doc { id: string; title: string; kind: string; url: string | null; role: string; notes: string | null; drive_url: string | null; created_by: string | null; created_at: string }
 interface DiscordSettings { guild_id?: string; channel_id?: string; log_channel_id?: string; role_id?: string }
 
@@ -265,12 +265,37 @@ async function nameOf(ctx: Ctx, m: Member | null) {
   return id ? `<@${id}>` : m.display_name;
 }
 
-/** The team mention for meeting posts: a role if one was chosen, otherwise everyone in the server. */
-function teamPing(ctx: Ctx) {
+/** What the server wide setting means as a ping list. */
+function teamDefault(ctx: Ctx): string[] {
   const role = ctx.settings.role_id;
-  if (!role) return { text: '', allowed: {} };
-  if (role === 'everyone') return { text: '@everyone ', allowed: { allowed_mentions: { parse: ['everyone'] } } };
-  return { text: `<@&${role}> `, allowed: { allowed_mentions: { roles: [role] } } };
+  if (!role) return [];
+  return role === 'everyone' ? ['everyone'] : [`drole:${role}`];
+}
+
+/**
+ * Turn a ping list into message text and the matching allowed mentions.
+ * Entries: everyone, owner, none, role:<proposal role>, user:<user id>,
+ * duser:<discord user id>, drole:<discord role id>.
+ */
+async function pingsFor(ctx: Ctx, list: string[] | null | undefined, fallback: string[], owner: Member | null, extraUsers: string[] = []) {
+  const entries = list && list.length ? list : fallback;
+  const users = new Set<string>(extraUsers);
+  const roles = new Set<string>();
+  let everyone = false;
+  for (const e of entries) {
+    if (e === 'none') { users.clear(); roles.clear(); everyone = false; break; }
+    if (e === 'everyone') everyone = true;
+    else if (e === 'owner') { const id = owner ? await resolveDiscordId(ctx, owner) : null; if (id) users.add(id); }
+    else if (e.startsWith('role:')) { for (const m of ctx.members.filter(m => m.proposal_role === e.slice(5))) { const id = await resolveDiscordId(ctx, m); if (id) users.add(id); } }
+    else if (e.startsWith('user:')) { const m = byUser(ctx, e.slice(5)); const id = m ? await resolveDiscordId(ctx, m) : null; if (id) users.add(id); }
+    else if (e.startsWith('duser:')) users.add(e.slice(6));
+    else if (e.startsWith('drole:')) roles.add(e.slice(6));
+  }
+  const parts = [everyone ? '@everyone' : '', ...[...users].map(id => `<@${id}>`), ...[...roles].map(id => `<@&${id}>`)].filter(Boolean);
+  return {
+    text: parts.length ? parts.join(' ') + ' ' : '',
+    allowed: { allowed_mentions: { users: [...users], roles: [...roles], parse: everyone ? ['everyone'] : [] } },
+  };
 }
 
 /**
@@ -343,8 +368,9 @@ async function announceTask(ctx: Ctx, t: Task, event: string, actor: Member | nu
   const dueText = t.due_date ? `, due ${tsDate(t.due_date)}` : '';
 
   if (event === 'created') {
-    const content = ownerId ? `<@${ownerId}>, ${who} gave you a task.` : `${who} added a task.`;
-    const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t), ...pingOwner });
+    const pings = await pingsFor(ctx, t.ping, ['owner'], owner);
+    const content = `${pings.text}${who} added a task${owner ? ` for ${ownerName}` : ''}.`;
+    const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t), ...pings.allowed });
     await remember(ctx, 'task', t.id, channel, msg.id);
     await logActivity(ctx, `${who} added the task ${t.title} in ${sectionName(t.section)}. Owner: ${ownerName}${dueText}.`, true);
     return;
@@ -410,7 +436,7 @@ async function announceMeeting(ctx: Ctx, m: Meeting, event: string, actor: Membe
   const channel = ctx.settings.channel_id;
   if (!channel) return;
   const who = actor ? actor.display_name : 'Someone';
-  const { text: role, allowed: pingRole } = teamPing(ctx);
+  const { text: role, allowed: pingRole } = await pingsFor(ctx, m.ping, teamDefault(ctx), null);
   const saved = await remembered(ctx, 'meeting', m.id);
 
   if (event === 'created') {
@@ -618,13 +644,11 @@ async function reminders(ctx: Ctx) {
       const id = mem ? await resolveDiscordId(ctx, mem) : null;
       if (id) ids.push(id);
     }
-    const { text: role } = teamPing(ctx);
-    const mentions = ids.map(id => `<@${id}>`).join(' ');
+    const pings = await pingsFor(ctx, m.ping, teamDefault(ctx), null, ids);
     const where = m.location ? ` Where: ${m.location}` : '';
-    const everyone = ctx.settings.role_id === 'everyone';
     const msg = await post(channel, {
-      content: `${role}${m.title} starts ${ts(m.starts_at, 'R')}.${where} ${mentions}`.trim(),
-      allowed_mentions: { users: ids, roles: ctx.settings.role_id && !everyone ? [ctx.settings.role_id] : [], parse: everyone ? ['everyone'] : [] },
+      content: `${pings.text}${m.title} starts ${ts(m.starts_at, 'R')}.${where}`.trim(),
+      ...pings.allowed,
     });
     await remember(ctx, 'meeting_reminder', m.id, channel, msg.id);
     sent++;
@@ -653,7 +677,7 @@ async function reminders(ctx: Ctx) {
 // ---------------------------------------------------------------------------
 // Slash commands
 // ---------------------------------------------------------------------------
-const STRING = 3, USER = 6, CHANNEL = 7, ROLE = 8;
+const STRING = 3, USER = 6, CHANNEL = 7, ROLE = 8, MENTIONABLE = 9;
 const SUB = 1;
 
 const COMMANDS = [
@@ -667,6 +691,8 @@ const COMMANDS = [
         { type: STRING, name: 'due', description: 'When it is due, like 9/24, friday, or tomorrow' },
         { type: STRING, name: 'link', description: 'The Doc, Sheet, or Figma file it lives in' },
         { type: STRING, name: 'details', description: 'What done looks like' },
+        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'The owner', value: 'owner' }, { name: 'Everyone', value: 'everyone' }, { name: 'Nobody', value: 'none' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name: `${name} group`, value: `role:${value}` }))] },
+        { type: MENTIONABLE, name: 'person', description: 'Someone else to ping, or a server role' },
       ] },
       { type: SUB, name: 'list', description: 'See tasks', options: [
         { type: STRING, name: 'show', description: 'Which tasks', choices: [{ name: 'Open', value: 'open' }, { name: 'Mine', value: 'mine' }, { name: 'Done', value: 'done' }, { name: 'All', value: 'all' }] },
@@ -690,6 +716,8 @@ const COMMANDS = [
         { type: STRING, name: 'length', description: 'How long', choices: [{ name: '30 minutes', value: '30' }, { name: '1 hour', value: '60' }, { name: '1.5 hours', value: '90' }, { name: '2 hours', value: '120' }] },
         { type: STRING, name: 'where', description: 'Zoom link, Discord voice, or a room' },
         { type: STRING, name: 'agenda', description: 'What you will cover' },
+        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'Everyone', value: 'everyone' }, { name: 'Nobody', value: 'none' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name: `${name} group`, value: `role:${value}` }))] },
+        { type: MENTIONABLE, name: 'person', description: 'Someone else to ping, or a server role' },
       ] },
       { type: SUB, name: 'list', description: 'What is coming up' },
       { type: SUB, name: 'cancel', description: 'Cancel a meeting', options: [
@@ -746,6 +774,20 @@ function optionsOf(data: { options?: Opt[] }) {
 }
 
 const reply = (content: string, extra: Record<string, unknown> = {}) => ({ type: 4, data: { content, flags: 64, allowed_mentions: NO_PINGS, ...extra } });
+
+/** The ping list from a command's ping choice and person option. */
+function pingFromOptions(ctx: Ctx, data: Record<string, any>, get: (name: string) => string | undefined, fallback: string[]) {
+  const list: string[] = [];
+  const choice = get('ping');
+  if (choice) list.push(choice);
+  const person = get('person');
+  if (person) {
+    if (data.resolved?.roles?.[person]) list.push(`drole:${person}`);
+    else { const m = byDiscord(ctx, person); list.push(m ? `user:${m.user_id}` : `duser:${person}`); }
+  }
+  if (list.includes('none')) return ['none'];
+  return list.length ? list : fallback;
+}
 const publicReply = (payload: Record<string, unknown>) => ({ type: 4, data: { allowed_mentions: NO_PINGS, ...payload } });
 const LINK_FIRST = 'The dashboard does not know who you are yet. Run /link with your UMD email, then try again.';
 
@@ -838,7 +880,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       if (get('due')) { due = parseDate(String(get('due'))); if (!due) return reply('I could not read that date. Try 9/24, friday, or tomorrow.'); }
       let link = get('link') ? String(get('link')).trim() : null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
-      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, created_by: me.user_id }).select().single();
+      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, ping: pingFromOptions(ctx, data, get, ['owner']), created_by: me.user_id }).select().single();
       if (error || !row) return reply(`Could not add the task. ${error?.message || ''}`);
       await announceTask(ctx, row as Task, 'created', me);
       return reply(`Added ${title}${assignee ? ` for ${assignee.display_name}` : ''}.`);
@@ -885,7 +927,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       const starts = zonedToUtc(Number(date.slice(0, 4)), Number(date.slice(5, 7)), Number(date.slice(8, 10)), time.hh, time.mm);
       const minutes = Number(get('length') || 60);
       const ends = new Date(starts.getTime() + minutes * 60000);
-      const { data: row, error } = await ctx.admin.from('suits_meetings').insert({ title: String(get('title')).trim(), starts_at: starts.toISOString(), ends_at: ends.toISOString(), location: get('where') || null, agenda: get('agenda') || null, created_by: me.user_id }).select().single();
+      const { data: row, error } = await ctx.admin.from('suits_meetings').insert({ title: String(get('title')).trim(), starts_at: starts.toISOString(), ends_at: ends.toISOString(), location: get('where') || null, agenda: get('agenda') || null, ping: pingFromOptions(ctx, data, get, teamDefault(ctx)), created_by: me.user_id }).select().single();
       if (error || !row) return reply(`Could not schedule it. ${error?.message || ''}`);
       await announceMeeting(ctx, row as Meeting, 'created', me);
       return reply(`Scheduled ${row.title} for ${ts(row.starts_at, 'F')}.`);
@@ -1072,6 +1114,8 @@ Deno.serve(async (req) => {
   const ctx = await loadCtx();
   const me = byUser(ctx, user.id);
   if (!me) return json({ error: 'You are not on the team roster yet.' }, 403);
+  // Throwaway accounts from the site's own tests never reach the server
+  if (/^e2e\./i.test(me.email) && action !== 'status') return json({ posted: false, reason: 'test account' });
 
   try {
     if (action === 'status') {
