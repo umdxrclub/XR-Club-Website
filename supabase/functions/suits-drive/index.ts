@@ -372,18 +372,28 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization') || '';
   if (!authHeader.startsWith('Bearer ')) return json({ error: 'Not signed in' }, 401);
 
-  const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authHeader } } });
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
-  if (authError || !user || !TEAM_EMAIL.test(user.email || '')) return json({ error: 'Not signed in with a UMD account' }, 401);
-
-  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: member } = await admin.from('suits_team').select('display_name, role').eq('user_id', user.id).single();
-  if (!member) return json({ error: 'You are not on the team roster yet. Open the dashboard once to join.' }, 403);
-  const isManager = member.role === 'product_manager' || member.role === 'lead';
-
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'Invalid request' }, 400); }
   const action = String(body.action || '');
+
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+  // Who is asking: a signed in team member, or the Discord bot acting for one
+  let user: { id: string; email?: string };
+  if (authHeader.slice(7) === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') && body.as_user_id) {
+    const { data: row } = await admin.from('suits_team').select('user_id, email').eq('user_id', String(body.as_user_id)).single();
+    if (!row) return json({ error: 'Unknown team member' }, 403);
+    user = { id: row.user_id, email: row.email };
+  } else {
+    const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authHeader } } });
+    const { data: { user: authed }, error: authError } = await userClient.auth.getUser();
+    if (authError || !authed || !TEAM_EMAIL.test(authed.email || '')) return json({ error: 'Not signed in with a UMD account' }, 401);
+    user = { id: authed.id, email: authed.email };
+  }
+
+  const { data: member } = await admin.from('suits_team').select('display_name, role').eq('user_id', user.id).single();
+  if (!member) return json({ error: 'You are not on the team roster yet. Open the dashboard once to join.' }, 403);
+  const isManager = member.role === 'product_manager' || member.role === 'lead';
 
   // Service account
   let sa: ServiceAccount | null = null;

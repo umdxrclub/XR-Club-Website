@@ -159,7 +159,7 @@ function openMeetingMenu(host: HTMLElement, button: HTMLElement, m: Meeting) {
     if (act === 'edit') editMeeting(host, m);
     if (act === 'delete') {
       if (!(await confirmModal('Delete this meeting?', `"${m.title}" will be removed for everyone.`, 'Delete meeting'))) return;
-      await api.deleteMeeting(m.id);
+      await api.deleteMeeting(m.id, m);
       await refreshBadges();
       await render(host);
     }

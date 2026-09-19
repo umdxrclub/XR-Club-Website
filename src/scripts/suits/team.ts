@@ -43,9 +43,11 @@ export async function render(host: HTMLElement) {
           <button type="submit" class="st-btn st-btn--primary">Save</button>
         </div>
       </form>
+      <p class="st-muted" id="st-discord-status" hidden style="margin:0.9rem 0 0;"></p>
     </div>`;
 
   enhanceSelects(host);
+  void showDiscordStatus(host);
 
   host.querySelector<HTMLFormElement>('#st-profile-form')!.addEventListener('submit', async e => {
     e.preventDefault();
@@ -106,4 +108,21 @@ export async function render(host: HTMLElement) {
   }));
 
   void db;
+}
+
+/** One line under the profile: whether the bot is connected and whether this member is linked to it. */
+async function showDiscordStatus(host: HTMLElement) {
+  const el = host.querySelector<HTMLElement>('#st-discord-status');
+  if (!el) return;
+  try {
+    const s = await api.discord<{ configured: boolean; channel: string | null; linked: boolean; linkedAs: string | null }>('status');
+    if (!s.configured || !s.channel) {
+      if (isLead()) { el.textContent = 'The Discord bot is not connected yet. Invite it to the server and run /setup there.'; el.hidden = false; }
+      return;
+    }
+    el.textContent = s.linked
+      ? `The bot posts in #${s.channel} and knows you as @${s.linkedAs || 'you'} on Discord.`
+      : `The bot posts in #${s.channel}. Run /link with your UMD email there so it can ping you.`;
+    el.hidden = false;
+  } catch { /* nothing to show */ }
 }

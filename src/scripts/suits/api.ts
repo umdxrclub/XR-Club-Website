@@ -212,19 +212,24 @@ export const api = {
     return unwrap(await db.from('suits_meetings').select('*').order('starts_at'));
   },
   async createMeeting(m: Pick<Meeting, 'title' | 'starts_at' | 'ends_at' | 'location' | 'agenda'>): Promise<Meeting> {
-    return unwrap(await db.from('suits_meetings').insert({ ...m, created_by: state.me!.user_id }).select().single());
+    const row = unwrap(await db.from('suits_meetings').insert({ ...m, created_by: state.me!.user_id }).select().single());
+    notify('meeting', row.id, 'created');
+    return row;
   },
   async updateMeeting(id: string, m: Partial<Meeting>) {
     unwrap(await db.from('suits_meetings').update(m).eq('id', id));
+    notify('meeting', id, 'updated');
   },
-  async deleteMeeting(id: string) {
+  async deleteMeeting(id: string, snapshot?: Meeting) {
     unwrap(await db.from('suits_meetings').delete().eq('id', id));
+    notify('meeting', id, 'deleted', snapshot);
   },
   async rsvps(): Promise<Rsvp[]> {
     return unwrap(await db.from('suits_meeting_rsvps').select('meeting_id, user_id, response'));
   },
   async setRsvp(meetingId: string, response: Rsvp['response']) {
     unwrap(await db.from('suits_meeting_rsvps').upsert({ meeting_id: meetingId, user_id: state.me!.user_id, response, updated_at: new Date().toISOString() }));
+    notify('meeting', meetingId, 'rsvp');
   },
 
   // Tasks
@@ -232,13 +237,20 @@ export const api = {
     return unwrap(await db.from('suits_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at'));
   },
   async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'>): Promise<Task> {
-    return unwrap(await db.from('suits_tasks').insert({ ...t, created_by: state.me!.user_id }).select().single());
+    const row = unwrap(await db.from('suits_tasks').insert({ ...t, created_by: state.me!.user_id }).select().single());
+    notify('task', row.id, 'created');
+    return row;
   },
-  async updateTask(id: string, t: Partial<Task>) {
+  async updateTask(id: string, t: Partial<Task>, before?: Task) {
     unwrap(await db.from('suits_tasks').update({ ...t, updated_at: new Date().toISOString() }).eq('id', id));
+    const event = t.status === 'done' && before?.status !== 'done' ? 'completed'
+      : 'assignee_id' in t && t.assignee_id && t.assignee_id !== before?.assignee_id ? 'assigned'
+      : 'updated';
+    notify('task', id, event);
   },
-  async deleteTask(id: string) {
+  async deleteTask(id: string, snapshot?: Task) {
     unwrap(await db.from('suits_tasks').delete().eq('id', id));
+    notify('task', id, 'deleted', snapshot);
   },
 
   // Announcements
@@ -273,7 +285,8 @@ export const api = {
   async updateDocument(id: string, patch: Partial<Pick<TeamDocument, 'title' | 'role' | 'notes'>>) {
     unwrap(await db.from('suits_documents').update(patch).eq('id', id));
   },
-  async deleteDocument(id: string) {
+  async deleteDocument(id: string, snapshot?: TeamDocument) {
+    notify('document', id, 'deleted', snapshot);
     unwrap(await db.from('suits_documents').delete().eq('id', id));
   },
 
@@ -293,6 +306,11 @@ export const api = {
     return callFunction<T>('suits-drive', action, params);
   },
 };
+
+/** Tell the Discord bot. Never blocks the dashboard and never surfaces an error. */
+function notify(kind: 'task' | 'meeting' | 'document', id: string, event: string, snapshot?: unknown) {
+  void callFunction('suits-discord', 'announce', { kind, id, event, snapshot }).catch(() => { /* the bot may not be set up */ });
+}
 
 async function callFunction<T>(name: string, action: string, params: Record<string, unknown>): Promise<T> {
     const { data: { session } } = await db.auth.getSession();

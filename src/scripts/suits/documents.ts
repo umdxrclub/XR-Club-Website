@@ -314,7 +314,7 @@ async function removeDocument(host: HTMLElement, d: TeamDocument) {
   try {
     if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
     if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
-    await api.deleteDocument(d.id);
+    await api.deleteDocument(d.id, d);
     await refreshDocs(host);
   } catch (err) {
     toast((err as Error).message, 'danger');
@@ -370,7 +370,7 @@ function addDocument(host: HTMLElement) {
       close();
       toast('Added.');
       await refreshDocs(host);
-      void syncToDrive(host, created.id);
+      void syncToDrive(host, created.id, true);
     },
   });
 
@@ -435,13 +435,15 @@ function editDocument(host: HTMLElement, d: TeamDocument) {
 // ---------------------------------------------------------------------------
 // Drive
 // ---------------------------------------------------------------------------
-async function syncToDrive(host: HTMLElement, id: string) {
+async function syncToDrive(host: HTMLElement, id: string, announce = false) {
   try {
     const r = await api.drive<{ drive_status: string; error?: string }>('sync', { documentId: id });
     if (r.drive_status === 'error') toast(`Saved here, but Drive said: ${r.error}`, 'danger');
   } catch (err) {
     toast(`Saved here, but Drive could not be reached: ${(err as Error).message}`, 'danger');
   }
+  // Tell Discord once the Drive link exists, so the post can point at it
+  if (announce) void api.discord('announce', { kind: 'document', id, event: 'created' }).catch(() => { /* the bot may not be set up */ });
   await refreshDocs(host);
 }
 

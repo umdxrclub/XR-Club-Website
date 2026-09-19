@@ -108,7 +108,7 @@ export function bindRows(host: HTMLElement, tasks: Task[], after: () => Promise<
     const next: Task['status'] = t.status === 'todo' ? 'doing' : t.status === 'doing' ? 'done' : 'todo';
     b.dataset.status = next;
     try {
-      await api.updateTask(t.id, { status: next });
+      await api.updateTask(t.id, { status: next }, t);
       await refreshBadges();
       await after();
     } catch (err) {
@@ -156,7 +156,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
     cancelLabel: 'Cancel',
     onSubmit: async (form, close) => {
       if (!canEdit) {
-        if (canMove && existing) await api.updateTask(existing.id, { status: formValue(form, 'status') as Task['status'] });
+        if (canMove && existing) await api.updateTask(existing.id, { status: formValue(form, 'status') as Task['status'] }, existing);
         close();
         await refreshBadges();
         await done();
@@ -167,7 +167,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
       let link = formValue(form, 'link') || null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
       const payload = { title, section: formValue(form, 'section'), assignee_id: formValue(form, 'assignee') || null, due_date: formValue(form, 'due') || null, details: formValue(form, 'details') || null, link };
-      if (existing) await api.updateTask(existing.id, { ...payload, status: (formValue(form, 'status') as Task['status']) || existing.status });
+      if (existing) await api.updateTask(existing.id, { ...payload, status: (formValue(form, 'status') as Task['status']) || existing.status }, existing);
       else await api.createTask(payload);
       close();
       toast(existing ? 'Saved.' : 'Task created.');
@@ -180,7 +180,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
     if (ta && existing) ta.value = existing.details || '';
     document.querySelector('[data-task-delete]')?.addEventListener('click', async () => {
       if (!existing || !(await confirmModal('Delete this task?', `"${existing.title}" will be removed.`, 'Delete task'))) return;
-      await api.deleteTask(existing.id);
+      await api.deleteTask(existing.id, existing);
       document.querySelector('.st-modal [data-modal-cancel]')?.dispatchEvent(new Event('click'));
       await refreshBadges();
       await done();
