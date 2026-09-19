@@ -1,8 +1,8 @@
 // In page viewer for team documents: PDFs, images, video, audio, text, office
 // files, Google Docs and Drive files, Figma, YouTube, Loom, and a link card for
 // everything else.
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFDocumentLoadingTask } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFDocumentLoadingTask } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { db, type TeamDocument } from './api';
 import { esc } from './ui';
 

@@ -1,8 +1,8 @@
 // Documents: everything the team works from, as cards grouped by role. Anyone
 // can add a file or a link; each one is mirrored to the club's Google Drive
 // and anything placed in Drive shows up here too.
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { db, api, state, isManager, isLead, type TeamDocument } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';

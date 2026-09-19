@@ -1,7 +1,7 @@
 // The Proposal reader: both NASA PDFs, one page at a time, with the parts that
 // matter for the reader's chosen role marked on the page.
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy, type RenderTask } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy, type RenderTask } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { api, state } from './api';
 import { esc, select, enhanceSelects } from './ui';
 import { READER_DOCS, READER_ROLES, type DocKey, type Highlight } from './reader-content';
