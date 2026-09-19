@@ -47,7 +47,9 @@ function pagesFor(d: DocKey) {
 function getDoc(key: DocKey) {
   if (!docs.has(key)) {
     const file = READER_DOCS.find(d => d.key === key)!.file;
-    docs.set(key, getDocument({ url: `${state.base}${encodeURIComponent(file)}` }).promise);
+    const task = getDocument({ url: `${state.base}${encodeURIComponent(file)}`, disableRange: true, disableStream: true, disableAutoFetch: true }).promise;
+    task.catch(() => docs.delete(key));
+    docs.set(key, task);
   }
   return docs.get(key)!;
 }
@@ -277,7 +279,8 @@ async function show() {
   } catch (err) {
     if (seq !== renderSeq) return;
     loading.hidden = false;
-    loading.textContent = `Could not load the page: ${(err as Error).message}`;
+    loading.innerHTML = `<div class="st-reader__fail"><p>Could not load the page.</p><p class="st-muted">${esc((err as Error).message)}</p><div class="st-reader__fail-actions"><button type="button" class="st-btn st-btn--small st-btn--primary" data-reader-retry>Try again</button><a class="st-btn st-btn--small" href="${state.base}${encodeURIComponent(d.file)}" target="_blank" rel="noopener">Open the PDF</a></div></div>`;
+    loading.querySelector('[data-reader-retry]')?.addEventListener('click', () => { loading.textContent = 'Loading page'; void show(); });
   }
 }
 

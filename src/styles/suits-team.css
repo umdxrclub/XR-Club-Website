@@ -2166,6 +2166,22 @@
   background: #fff;
 }
 
+.st-reader__fail {
+  text-align: center;
+  padding: 1rem;
+}
+
+.st-reader__fail p {
+  margin: 0 0 0.4rem;
+}
+
+.st-reader__fail-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .st-reader__flip {
   width: 44px;
   height: 44px;

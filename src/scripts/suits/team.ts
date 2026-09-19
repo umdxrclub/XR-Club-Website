@@ -16,7 +16,6 @@ export async function render(host: HTMLElement) {
   host.innerHTML = `
     <div class="st-section">
       <h2 class="st-h1">Team</h2>
-      <p class="st-muted" style="margin:0 0 1rem;">${state.members.length} on the team. Each person picks their own proposal role.</p>
       <div class="st-roster">
         ${state.members.map(m => `
           <div class="st-member">

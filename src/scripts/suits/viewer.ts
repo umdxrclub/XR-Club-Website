@@ -107,7 +107,13 @@ async function renderFile(body: HTMLElement, d: TeamDocument, url: string) {
 
 async function renderPdf(body: HTMLElement, url: string) {
   pdfTask = getDocument({ url });
-  pdfDoc = await pdfTask.promise;
+  try {
+    pdfDoc = await pdfTask.promise;
+  } catch {
+    if (!overlay) return;
+    pdfTask = getDocument({ url, disableRange: true, disableStream: true });
+    pdfDoc = await pdfTask.promise;
+  }
   if (!overlay) return;
   const doc = pdfDoc;
   const first = await doc.getPage(1);
