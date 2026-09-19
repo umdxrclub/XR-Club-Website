@@ -866,7 +866,7 @@
 
 .st-member {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 230px 150px 96px;
+  grid-template-columns: 36px minmax(0, 1fr) 230px 150px;
   gap: 1rem;
   align-items: center;
   padding: 0.7rem 0.8rem;
@@ -912,18 +912,12 @@
   white-space: nowrap;
 }
 
-.st-member__joined {
-  font-size: 0.82rem;
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-
 .st-member__remove {
-  grid-column: 6;
+  grid-column: 5;
 }
 
 .st-member:has(.st-member__remove) {
-  grid-template-columns: 36px minmax(0, 1fr) 230px 150px 96px auto;
+  grid-template-columns: 36px minmax(0, 1fr) 230px 150px auto;
 }
 
 .st-member__role .st-dd,
@@ -3045,7 +3039,6 @@
 
   .st-member__role,
   .st-member__access,
-  .st-member__joined,
   .st-member__remove {
     grid-column: 2;
   }
@@ -3055,10 +3048,6 @@
   .st-member__access .st-dd,
   .st-member__access .st-dd__btn {
     width: 100%;
-  }
-
-  .st-member__joined {
-    margin-top: -0.15rem;
   }
 
   .st-member__remove {

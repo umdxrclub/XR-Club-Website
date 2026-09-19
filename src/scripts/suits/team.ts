@@ -1,7 +1,7 @@
 // Team: the roster with everyone's proposal role, your profile, and (for the
 // lead) who has product manager or lead access.
 import { db, api, state, isLead, type Role } from './api';
-import { esc, toast, confirmModal, avatarHtml, roleLabel, fmtDate, enhanceSelects } from './ui';
+import { esc, toast, confirmModal, avatarHtml, roleLabel, enhanceSelects } from './ui';
 import { READER_ROLES } from './reader-content';
 
 const roleName = (key: string | null) => READER_ROLES.find(r => r.key === key)?.name ?? '';
@@ -26,7 +26,6 @@ export async function render(host: HTMLElement) {
             </div>
             <div class="st-member__role">${canEditRole(m.user_id) ? roleSelect(m.user_id, m.proposal_role) : `<span class="st-member__pill">${esc(roleName(m.proposal_role)) || 'No role yet'}</span>`}</div>
             <div class="st-member__access">${isLead() && m.user_id !== me.user_id ? `<select class="st-select st-select--inline" data-role-for="${m.user_id}">${(['member', 'product_manager', 'lead'] as Role[]).map(r => `<option value="${r}"${m.role === r ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>` : `<span class="st-member__pill">${esc(roleLabel(m.role))}</span>`}</div>
-            <span class="st-member__joined">Joined ${esc(fmtDate(m.created_at, { month: 'short', day: 'numeric' }))}</span>
             ${isLead() && m.user_id !== me.user_id ? `<button type="button" class="st-btn st-btn--small st-btn--danger st-member__remove" data-remove="${m.user_id}">Remove</button>` : ''}
           </div>`).join('')}
       </div>
