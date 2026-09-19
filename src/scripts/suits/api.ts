@@ -213,7 +213,7 @@ export const api = {
   async meetings(): Promise<Meeting[]> {
     return unwrap(await db.from('suits_meetings').select('*').order('starts_at'));
   },
-  async createMeeting(m: Pick<Meeting, 'title' | 'starts_at' | 'ends_at' | 'location' | 'agenda' | 'ping'>): Promise<Meeting> {
+  async createMeeting(m: Pick<Meeting, 'title' | 'starts_at' | 'ends_at' | 'location' | 'agenda'>): Promise<Meeting> {
     const row = unwrap(await db.from('suits_meetings').insert({ ...m, created_by: state.me!.user_id }).select().single());
     notify('meeting', row.id, 'created');
     return row;
@@ -238,7 +238,7 @@ export const api = {
   async tasks(): Promise<Task[]> {
     return unwrap(await db.from('suits_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at'));
   },
-  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link' | 'ping'>): Promise<Task> {
+  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'>): Promise<Task> {
     const row = unwrap(await db.from('suits_tasks').insert({ ...t, created_by: state.me!.user_id }).select().single());
     notify('task', row.id, 'created');
     return row;

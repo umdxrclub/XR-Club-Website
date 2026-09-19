@@ -1134,9 +1134,76 @@
   outline: 0;
 }
 
-.st-tlist--tight .st-trow {
-  padding: 0.55rem 0.6rem;
-  margin: 0 -0.6rem;
+.st-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.st-overview__more {
+  margin: 0.9rem 0 0 0.8rem;
+}
+
+.st-uplist {
+  display: grid;
+  gap: 2px;
+}
+
+.st-uprow {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.st-uprow:hover,
+.st-uprow:focus-visible {
+  background: var(--fill);
+  outline: 0;
+}
+
+.st-uprow__when {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  line-height: 1.3;
+}
+
+.st-uprow__weekday {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.st-uprow__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.st-uprow__title {
+  font-size: 1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-uprow__sub {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  margin-top: 0.1rem;
 }
 
 .st-trow__main {
@@ -1533,6 +1600,20 @@
   .st-trow {
     padding: 0.65rem 0.6rem;
     gap: 0.7rem;
+  }
+
+  .st-overview {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .st-uprow {
+    grid-template-columns: 64px minmax(0, 1fr);
+    padding: 0.65rem 0.6rem;
+  }
+
+  .st-uprow__title {
+    white-space: normal;
   }
 
   .st-trow__title {
@@ -2051,10 +2132,45 @@
   color: var(--surface);
 }
 
-.st-pings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+.st-datepick__btn {
+  width: 100%;
+}
+
+.st-datepick__btn .st-dd__label.is-empty {
+  color: var(--ink-2);
+}
+
+.st-datepick__pop {
+  z-index: 960;
+  width: 292px;
+  padding: 0.9rem 0.9rem 0.7rem;
+}
+
+.st-month--pop {
+  position: static;
+}
+
+.st-month--pop .st-month__cell {
+  font-size: 0.9rem;
+}
+
+.st-datepick__clear {
+  margin-top: 0.4rem;
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  padding: 0.5rem;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.st-datepick__clear:hover {
+  background: var(--fill);
+  color: var(--ink);
 }
 
 .st-chip--small {

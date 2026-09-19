@@ -51,7 +51,7 @@ const SECTIONS: Array<{ key: string; name: string }> = [
   { key: 'budget', name: 'Funding and budget' },
   { key: 'general', name: 'General' },
 ];
-const sectionName = (key: string) => SECTIONS.find(s => s.key === key)?.name || key;
+const sectionName = (key: string) => ROLES[key] || SECTIONS.find(s => s.key === key)?.name || key;
 
 const ROLES: Record<string, string> = {
   team: 'Everyone',
@@ -258,11 +258,9 @@ async function resolveDiscordId(ctx: Ctx, m: Member) {
   }
 }
 
-/** How to write a member in a message: a mention if we know their Discord, otherwise their name. */
-async function nameOf(ctx: Ctx, m: Member | null) {
-  if (!m) return 'nobody yet';
-  const id = await resolveDiscordId(ctx, m);
-  return id ? `<@${id}>` : m.display_name;
+/** How to write a member in a message: always their name, never a mention. The bot does not ping. */
+async function nameOf(_ctx: Ctx, m: Member | null) {
+  return m ? m.display_name : 'nobody yet';
 }
 
 /** What the server wide setting means as a ping list. */
@@ -277,25 +275,9 @@ function teamDefault(ctx: Ctx): string[] {
  * Entries: everyone, owner, none, role:<proposal role>, user:<user id>,
  * duser:<discord user id>, drole:<discord role id>.
  */
-async function pingsFor(ctx: Ctx, list: string[] | null | undefined, fallback: string[], owner: Member | null, extraUsers: string[] = []) {
-  const entries = list && list.length ? list : fallback;
-  const users = new Set<string>(extraUsers);
-  const roles = new Set<string>();
-  let everyone = false;
-  for (const e of entries) {
-    if (e === 'none') { users.clear(); roles.clear(); everyone = false; break; }
-    if (e === 'everyone') everyone = true;
-    else if (e === 'owner') { const id = owner ? await resolveDiscordId(ctx, owner) : null; if (id) users.add(id); }
-    else if (e.startsWith('role:')) { for (const m of ctx.members.filter(m => m.proposal_role === e.slice(5))) { const id = await resolveDiscordId(ctx, m); if (id) users.add(id); } }
-    else if (e.startsWith('user:')) { const m = byUser(ctx, e.slice(5)); const id = m ? await resolveDiscordId(ctx, m) : null; if (id) users.add(id); }
-    else if (e.startsWith('duser:')) users.add(e.slice(6));
-    else if (e.startsWith('drole:')) roles.add(e.slice(6));
-  }
-  const parts = [everyone ? '@everyone' : '', ...[...users].map(id => `<@${id}>`), ...[...roles].map(id => `<@&${id}>`)].filter(Boolean);
-  return {
-    text: parts.length ? parts.join(' ') + ' ' : '',
-    allowed: { allowed_mentions: { users: [...users], roles: [...roles], parse: everyone ? ['everyone'] : [] } },
-  };
+// The bot never pings anyone. Whatever was chosen, a post carries no mention.
+async function pingsFor(_ctx: Ctx, _list: string[] | null | undefined, _fallback: string[], _owner: Member | null, _extraUsers: string[] = []) {
+  return { text: '', allowed: { allowed_mentions: NO_PINGS } };
 }
 
 /**
@@ -358,26 +340,23 @@ async function announceTask(ctx: Ctx, t: Task, event: string, actor: Member | nu
   const channel = ctx.settings.channel_id;
   if (!channel) return;
   const owner = byUser(ctx, t.assignee_id);
-  const ownerId = owner ? await resolveDiscordId(ctx, owner) : null;
   const who = actor ? actor.display_name : 'Someone';
   const embed = await taskEmbed(ctx, t);
   const saved = await remembered(ctx, 'task', t.id);
-  const pingOwner = ownerId ? { allowed_mentions: { users: [ownerId] } } : {};
 
   const ownerName = owner ? owner.display_name : 'nobody yet';
   const dueText = t.due_date ? `, due ${tsDate(t.due_date)}` : '';
 
   if (event === 'created') {
-    const pings = await pingsFor(ctx, [...(t.ping || []), 'owner'], ['owner'], owner);
-    const content = `${pings.text}${who} added a task${owner ? ` for ${ownerName}` : ''}.`;
-    const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t), ...pings.allowed });
+    const content = `${who} added a task${owner ? ` for ${ownerName}` : ''}.`;
+    const msg = await post(channel, { content, embeds: [embed], components: taskButtons(t) });
     await remember(ctx, 'task', t.id, channel, msg.id);
     await logActivity(ctx, `${who} added the task ${t.title} in ${sectionName(t.section)}. Owner: ${ownerName}${dueText}.`, true);
     return;
   }
   if (saved) await edit(saved.channel_id, saved.message_id, { embeds: [embed], components: taskButtons(t) }).catch(() => {});
-  if (event === 'assigned' && ownerId) {
-    await post(channel, { content: `<@${ownerId}>, ${who} handed you ${t.title}.`, ...pingOwner });
+  if (event === 'assigned' && owner) {
+    await post(channel, { content: `${who} handed ${t.title} to ${ownerName}.` });
     await logActivity(ctx, `${who} handed ${t.title} to ${ownerName}.`, true);
   } else if (event === 'completed') {
     await post(channel, { content: `${who} finished ${t.title}.` });
@@ -580,8 +559,7 @@ async function driveActivity(ctx: Ctx) {
     const email = (u?.emailAddress || '').toLowerCase();
     if (email === saEmail) return 'dashboard';
     const m = email ? byEmail(ctx, email) : null;
-    if (m?.discord_id) return `<@${m.discord_id}>`;
-    return u?.displayName || m?.display_name || 'Someone';
+    return m?.display_name || u?.displayName || 'Someone';
   };
 
   const changes: Change[] = [];
@@ -637,18 +615,10 @@ async function reminders(ctx: Ctx) {
   for (const m of (soon || []) as Meeting[]) {
     if (await remembered(ctx, 'meeting_reminder', m.id)) continue;
     const answers = await rsvps(ctx, m.id);
-    const ids: string[] = [];
-    for (const a of answers) {
-      if (a.response === 'no') continue;
-      const mem = byUser(ctx, a.user_id);
-      const id = mem ? await resolveDiscordId(ctx, mem) : null;
-      if (id) ids.push(id);
-    }
-    const pings = await pingsFor(ctx, m.ping, teamDefault(ctx), null, ids);
-    const where = m.location ? ` Where: ${m.location}` : '';
+    const coming = answers.filter(a => a.response !== 'no').map(a => byUser(ctx, a.user_id)?.display_name).filter(Boolean);
+    const where = m.location ? ` Where: ${m.location}.` : '';
     const msg = await post(channel, {
-      content: `${pings.text}${m.title} starts ${ts(m.starts_at, 'R')}.${where}`.trim(),
-      ...pings.allowed,
+      content: `${m.title} starts ${ts(m.starts_at, 'R')}.${where}${coming.length ? ` Coming: ${coming.join(', ')}.` : ''}`.trim(),
     });
     await remember(ctx, 'meeting_reminder', m.id, channel, msg.id);
     sent++;
@@ -662,11 +632,7 @@ async function reminders(ctx: Ctx) {
     for (const t of (due || []) as Task[]) {
       if (await remembered(ctx, 'task_due', t.id)) continue;
       const owner = byUser(ctx, t.assignee_id);
-      const id = owner ? await resolveDiscordId(ctx, owner) : null;
-      const msg = await post(channel, {
-        content: `${id ? `<@${id}>, ` : ''}${t.title} is due today. ${SITE}tasks/`,
-        allowed_mentions: { users: id ? [id] : [] },
-      });
+      const msg = await post(channel, { content: `${t.title} is due today${owner ? ` (${owner.display_name})` : ''}. ${SITE}tasks/` });
       await remember(ctx, 'task_due', t.id, channel, msg.id);
       sent++;
     }
@@ -686,12 +652,11 @@ const COMMANDS = [
     options: [
       { type: SUB, name: 'new', description: 'Add a task', options: [
         { type: STRING, name: 'title', description: 'What needs doing', required: true },
-        { type: STRING, name: 'section', description: 'Proposal section', required: true, choices: SECTIONS.map(s => ({ name: s.name, value: s.key })) },
+        { type: STRING, name: 'group', description: 'Everyone, or one of the six roles', required: true, choices: Object.entries(ROLES).map(([value, name]) => ({ name, value })) },
         { type: USER, name: 'owner', description: 'Who is doing it' },
         { type: STRING, name: 'due', description: 'When it is due, like 9/24, friday, or tomorrow' },
         { type: STRING, name: 'link', description: 'The Doc, Sheet, or Figma file it lives in' },
         { type: STRING, name: 'details', description: 'What done looks like' },
-        { type: STRING, name: 'ping', description: 'Who gets pinged, besides the owner', choices: [{ name: 'Everyone', value: 'everyone' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name, value: `role:${value}` }))] },
       ] },
       { type: SUB, name: 'list', description: 'See tasks', options: [
         { type: STRING, name: 'show', description: 'Which tasks', choices: [{ name: 'Open', value: 'open' }, { name: 'Mine', value: 'mine' }, { name: 'Done', value: 'done' }, { name: 'All', value: 'all' }] },
@@ -715,7 +680,6 @@ const COMMANDS = [
         { type: STRING, name: 'length', description: 'How long', choices: [{ name: '30 minutes', value: '30' }, { name: '1 hour', value: '60' }, { name: '1.5 hours', value: '90' }, { name: '2 hours', value: '120' }] },
         { type: STRING, name: 'where', description: 'Zoom link, Discord voice, or a room' },
         { type: STRING, name: 'agenda', description: 'What you will cover' },
-        { type: STRING, name: 'ping', description: 'Who gets pinged', choices: [{ name: 'Everyone', value: 'everyone' }, ...Object.entries(ROLES).filter(([k]) => k !== 'team').map(([value, name]) => ({ name, value: `role:${value}` }))] },
       ] },
       { type: SUB, name: 'list', description: 'What is coming up' },
       { type: SUB, name: 'cancel', description: 'Cancel a meeting', options: [
@@ -750,7 +714,6 @@ const COMMANDS = [
     options: [
       { type: CHANNEL, name: 'announcements', description: 'Tasks, meetings, and reminders go here', required: true, channel_types: [0] },
       { type: CHANNEL, name: 'log', description: 'Drive and document activity goes here', channel_types: [0] },
-      { type: ROLE, name: 'role', description: 'The role to ping for meetings' },
     ],
   },
 ];
@@ -799,7 +762,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       '**You and the team**',
       '/link connects your Discord to the dashboard. /team shows everyone. /dashboard opens the site.',
       '',
-      'When a task or meeting is added on the dashboard, it shows up here and the people it concerns get pinged. Changes in the Drive folder are posted in the log channel.',
+      'When a task or meeting is added on the dashboard, it shows up here. Everything that changes, on the site or in the Drive folder, is written to the activity channel with the date and time. The bot never pings anyone.',
     ].join('\n'));
   }
 
@@ -820,12 +783,11 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       guild_id: body.guild_id,
       channel_id: get('announcements') || ctx.settings.channel_id,
       log_channel_id: get('log') || get('announcements') || ctx.settings.log_channel_id,
-      role_id: get('role') || ctx.settings.role_id || 'everyone',
     };
     await ctx.saveSettings(s);
     ctx.settings = s;
-    await post(s.channel_id!, { content: 'The SUITS dashboard is connected. Tasks, meetings, and reminders will show up here. Run /link with your UMD email so the bot can ping you.' }).catch(() => {});
-    return reply(`Set. Announcements go to <#${s.channel_id}>${s.log_channel_id && s.log_channel_id !== s.channel_id ? `, Drive activity goes to <#${s.log_channel_id}>` : ''}${s.role_id === 'everyone' ? ', and meetings ping everyone' : s.role_id ? `, and meetings ping <@&${s.role_id}>` : ''}.`);
+    await post(s.channel_id!, { content: 'The SUITS dashboard is connected. Tasks, meetings, and reminders will show up here. Run /link with your UMD email once so the bot knows who you are.' }).catch(() => {});
+    return reply(`Set. Announcements go to <#${s.channel_id}>${s.log_channel_id && s.log_channel_id !== s.channel_id ? ` and activity goes to <#${s.log_channel_id}>` : ''}.`);
   }
 
   if (name === 'team') {
@@ -859,18 +821,18 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
     if (sub === 'new') {
       if (!isManager(me)) return reply('Only the lead or a product manager can add tasks. Ask them, or use the dashboard if you have that access.');
       const title = String(get('title') || '').trim();
-      const section = String(get('section') || 'general');
+      const section = String(get('group') || 'team');
       let assignee: Member | null = null;
       const ownerId = get('owner');
       if (ownerId) {
         assignee = byDiscord(ctx, ownerId);
-        if (!assignee) return reply(`<@${ownerId}> has not linked their Discord to the dashboard yet. They can run /link.`);
+        if (!assignee) return reply(`${data.resolved?.users?.[ownerId]?.username || "That person"} has not linked their Discord to the dashboard yet. They can run /link.`);
       }
       let due: string | null = null;
       if (get('due')) { due = parseDate(String(get('due'))); if (!due) return reply('I could not read that date. Try 9/24, friday, or tomorrow.'); }
       let link = get('link') ? String(get('link')).trim() : null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
-      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, ping: pingFromOptions(ctx, data, get, []), created_by: me.user_id }).select().single();
+      const { data: row, error } = await ctx.admin.from('suits_tasks').insert({ title, section, assignee_id: assignee?.user_id || null, due_date: due, details: get('details') || null, link, created_by: me.user_id }).select().single();
       if (error || !row) return reply(`Could not add the task. ${error?.message || ''}`);
       await announceTask(ctx, row as Task, 'created', me);
       return reply(`Added ${title}${assignee ? ` for ${assignee.display_name}` : ''}.`);
@@ -887,7 +849,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       }
       if (!isManager(me)) return reply('Only the lead or a product manager can reassign tasks.');
       const owner = byDiscord(ctx, String(get('owner')));
-      if (!owner) return reply(`<@${get('owner')}> has not linked their Discord to the dashboard yet. They can run /link.`);
+      if (!owner) return reply(`${data.resolved?.users?.[String(get('owner'))]?.username || "That person"} has not linked their Discord to the dashboard yet. They can run /link.`);
       await ctx.admin.from('suits_tasks').update({ assignee_id: owner.user_id, updated_at: new Date().toISOString() }).eq('id', task.id);
       await announceTask(ctx, { ...task, assignee_id: owner.user_id }, 'assigned', me);
       return reply(`${task.title} is now with ${owner.display_name}.`);
@@ -917,7 +879,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       const starts = zonedToUtc(Number(date.slice(0, 4)), Number(date.slice(5, 7)), Number(date.slice(8, 10)), time.hh, time.mm);
       const minutes = Number(get('length') || 60);
       const ends = new Date(starts.getTime() + minutes * 60000);
-      const { data: row, error } = await ctx.admin.from('suits_meetings').insert({ title: String(get('title')).trim(), starts_at: starts.toISOString(), ends_at: ends.toISOString(), location: get('where') || null, agenda: get('agenda') || null, ping: pingFromOptions(ctx, data, get, teamDefault(ctx)), created_by: me.user_id }).select().single();
+      const { data: row, error } = await ctx.admin.from('suits_meetings').insert({ title: String(get('title')).trim(), starts_at: starts.toISOString(), ends_at: ends.toISOString(), location: get('where') || null, agenda: get('agenda') || null, created_by: me.user_id }).select().single();
       if (error || !row) return reply(`Could not schedule it. ${error?.message || ''}`);
       await announceMeeting(ctx, row as Meeting, 'created', me);
       return reply(`Scheduled ${row.title} for ${ts(row.starts_at, 'F')}.`);

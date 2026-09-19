@@ -39,8 +39,19 @@ export const SECTIONS: ProposalSection[] = [
   { key: 'general', name: 'General', group: 'Submission' },
 ];
 
+/** Tasks belong to a group: everyone, or one of the six roles. */
+export const GROUPS: Array<{ key: string; name: string }> = [
+  { key: 'team', name: 'Everyone' },
+  { key: 'technical', name: 'Technical Design and Systems' },
+  { key: 'uiux', name: 'UI/UX Design' },
+  { key: 'aiml', name: 'AI/ML' },
+  { key: 'hitl', name: 'HITL / Human Factors' },
+  { key: 'pm', name: 'Project Management' },
+  { key: 'engagement', name: 'Community and Industry Engagement' },
+];
+
 export function sectionName(key: string) {
-  return SECTIONS.find(s => s.key === key)?.name ?? key;
+  return GROUPS.find(g => g.key === key)?.name ?? SECTIONS.find(s => s.key === key)?.name ?? key;
 }
 
 export interface ChecklistItem {

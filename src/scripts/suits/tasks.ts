@@ -2,13 +2,13 @@
 // tap the row for details. Managers add tasks from the line at the top.
 import { api, state, isManager, memberName, type Task } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtDate, initials } from './ui';
-import { SECTIONS, sectionName } from './content';
+import { GROUPS, sectionName } from './content';
+import { datePicker, bindPickers } from './pickers';
 import { refreshBadges } from './index';
-import { pingPicker, bindPingPicker, parsePing } from './pings';
 
 type Filter = 'all' | 'mine' | 'open' | 'done';
 let filter: Filter = 'all';
-let quickSection = 'setup';
+let quickSection = 'team';
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
@@ -33,12 +33,12 @@ export async function render(host: HTMLElement) {
       <form class="st-quickadd" id="st-quickadd" novalidate>
         <span class="st-tcheck" data-status="todo" aria-hidden="true"></span>
         <input class="st-quickadd__input" name="title" placeholder="Add a task and press Enter" autocomplete="off" />
-        <div class="st-quickadd__section">${select('quick_section', SECTIONS.map(s => ({ value: s.key, label: s.name, selected: s.key === quickSection })), 'class="st-select st-select--inline"')}</div>
+        <div class="st-quickadd__section">${select('quick_section', GROUPS.map(s => ({ value: s.key, label: s.name, selected: s.key === quickSection })), 'class="st-select st-select--inline"')}</div>
       </form>` : ''}
     </div>
     ${tasks.length === 0 ? `<p class="st-group__empty">No tasks yet.${isManager() ? ' Add the first one above.' : ''}</p>` : ''}
-    ${SECTIONS.map(s => {
-      const all = tasks.filter(t => t.section === s.key);
+    ${GROUPS.map(s => {
+      const all = tasks.filter(t => (GROUPS.some(g => g.key === t.section) ? t.section : 'team') === s.key);
       const shown = visible.filter(t => t.section === s.key);
       if (!all.length || !shown.length) return '';
       const done = all.filter(t => t.status === 'done').length;
@@ -67,7 +67,7 @@ export async function render(host: HTMLElement) {
       if (!title) return;
       inputEl.disabled = true;
       try {
-        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null, ping: [] });
+        await api.createTask({ title, section: quickSection, assignee_id: null, due_date: null, details: null, link: null });
         await refreshBadges();
         await render(host);
         host.querySelector<HTMLInputElement>('#st-quickadd input')?.focus();
@@ -134,20 +134,19 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
     body: canEdit ? `
       ${field('title', 'Task', input('title', `type="text" required value="${esc(existing?.title || '')}" placeholder="Draft the abstract"`))}
       <div class="st-row">
-        ${field('section', 'Proposal section', select('section', SECTIONS.map(s => ({ value: s.key, label: s.name, selected: (existing?.section || quickSection) === s.key }))))}
+        ${field('section', 'Group', select('section', GROUPS.map(s => ({ value: s.key, label: s.name, selected: (existing?.section || quickSection) === s.key }))))}
         ${field('assignee', 'Owner', select('assignee', [{ value: '', label: 'Unassigned', selected: !existing?.assignee_id }, ...state.members.map(m => ({ value: m.user_id, label: m.display_name, selected: existing?.assignee_id === m.user_id }))]))}
       </div>
       <div class="st-row">
-        ${field('due', 'Due', input('due', `type="date" value="${existing?.due_date || ''}"`))}
+        ${field('due', 'Due', datePicker('due', existing?.due_date || '', { placeholder: 'No date', clearable: true }))}
         ${existing ? field('status', 'Status', select('status', [{ value: 'todo', label: 'To do', selected: existing.status === 'todo' }, { value: 'doing', label: 'In progress', selected: existing.status === 'doing' }, { value: 'done', label: 'Done', selected: existing.status === 'done' }])) : ''}
       </div>
       ${field('details', 'Details', textarea('details', 'rows="3" placeholder="What done looks like"'))}
       ${field('link', 'Link', input('link', `type="url" value="${esc(existing?.link || '')}" placeholder="The Doc, Sheet, or Figma file this task lives in"`))}
-      ${pingPicker(existing?.ping || [], { owner: true })}
       ${existing ? `<p style="margin:0.25rem 0 0;"><button type="button" class="st-btn st-btn--small st-btn--danger" data-task-delete>Delete task</button></p>` : ''}`
     : `
       <dl class="st-kv" style="margin:0 0 1rem;">
-        <dt>Section</dt><dd>${esc(sectionName(existing!.section))}</dd>
+        <dt>Group</dt><dd>${esc(sectionName(existing!.section))}</dd>
         <dt>Owner</dt><dd>${esc(existing!.assignee_id ? memberName(existing!.assignee_id) : 'Unassigned')}</dd>
         <dt>Due</dt><dd>${esc(existing!.due_date ? fmtDate(existing!.due_date + 'T12:00:00') : 'No date')}</dd>
         ${existing!.details ? `<dt>Details</dt><dd style="white-space:pre-wrap;">${esc(existing!.details)}</dd>` : ''}
@@ -168,7 +167,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
       if (!title) throw new Error('Give the task a name.');
       let link = formValue(form, 'link') || null;
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
-      const payload = { title, section: formValue(form, 'section'), assignee_id: formValue(form, 'assignee') || null, due_date: formValue(form, 'due') || null, details: formValue(form, 'details') || null, link, ping: parsePing(formValue(form, 'ping')) };
+      const payload = { title, section: formValue(form, 'section'), assignee_id: formValue(form, 'assignee') || null, due_date: formValue(form, 'due') || null, details: formValue(form, 'details') || null, link };
       if (existing) await api.updateTask(existing.id, { ...payload, status: (formValue(form, 'status') as Task['status']) || existing.status }, existing);
       else await api.createTask(payload);
       close();
@@ -180,7 +179,7 @@ function editTask(host: HTMLElement, existing: Task | null, after?: () => Promis
   setTimeout(() => {
     const ta = document.querySelector<HTMLTextAreaElement>('#f-details');
     if (ta && existing) ta.value = existing.details || '';
-    bindPingPicker(document.querySelector('.st-modal') || document);
+    bindPickers(document.querySelector('.st-modal') || document);
     document.querySelector('[data-task-delete]')?.addEventListener('click', async () => {
       if (!existing || !(await confirmModal('Delete this task?', `"${existing.title}" will be removed.`, 'Delete task'))) return;
       await api.deleteTask(existing.id, existing);

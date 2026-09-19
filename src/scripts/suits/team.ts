@@ -122,7 +122,7 @@ async function showDiscordStatus(host: HTMLElement) {
     }
     el.textContent = s.linked
       ? `The bot posts in #${s.channel} and knows you as @${s.linkedAs || 'you'} on Discord.`
-      : `The bot posts in #${s.channel}. Run /link with your UMD email there so it can ping you.`;
+      : `The bot posts in #${s.channel}. Run /link with your UMD email there so it knows who you are.`;
     el.hidden = false;
   } catch { /* nothing to show */ }
 }

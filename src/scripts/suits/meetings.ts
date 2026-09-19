@@ -4,7 +4,7 @@
 import { api, state, isManager, memberName, type Meeting, type Rsvp } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, formValue, fmtTime, dateKey, initials } from './ui';
 import { refreshBadges } from './index';
-import { pingPicker, bindPingPicker, parsePing } from './pings';
+import { datePicker, timePicker, bindPickers } from './pickers';
 
 let monthCursor: Date | null = null;
 let dayFilter: string | null = null;
@@ -178,8 +178,8 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
     body: `
       ${field('title', 'Title', input('title', `type="text" required value="${esc(existing?.title || '')}" placeholder="Team meeting"`))}
       <div class="st-row">
-        ${field('date', 'Date', input('date', `type="date" required value="${dateKey(start)}"`))}
-        ${field('start', 'Starts', input('start', `type="time" required value="${hm(start)}"`))}
+        ${field('date', 'Date', datePicker('date', dateKey(start)))}
+        ${field('start', 'Starts', timePicker('start', hm(start)))}
       </div>
       <div class="st-field">
         <span class="st-label">How long</span>
@@ -188,7 +188,7 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
       </div>
       ${field('location', 'Where', input('location', `type="text" value="${esc(existing?.location || '')}" placeholder="Zoom link, Discord voice, or a room"`))}
       ${field('agenda', 'Agenda', textarea('agenda', 'rows="4" placeholder="What we will cover"'))}
-      ${pingPicker(existing?.ping || ['everyone'])}`,
+`,
     submitLabel: existing ? 'Save changes' : 'Schedule',
     onSubmit: async (form, close) => {
       const title = formValue(form, 'title');
@@ -198,7 +198,7 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
       if (isNaN(s.getTime())) throw new Error('Check the date and time.');
       const mins = Number(formValue(form, 'minutes')) || 60;
       const e = new Date(s.getTime() + mins * 60000);
-      const payload = { title, starts_at: s.toISOString(), ends_at: e.toISOString(), location: formValue(form, 'location') || null, agenda: formValue(form, 'agenda') || null, ping: parsePing(formValue(form, 'ping')) };
+      const payload = { title, starts_at: s.toISOString(), ends_at: e.toISOString(), location: formValue(form, 'location') || null, agenda: formValue(form, 'agenda') || null };
       if (existing) await api.updateMeeting(existing.id, payload);
       else await api.createMeeting(payload);
       close();
@@ -212,7 +212,7 @@ function editMeeting(host: HTMLElement, existing: Meeting | null) {
   setTimeout(() => {
     const ta = document.querySelector<HTMLTextAreaElement>('#f-agenda');
     if (ta && existing) ta.value = existing.agenda || '';
-    bindPingPicker(document.querySelector('.st-modal') || document);
+    bindPickers(document.querySelector('.st-modal') || document);
     const seg = document.getElementById('st-duration');
     seg?.addEventListener('click', e => {
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-minutes]');
