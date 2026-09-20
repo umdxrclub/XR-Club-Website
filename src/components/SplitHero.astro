@@ -3,8 +3,9 @@ const base = import.meta.env.BASE_URL;
 ---
 <!--
   Night City behind the home page. A poster frame paints first, so the page is
-  never blank, and a short muted loop fades in over it once the browser can
-  play it. The script picks the smallest file that fits the screen.
+  never blank, and a short muted loop at the source's own resolution fades in
+  over it once the browser can play it. The script picks the file that fits
+  the screen.
 -->
 <section class="hero" data-hero data-video-base={`${base}video/`}>
   <picture>
@@ -81,8 +82,9 @@ const base = import.meta.env.BASE_URL;
 
     const base = hero.dataset.videoBase || '/video/';
     const portrait = matchMedia('(max-width: 767px) and (orientation: portrait)').matches;
-    const small = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) <= 1300;
-    const file = portrait ? 'night-city-portrait.mp4' : small ? 'night-city-720.mp4' : 'night-city-1080.mp4';
+    // Full 4K on large or sharp screens, 1080p on the rest, a full height portrait crop on phones
+    const sharp = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) >= 2000;
+    const file = portrait ? 'night-city-portrait.mp4' : sharp ? 'night-city-4k.mp4' : 'night-city-1080.mp4';
 
     const listeners = new AbortController();
     const { signal } = listeners;
