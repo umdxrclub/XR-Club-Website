@@ -9,7 +9,8 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="XR Club">
-  <link slot="head" rel="preload" as="image" href={`${base}Images/homescreen-2560.webp`} imagesrcset={`${base}Images/homescreen-1600.webp 1600w, ${base}Images/homescreen-2560.webp 2560w, ${base}Images/homescreen-3840.webp 3840w`} imagesizes="max(100vw, 200vh)" fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" href={`${base}video/night-city-poster.webp`} media="(min-width: 768px), (orientation: landscape)" fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" href={`${base}video/night-city-poster-portrait.webp`} media="(max-width: 767px) and (orientation: portrait)" fetchpriority="high" />
   <link slot="head" rel="preload" as="image" href={`${base}Images/bubble-1400.webp`} imagesrcset={`${base}Images/bubble-1000.webp 1000w, ${base}Images/bubble-1400.webp 1400w, ${base}Images/bubble-2130.webp 2130w`} imagesizes="62vh" fetchpriority="high" />
   <Header />
 
@@ -150,10 +151,9 @@ const base = import.meta.env.BASE_URL;
   /* A quiet, fitted logo on phones, including phone-sized landscape windows. */
   @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) {
     .hero-section {
-      background: #08090d;
+      background: #06080c;
     }
 
-    .hero-section :global([data-hero]),
     .hero-section :global([data-butterfly-scene]) {
       display: none;
     }
