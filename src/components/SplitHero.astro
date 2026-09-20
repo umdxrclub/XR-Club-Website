@@ -9,11 +9,11 @@ const base = import.meta.env.BASE_URL;
 -->
 <section class="hero" data-hero data-video-base={`${base}video/`}>
   <picture>
-    <source media="(max-width: 767px) and (orientation: portrait)" srcset={`${base}video/night-city-poster-portrait.webp`} />
+    <source media="(max-width: 767px) and (orientation: portrait)" srcset={`${base}video/night-city-poster-portrait-v2.webp`} />
     <img
       class="hero__bg"
       data-hero-background
-      src={`${base}video/night-city-poster.webp`}
+      src={`${base}video/night-city-poster-v2.webp`}
       alt=""
       fetchpriority="high"
       decoding="async"
@@ -84,7 +84,7 @@ const base = import.meta.env.BASE_URL;
     const portrait = matchMedia('(max-width: 767px) and (orientation: portrait)').matches;
     // Full 4K on large or sharp screens, 1080p on the rest, a full height portrait crop on phones
     const sharp = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) >= 2000;
-    const file = portrait ? 'night-city-portrait.mp4' : sharp ? 'night-city-4k.mp4' : 'night-city-1080.mp4';
+    const file = portrait ? 'night-city-portrait-v2.mp4' : sharp ? 'night-city-4k-v2.mp4' : 'night-city-1080-v2.mp4';
 
     const listeners = new AbortController();
     const { signal } = listeners;
