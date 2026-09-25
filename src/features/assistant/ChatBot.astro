@@ -1,0 +1,224 @@
+<div class="chat" data-chat>
+  <button class="chat__trigger" type="button" data-chat-toggle aria-expanded="false" aria-controls="chat-panel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span data-chat-trigger-label>Ask XR Club</span>
+  </button>
+
+  <div class="chat__panel" id="chat-panel" data-chat-window role="dialog" aria-label="XR Club assistant" aria-modal="false">
+    <div class="chat__panel-top" title="Drag to move">
+      <div><span class="chat__panel-title" data-chat-title>Ask XR Club</span><span class="chat__panel-subtitle">A little guidance, whenever you need it.</span></div>
+      <button class="chat__panel-close" data-chat-close aria-label="Close chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="chat__feed" data-chat-msgs role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+    <form class="chat__input-row" data-chat-form>
+      <input class="chat__field" data-chat-input type="text" aria-label="Your message" placeholder="Ask a question" autocomplete="off" maxlength="600" />
+      <button class="chat__submit" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M12 19V5m-5 5 5-5 5 5"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  import { dragSurface } from './dragSurface';
+  import { assistantDocks } from './assistantDocks';
+  import { answerClubQuestion, MAX_QUESTION_LENGTH, type GuideReply } from './clubGuide';
+
+  let isOpen = false;
+  type ChatMessage = GuideReply & { role: 'user' | 'bot' };
+  const history: ChatMessage[] = [];
+  const historyLimit = 40;
+  let ac: AbortController | null = null;
+
+  function bindChat() {
+    ac?.abort();
+    ac = new AbortController();
+    const { signal } = ac;
+
+    const chatEl = document.querySelector('[data-chat]') as HTMLElement;
+    const panel = document.querySelector('[data-chat-window]') as HTMLElement;
+    const feed = document.querySelector('[data-chat-msgs]') as HTMLElement;
+    const form = document.querySelector('[data-chat-form]') as HTMLFormElement;
+    const input = document.querySelector('[data-chat-input]') as HTMLInputElement;
+    const toggles = Array.from(document.querySelectorAll('[data-chat-toggle]'));
+    if (!chatEl || !panel || !feed || !form || !input) return;
+    input.maxLength = MAX_QUESTION_LENGTH;
+    let opener: HTMLElement | null = null;
+    const docking = dragSurface(panel, panel.querySelector<HTMLElement>('.chat__panel-top')!, signal, box => assistantDocks(box, false));
+    const home = document.querySelector<HTMLElement>('[data-home-waves]');
+    let arranging = false;
+    const layoutProperties = ['--chat-photo-width', '--chat-photo-height', '--chat-photo-top', '--chat-photo-right', '--chat-home-scale', '--chat-model-width'];
+    function clearChatLayout() {
+      delete panel.dataset.chatLayout;
+      for (const property of layoutProperties) home?.style.removeProperty(property);
+    }
+    function arrangeChat() {
+      if (!isOpen || signal.aborted || arranging || panel.hasAttribute('data-dragging')) return;
+      arranging = true;
+      clearChatLayout();
+      const spaces = assistantDocks(panel.getBoundingClientRect(), false);
+      if (home && !spaces.some(space => (space.width || 0) >= 220 && (space.height || 0) >= 180)) {
+        const photo = home.querySelector<HTMLElement>('[data-home-carousel]');
+        const statement = home.querySelector<HTMLElement>('.home-statement-block');
+        const header = document.querySelector('[data-header]')?.getBoundingClientRect();
+        const brand = document.querySelector('.site-header__brand')?.getBoundingClientRect();
+        const margin = Math.max(16, Math.min(brand?.left || 24, 64));
+        const viewportWidth = document.documentElement.clientWidth || innerWidth;
+        const top = (header?.bottom || 0) + 12;
+        const photoBox = photo?.getBoundingClientRect();
+        const photoWidth = Math.min(128, Math.max(64, viewportWidth - margin * 2 - 220 - 36));
+        const ratio = photoBox && photoBox.width > 0 ? photoBox.height / photoBox.width : 2 / 3;
+        const block = statement?.getBoundingClientRect();
+        // Preserve the Create baseline. On short screens, the words and
+        // funding button scale toward that baseline to reserve a readable row.
+        const scale = block ? Math.max(.4, Math.min(1, (block.bottom - top - 156) / block.height)) : 1;
+        home.style.setProperty('--chat-photo-width', `${photoWidth}px`);
+        home.style.setProperty('--chat-photo-height', `${photoWidth * ratio}px`);
+        home.style.setProperty('--chat-photo-top', `${top}px`);
+        home.style.setProperty('--chat-photo-right', `${margin}px`);
+        home.style.setProperty('--chat-home-scale', String(scale));
+        home.style.setProperty('--chat-model-width', scale < .85 ? '80px' : '122px');
+        panel.dataset.chatLayout = 'compact';
+      }
+      docking.dock();
+      arranging = false;
+    }
+    window.addEventListener('resize', arrangeChat, { signal, passive: true });
+    home?.querySelector('[data-home-gallery]')?.addEventListener('xr:carousel-layout', arrangeChat, { signal });
+    document.fonts.ready.then(() => { if (!signal.aborted) arrangeChat(); });
+
+    if (feed.children.length === 0 && history.length === 0) {
+      addMsg(feed, { text: 'Ask about a project, equipment, funding, or getting involved with XR Club.', role: 'bot' });
+    } else if (feed.children.length === 0) {
+      history.forEach(message => addMsg(feed, message));
+    }
+
+    function syncOpenState() {
+      panel.classList.toggle('chat__panel--open', isOpen);
+      for (const btn of toggles) btn.setAttribute('aria-expanded', String(isOpen));
+      if (!isOpen) clearChatLayout();
+      window.dispatchEvent(new CustomEvent('xr:chat-state', { detail: isOpen }));
+      if (isOpen) arrangeChat();
+    }
+
+    syncOpenState();
+
+    function openChat() {
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      isOpen = true;
+      syncOpenState();
+      input.focus({ preventScroll: true });
+    }
+
+    function closeChat() {
+      isOpen = false;
+      syncOpenState();
+      if (opener?.isConnected && !opener.inert) opener.focus({ preventScroll: true });
+    }
+
+    for (const btn of toggles) {
+      btn.addEventListener('click', () => {
+        if (isOpen) closeChat(); else openChat();
+      }, { signal });
+    }
+
+    document.querySelector('[data-chat-close]')?.addEventListener('click', () => closeChat(), { signal });
+    document.addEventListener('keydown', event => { if (isOpen && event.key === 'Escape') { event.preventDefault(); closeChat(); } }, { signal });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value.slice(0, MAX_QUESTION_LENGTH).trim();
+      if (!text) return;
+      const question: ChatMessage = { role: 'user', text };
+      const reply: ChatMessage = { ...answerClubQuestion(text), role: 'bot' };
+      addMsg(feed, question);
+      input.value = '';
+      addMsg(feed, reply);
+      history.push(question, reply);
+      if (history.length > historyLimit) history.splice(0, history.length - historyLimit);
+    }, { signal });
+  }
+
+  function addMsg(feed: HTMLElement, message: ChatMessage) {
+    const el = document.createElement('div');
+    el.className = `chat__bubble chat__bubble--${message.role}`;
+    const text = document.createElement('p');
+    text.textContent = message.text;
+    el.append(text);
+    for (const link of message.links || []) {
+      if (!/^(https:\/\/|mailto:)/i.test(link.href)) continue;
+      const paragraph = document.createElement('p');
+      const anchor = document.createElement('a');
+      anchor.className = 'chat__a'; anchor.href = link.href; anchor.textContent = link.label;
+      if (link.href.startsWith('https://')) { anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; }
+      paragraph.append(anchor); el.append(paragraph);
+    }
+    feed.appendChild(el);
+    while (feed.children.length > historyLimit) feed.firstElementChild?.remove();
+    feed.scrollTop = feed.scrollHeight;
+    return el;
+  }
+
+  document.addEventListener('astro:page-load', bindChat);
+  document.addEventListener('astro:before-swap', () => ac?.abort());
+</script>
+
+<style>
+  .chat { position: fixed; bottom: calc(14px + var(--site-footer-height, 0px)); left: max(5vw, calc((100% - 1280px) / 2)); z-index: 1200; font-family: var(--font-site); }
+  .chat__trigger { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 10px 16px; color: #edede9; background: #202322; border: 1px solid #ffffff1c; border-radius: 12px; font-size: 13px; font-weight: 500; letter-spacing: -.02em; }
+  :global(body:has([data-home-assistant])) .chat__trigger { display: none; }
+  .chat__trigger:hover { background: #2b302e; }
+  .chat :is(button,summary,a):focus-visible { outline: 1px solid #c5d6ca; outline-offset: 3px; }
+  .chat__panel { position: absolute; bottom: 56px; left: 0; display: none; flex-direction: column; width: 342px; height: min(418px, calc(100dvh - var(--site-footer-height, 0px) - 150px)); background: #eeede9; border: 1px solid #ffffff70; border-radius: 20px; color: #232625; box-shadow: 0 8px 24px #00000014; overflow: hidden; }
+  :global(body:has([data-home-assistant])) .chat__panel { bottom: 0; }
+  .chat__panel--open { display: flex; animation: chat-enter 220ms cubic-bezier(.2,.75,.25,1); }
+  .chat__panel[data-docked] { bottom: auto !important; }
+  @keyframes chat-enter { from { opacity: 0; } to { opacity: 1; } }
+  .chat__panel-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 23px 20px 20px; flex-shrink: 0; cursor: grab; touch-action: none; user-select: none; }
+  .chat__panel[data-dragging] .chat__panel-top { cursor: grabbing; }
+  .chat__panel-title { display: block; font: 450 23px/1.2 var(--font-site); letter-spacing: -.035em; }
+  .chat__panel-subtitle { display: block; margin-top: 7px; font-size: 10px; color: #737775; letter-spacing: -.01em; }
+  .chat__panel-close { display: grid; place-items: center; width: 36px; height: 36px; margin: -7px -8px 0 0; color: #737775; }
+  .chat__panel-close svg { stroke-width: 1.25; }
+  .chat__panel-close:hover { color: #151816; }
+  .chat__feed { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b8bcb9 transparent; padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 19px; }
+  .chat__feed :global(.chat__bubble) { max-width: 100%; font-size: 14px; line-height: 1.7; font-weight: 400; letter-spacing: -.012em; overflow-wrap: anywhere; }
+  .chat__feed :global(.chat__bubble p) { margin: 0; white-space: pre-line; }
+  .chat__feed :global(.chat__bubble--bot) { color: #474e49; align-self: flex-start; }
+  .chat__feed :global(.chat__bubble--user) { max-width: 90%; align-self: flex-end; color: #222a25; background: #dedfd9; padding: 10px 14px; border-radius: 14px 14px 4px 14px; }
+  .chat__input-row { display: flex; align-items: center; gap: 8px; margin: 0 16px 16px; padding: 5px 6px 5px 14px; border: 1px solid #c6cbc6; border-radius: 12px; flex-shrink: 0; background: #f8f8f4; }
+  .chat__field { min-width: 0; flex: 1; min-height: 36px; padding: 0; color: #252c27; font: 14px var(--font-site); background: none; border: 0; outline: none; }
+  .chat__field::placeholder { color: #828782; }
+  .chat__input-row:focus-within { border-color: #8b958d; }
+  .chat__field:focus-visible { outline: none; }
+  .chat__submit { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; color: #eeede9; border-radius: 9px; background: #303a33; }
+  .chat__submit:hover { background: #46534a; }
+  .chat__feed :global(.chat__a) { color: #244931; text-decoration: underline; text-underline-offset: 3px; }
+  .chat__panel[data-chat-compact] .chat__panel-top { padding: 14px 14px 10px; gap: 8px; }
+  .chat__panel[data-chat-compact] .chat__panel-title { font-size: 20px; }
+  .chat__panel[data-chat-compact] .chat__panel-subtitle { display: none; }
+  .chat__panel[data-chat-compact] .chat__panel-close { width: 30px; height: 30px; margin: -4px -4px 0 0; }
+  .chat__panel[data-chat-compact] .chat__feed { padding: 4px 14px 12px; gap: 12px; }
+  .chat__panel[data-chat-compact] .chat__feed :global(.chat__bubble) { font-size: 13px; line-height: 1.5; }
+  .chat__panel[data-chat-compact] .chat__input-row { margin: 0 10px 10px; padding-left: 10px; gap: 4px; }
+  .chat__panel[data-chat-tight] .chat__panel-top { padding-block: 9px 5px; }
+  .chat__panel[data-chat-tight] .chat__panel-title { font-size: 18px; }
+  .chat__panel[data-chat-tight] .chat__feed { padding-bottom: 8px; }
+  :global(body:has(.chat__panel--open[data-chat-layout='compact']) .home-gallery:not([data-flight]) .home-gallery__carousel) {
+    left: auto !important; right: var(--chat-photo-right); top: var(--chat-photo-top) !important;
+    width: var(--chat-photo-width) !important; height: var(--chat-photo-height) !important;
+  }
+  :global(body:has(.chat__panel--open[data-chat-layout='compact']) .home-statement-block) { scale: var(--chat-home-scale, 1); transform-origin: right bottom; }
+  :global(body:has(.chat__panel--open[data-chat-layout='compact']) .home-assistant) { width: var(--chat-model-width, 122px); }
+  @media(max-width:900px) { .chat { left: 32px; } }
+  @media(max-width:640px) {
+    .chat { left: 24px; }
+    .chat__panel { position: fixed; left: 16px; bottom: calc(var(--site-footer-height, 0px) + 10px) !important; width: min(342px, calc(100vw - 32px)); height: min(418px, calc(100dvh - var(--site-footer-height, 0px) - 152px)); border-radius: 18px; }
+    .chat__field { font-size: 16px; }
+  }
+  @media(prefers-reduced-motion:reduce) { .chat__panel--open { animation: none; } }
+</style>

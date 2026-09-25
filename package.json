@@ -1,26 +1,26 @@
 {
-  "name": "xr-club-website",
-  "type": "module",
+  "name": "xr-labs-website",
   "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
+    "check": "astro check",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "node scripts/test-story.mjs && node scripts/test-equipment-cat.mjs"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.0",
-    "@fontsource/exo-2": "^5.2.8",
-    "@fontsource/orbitron": "^5.2.8",
-    "@supabase/supabase-js": "^2.96.0",
-    "@types/three": "^0.184.0",
-    "astro": "^5.16.11",
-    "gsap": "^3.14.2",
-    "jsqr": "^1.4.0",
-    "pdfjs-dist": "^6.3.289",
-    "three": "^0.184.0"
+    "astro": "7.3.5",
+    "three": "0.184.0"
   },
   "devDependencies": {
-    "qrcode": "^1.5.4",
-    "sharp": "^0.34.5"
+    "@astrojs/check": "0.9.10",
+    "@types/three": "0.184.0",
+    "sharp": "0.35.4",
+    "typescript": "5.9.3"
   }
 }

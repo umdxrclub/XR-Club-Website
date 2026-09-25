@@ -1,0 +1,98 @@
+---
+import { Image } from 'astro:assets';
+import PartnerCollage from './PartnerCollage.astro';
+import ScrollTitle from '../../components/ScrollTitle.astro';
+import FolderButtonShape from '../../components/FolderButtonShape.astro';
+import type { ClubStoryBeat } from '../../data/clubStory';
+import { cloudPhotos, photoContours } from './cloudPhotos';
+interface Props { chapter: ClubStoryBeat; }
+const { chapter } = Astro.props;
+const photos = cloudPhotos[chapter.id];
+const birdSprite = `${import.meta.env.BASE_URL}scenes/sky/bird-flight.webp`;
+---
+<div class="cloud-photo-story" data-cloud-photo-story={chapter.id} data-photo-layout={chapter.layout} data-composition={chapter.id}>
+  <div class="cloud-photo-story__birds" aria-hidden="true">
+    {[30, 24, 19].map((size, index) => <span class="cloud-photo-story__bird" data-story-bird
+      style={`--bird-size:${size}px;--bird-facing:${chapter.layout === 'right' ? -1 : 1};--bird-delay:${index * -.21}s;`}>
+      <span style={`background-image:url('${birdSprite}')`}></span>
+    </span>)}
+  </div>
+  <div class="cloud-photo-story__content">
+    <h2 class="cloud-photo-story__title" data-story-heading data-cloud-photo-title>
+      {chapter.title.map(line => <span><ScrollTitle>{line}</ScrollTitle></span>)}
+    </h2>
+    <div class="cloud-photo-story__copy" data-story-reveal>
+      {chapter.lead && <p class="cloud-photo-story__lead">{chapter.lead}</p>}
+      {chapter.description && <p class="cloud-photo-story__description">{chapter.description}</p>}
+      {chapter.id === 'sponsors' && <a class="cloud-photo-story__contact" data-story-contact href="mailto:umd.xr.club@gmail.com?subject=XR%20Club%20collaboration" tabindex="-1">
+        <FolderButtonShape shortTab /><span>Contact us</span>
+      </a>}
+    </div>
+  </div>
+  <div class="cloud-photo-story__collage" data-cloud-collage>
+    {photos.map((photo, index) => (
+      <div class="cloud-photo-story__folder" data-cloud-photo-folder={index} data-photo-contour={photoContours[photo.shape]} data-photo-ratio={photo.image.width / photo.image.height}
+        style={`--photo-position:${photo.position ?? '50% 50%'};--photo-ratio:${photo.image.width / photo.image.height}`}>
+
+        <div class="cloud-photo-story__front" data-cloud-photo-front><div class="cloud-photo-story__crop">
+          <Image src={photo.image} alt={photo.alt} width={Math.min(photo.image.width, 1600)}
+            widths={[480, 800, 1200, 1600].filter(w => w < photo.image.width).concat(Math.min(photo.image.width, 1920))}
+            sizes="(max-width: 640px) 90vw, 38vw" format="webp" quality={92} loading="lazy" decoding="async" />
+        </div>
+        </div>
+      </div>
+    ))}
+  </div>
+  {chapter.id === 'sponsors' && <PartnerCollage />}
+</div>
+<style>
+  .cloud-photo-story { position: relative; padding-top: 42px; }
+  .cloud-photo-story__content { position: absolute; z-index: 3; left: 0; top: 44px; width: 44%; display: block; pointer-events: none; }
+  .cloud-photo-story__collage { position: relative; width: 100%; height: 620px; }
+  .cloud-photo-story__folder { position: absolute; transform-origin: 50% 50%; visibility: hidden; filter: drop-shadow(0 10px 12px rgb(8 33 70 / .18)); }
+  .cloud-photo-story__front { position: absolute; inset: 0; }
+  .cloud-photo-story__crop { position: absolute; inset: 0; overflow: hidden; }
+  .cloud-photo-story__crop img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: var(--photo-position); }
+  .cloud-photo-story__title { margin: 0; font-family: var(--font-title); font-size: clamp(46px, 5.8vw, 94px); font-weight: 600; line-height: .98; letter-spacing: -.025em; color: #fff7e8; transform-origin: 65% 50%; text-shadow: 0 2px 2px #08294dab, 0 6px 16px #12396666; }
+  .cloud-photo-story__title > span { display: block; white-space: nowrap; }
+  .cloud-photo-story__copy { position: relative; margin-top: 20px; max-width: none; }
+  .cloud-photo-story__description, .cloud-photo-story__lead { margin: 0; color: #fff; font-size: clamp(17px, min(1.65vw, 2.75svh), 25px); line-height: 1.4; letter-spacing: -.018em; text-wrap: pretty; }
+  .cloud-photo-story__lead { font-weight: 600; margin-bottom: 18px; font-size: clamp(18px, min(1.7vw, 3svh), 28px); }
+  [data-photo-layout='right'] .cloud-photo-story__content { left: 53%; top: 44px; width: 46%; }
+  [data-composition='history'] .cloud-photo-story__content { top: 42px; left: 0; width: 45%; }
+  [data-composition='community'] .cloud-photo-story__title { font-size: clamp(46px, 5.4vw, 90px); }
+  [data-composition='sponsors'] .cloud-photo-story__content { display: block; left: 53%; top: 44px; width: 46%; }
+  [data-composition='sponsors'] .cloud-photo-story__copy { margin-top: 22px; }
+  [data-composition='sponsors'] .cloud-photo-story__collage { min-height: 0; }
+  [data-composition='history'] .cloud-photo-story__lead { margin-bottom: 12px; }
+  [data-composition='sponsors'] .cloud-photo-story__title { font-size: clamp(44px, 5vw, 84px); }
+  .cloud-photo-story__birds { position: absolute; z-index: 2; top: 0; left: 0; right: 0; height: 42px; pointer-events: none; }
+  .cloud-photo-story__bird { position: absolute; width: var(--bird-size); height: var(--bird-size); }
+  .cloud-photo-story__bird > span { display: block; width: 100%; height: 100%; background-repeat: no-repeat; background-size: calc(var(--bird-size) * 16) var(--bird-size); transform: scaleX(var(--bird-facing)); animation: collage-bird-flap .72s steps(16) infinite; animation-delay: var(--bird-delay); }
+  :global([data-story-chapter][aria-hidden='true']) .cloud-photo-story__bird > span { animation-play-state: paused; }
+  @keyframes collage-bird-flap { to { background-position-x: calc(var(--bird-size) * -16); } }
+  .cloud-photo-story__contact { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-top: 25px; min-height: 54px; padding: 16px 32px; color: #20252d; font: 600 18px/1 var(--font-site); text-shadow: none; text-decoration: none; pointer-events: auto; --folder-button-fill: #f5f3ed; transition: transform 180ms ease; }
+  .cloud-photo-story__contact :global(.folder-button-shape) { filter: drop-shadow(0 2px 3px rgb(8 33 70 / .22)) drop-shadow(0 9px 16px rgb(8 33 70 / .20)); }
+  .cloud-photo-story__contact span { position: relative; }
+  .cloud-photo-story__contact:hover { --folder-button-fill: #fff; transform: translateY(-2px); }
+  .cloud-photo-story__contact:focus-visible { outline: 3px solid #173c68; outline-offset: 6px; border-radius: 9px; }
+  @media (min-width: 641px) and (max-width: 900px) {
+    .cloud-photo-story__title, [data-composition='community'] .cloud-photo-story__title, [data-composition='sponsors'] .cloud-photo-story__title { font-size: 4.5vw; }
+    .cloud-photo-story__description { font-size: 18px; }
+    [data-composition='history'] .cloud-photo-story__content { top: 42px; }
+    .cloud-photo-story__description { font-size: 16px; }
+    .cloud-photo-story__lead { font-size: 18px; }
+  }
+  @media (max-width: 640px) {
+    .cloud-photo-story { display: flex; flex-direction: column; gap: 28px; padding-top: 54px; }
+    .cloud-photo-story__content, [data-photo-layout='right'] .cloud-photo-story__content, [data-composition='sponsors'] .cloud-photo-story__content { display: contents; }
+    .cloud-photo-story__title, [data-composition='community'] .cloud-photo-story__title, [data-composition='sponsors'] .cloud-photo-story__title { order: 0; font-size: clamp(36px, 9.7vw, 62px); }
+    .cloud-photo-story__collage { order: 1; width: 100%; flex: none; }
+    [data-composition='sponsors'] .cloud-photo-story__collage { min-height: 0; }
+    .cloud-photo-story__copy, [data-composition='sponsors'] .cloud-photo-story__copy { order: 2; margin-top: 0; max-width: none; }
+    .cloud-photo-story__description { font-size: 20px; }
+    .cloud-photo-story__lead { font-size: 23px; margin-bottom: 12px; }
+    .cloud-photo-story__contact { margin-top: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cloud-photo-story__folder, .cloud-photo-story__front { transition: none; } .cloud-photo-story__bird > span { animation: none; } .cloud-photo-story__contact { transition: none; } .cloud-photo-story__contact:hover { transform: none; } }
+</style>

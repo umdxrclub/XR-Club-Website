@@ -1,0 +1,92 @@
+---
+import { clubRecognition } from '../../data/clubStory';
+const base = import.meta.env.BASE_URL;
+const marks = [null, 'mit-reality-hack', 'nasa', 'nasa', 'amazon'] as const;
+---
+<ul class="recognition" aria-label="Club recognition" role="list">
+  {clubRecognition.map((item, index) => (
+    <li class="recognition__item">
+      <span class="recognition__mark" data-brand={marks[index] ?? 'award'} aria-hidden="true">
+        {marks[index] ? (
+          <img src={base + 'brand/recognition/' + marks[index] + '.' + (marks[index] === 'nasa' ? 'svg' : 'png')} alt="" width={marks[index] === 'amazon' ? 520 : marks[index] === 'nasa' ? 110 : 280} height={marks[index] === 'amazon' ? 174 : marks[index] === 'nasa' ? 92 : 242} decoding="async" />
+        ) : (
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8h16v10c0 8-3.5 12-8 12s-8-4-8-12V8Z" />
+            <path d="M16 12h-5v5c0 5 3 8 7 8m14-13h5v5c0 5-3 8-7 8M24 30v9m-7 1h14" />
+          </svg>
+        )}
+      </span>
+      <h3 class="recognition__achievement">{item}</h3>
+    </li>
+  ))}
+</ul>
+<style>
+  .recognition {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 48px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: #202d38;
+    text-shadow: none;
+  }
+  .recognition__item { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 24px; }
+  .recognition__mark { display: flex; align-items: center; justify-content: flex-start; width: 100%; height: 52px; flex-shrink: 0; }
+  .recognition__mark img { display: block; width: auto; max-width: 100%; height: 100%; min-height: 0; max-height: 100%; object-fit: contain; object-position: left center; }
+  .recognition__mark svg { width: 46px; height: 46px; }
+  .recognition__mark[data-brand='mit-reality-hack'] img { width: 60px; filter: brightness(0); opacity: .86; }
+  .recognition__mark[data-brand='nasa'] img { width: 58px; }
+  .recognition__mark[data-brand='amazon'] img { width: 112px; height: auto; }
+  .recognition__achievement { max-width: 14em; margin: 0; font-family: var(--font-site); font-size: clamp(15px, 1.35vw, 21px); font-weight: 450; line-height: 1.35; letter-spacing: -.018em; text-wrap: pretty; text-shadow: none; }
+  @media (max-width: 1100px) {
+    .recognition { gap: 20px; }
+    .recognition__item { gap: 18px; }
+    .recognition__mark { height: 44px; }
+    .recognition__mark[data-brand='mit-reality-hack'] img { width: 51px; }
+    .recognition__mark[data-brand='nasa'] img { width: 52px; }
+    .recognition__mark[data-brand='amazon'] img { width: 100px; }
+    .recognition__achievement { font-size: 15px; }
+  }
+  @media (max-width: 640px) and (orientation: portrait) {
+    .recognition { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .recognition__item { display: grid; grid-template-columns: 60px minmax(0, 1fr); align-items: center; gap: 22px; min-height: 48px; }
+    .recognition__mark { justify-content: center; height: 42px; }
+    .recognition__mark img { object-position: center; }
+    .recognition__mark svg { width: 36px; height: 36px; }
+    .recognition__mark[data-brand='mit-reality-hack'] img { width: 46px; }
+    .recognition__mark[data-brand='nasa'] img { width: 48px; }
+    .recognition__mark[data-brand='amazon'] img { width: 60px; }
+    .recognition__achievement { max-width: none; font-size: 15px; line-height: 1.3; }
+  }
+  @media (max-width: 640px) and (orientation: portrait) and (max-height: 660px) {
+    .recognition { gap: 10px; }
+    .recognition__item { grid-template-columns: 52px minmax(0, 1fr); gap: 16px; min-height: 34px; }
+    .recognition__mark { height: 30px; }
+    .recognition__mark svg { width: 29px; height: 29px; }
+    .recognition__mark[data-brand='mit-reality-hack'] img { width: 34px; }
+    .recognition__mark[data-brand='nasa'] img { width: 36px; }
+    .recognition__mark[data-brand='amazon'] img { width: 52px; }
+    .recognition__achievement { font-size: 13px; line-height: 1.25; }
+  }
+  @media (max-height: 540px) and (orientation: landscape) {
+    .recognition { gap: 18px; }
+    .recognition__item { gap: 12px; }
+    .recognition__mark { height: 34px; }
+    .recognition__mark svg { width: 32px; height: 32px; }
+    .recognition__mark[data-brand='mit-reality-hack'] img { width: 39px; }
+    .recognition__mark[data-brand='nasa'] img { width: 40px; }
+    .recognition__mark[data-brand='amazon'] img { width: 82px; }
+    .recognition__achievement { font-size: 13px; line-height: 1.25; }
+  }
+  @media (max-height: 380px) and (orientation: landscape) {
+    .recognition { gap: 12px; }
+    .recognition__item { gap: 6px; }
+    .recognition__mark { height: 22px; }
+    .recognition__mark svg { width: 22px; height: 22px; }
+    .recognition__mark[data-brand='mit-reality-hack'] img { width: 26px; }
+    .recognition__mark[data-brand='nasa'] img { width: 26px; }
+    .recognition__mark[data-brand='amazon'] img { width: 60px; }
+    .recognition__achievement { font-size: 10px; line-height: 1.2; }
+  }
+</style>

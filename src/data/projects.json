@@ -1,0 +1,246 @@
+[
+  {
+    "name": "Meta Reality Labs - Project ARIA",
+    "summary": "We are working with Meta Reality Labs and Professor Ming Lin to study what everyday social interactions can tell us about a person's emotions. Using Meta ARIA Gen 2 research glasses, we record the world from the wearer's point of view. We look at how other people respond to them, rather than relying on body measurements or asking the wearer to describe how they feel. The focus is on the social context around the wearer and how it changes during an interaction.\n\nThe team is building a dataset of these interactions and developing computer vision and machine learning models to study the patterns. We use Meta's Project Aria tools and Machine Perception Services to process the recordings. The work brings together data collection, careful analysis, and model testing. It is an ongoing research project, with the aim of sharing a dataset that other researchers can use.",
+    "tier": "Advanced",
+    "equipment": "Meta ARIA Gen 2 Wearables",
+    "estimated_completion": "1 year",
+    "people": [
+      "Russell Mehta",
+      "Saunak Roy",
+      "Chanakya Maddineni",
+      "Mohan Vamsi",
+      "Javin Ahuja",
+      "Suchismit Ghosh"
+    ],
+    "contact_name": "Russell Mehta",
+    "contact_email": "rmehta27@umd.edu",
+    "website": "https://www.projectaria.com/"
+  },
+  {
+    "name": "The Rosetta Engine - BCI",
+    "summary": "The Rosetta Engine explores how brain activity could become a way to communicate ideas visually. We use the Emotiv EPOC X headset to record neural signals and study how they change in response to different stimuli. Early tests have focused on telling those responses apart. The larger goal is to investigate whether a system could turn aspects of a person's thinking into visual output. The longer term aim is to show the steps in a thought process as they happen, beyond spoken language.\n\nThis work is still in its early research stage. With guidance from Elia Shahbazi, an NIH researcher and UMD HCIL faculty member, the team studies brain computer interfaces, signal processing, and neural decoding. Members review existing research, work with recorded signals, and test possible approaches. Each experiment helps us understand what the data can support and what still needs more study.",
+    "tier": "Advanced",
+    "equipment": "Emotiv Epoc X (BCI)",
+    "estimated_completion": "1 year",
+    "people": [
+      "Russell Mehta",
+      "Tamanna Jindal",
+      "Abir Modak",
+      "Ritesh Thipparthi"
+    ],
+    "contact_name": "Russell Mehta",
+    "contact_email": "rmehta27@umd.edu",
+    "website": null
+  },
+  {
+    "name": "Doublepoint - Tactura",
+    "summary": "Tactura explores how a smartwatch could help people who use ASL communicate through speech. In partnership with Doublepoint, we are developing a set of hand and wrist gestures that correspond to sounds. Motion sensors in the watch capture those movements, and the team works on recognizing them accurately. The design draws on how sign language breaks gestures into smaller parts. This connects accessibility research with wearable technology that people can use without carrying a separate communication device.\n\nWe currently use the Samsung Galaxy Watch 7 and Doublepoint's TouchSDK, with plans to move to the Doublepoint Dev Kit. The project is in the research and experimentation stage, supported by HCIL mentorship. We are working through gesture choices and the steps needed to turn sensor data into speech. The aim is to make the gestures practical to learn while keeping the system useful for communication.",
+    "tier": "Intermediate",
+    "equipment": "Doublepoint Dev Kit, Samsung Galaxy Watch 7",
+    "estimated_completion": "1 year",
+    "people": [
+      "Pallavi Kothapalli",
+      "Dhruv Hegde",
+      "Amit Reich"
+    ],
+    "contact_name": "Pallavi Kothapalli",
+    "contact_email": "kpallavi@umd.edu",
+    "website": "https://www.doublepoint.com/"
+  },
+  {
+    "name": "Niantic - Niantic Spatial",
+    "summary": "We are working with Niantic to explore its Spatial SDK and build an AR experience for smartphones. These tools let digital content relate to a real location and stay connected to the space around it. The team is looking for a useful idea that makes good use of those capabilities, rather than starting with a fixed concept. The aim is to connect an interaction to its surroundings so the location has a real purpose in the experience.\n\nThe work will use Unity and C#. Members can help explore the SDK, try different interactions, and develop a prototype around the direction the team chooses. There is room to shape both what the experience does and how people use it in a physical space. Prior experience with Unity or C# is needed so the team can focus on experimenting with the spatial tools and building the experience.",
+    "tier": "Gateway",
+    "equipment": "Smartphone, Quest 3",
+    "estimated_completion": "December 2026",
+    "people": [
+      "Julian Bauer",
+      "Arindam Tripathi",
+      "Avelyne Tran",
+      "Dvij Raicha",
+      "Jason Chen",
+      "Jayden Jung"
+    ],
+    "contact_name": "Julian Bauer, Arindam Tripathi",
+    "contact_email": "jbauer16@umd.edu, aritrip@umd.edu",
+    "website": "https://www.nianticspatial.com/docs/nsdk/?platform=unity"
+  },
+  {
+    "name": "App Dev x XR Club - Henson Day Initiative",
+    "summary": "The Henson Day Initiative is a collaboration between XR Club and App Dev Club. We are building a mobile AR experience for UMD's annual celebration of Jim Henson, the Muppets creator and UMD alumnus. The idea is to let attendees use their phones to interact with the campus as part of the event. It brings the two clubs together around an event where visitors can try AR directly on the devices they carry.\n\nThe team will develop the experience in Swift for iOS. The work combines app development with the question of how an AR interaction can fit into a campus celebration. Members will help turn the event concept into something attendees can open and use on their phones. Prior Swift and iOS development experience is strongly recommended for this project.",
+    "tier": "Intermediate",
+    "equipment": "Smartphone",
+    "estimated_completion": "May 2026",
+    "people": [
+      "Renee Jun",
+      "Earl Grecia",
+      "Havish Prattipati",
+      "Colin Kurniawan"
+    ],
+    "contact_name": "Renee Jun",
+    "contact_email": "rjun@umd.edu",
+    "website": null
+  },
+  {
+    "name": "VIRNECT - PhobiaVerse",
+    "summary": "PhobiaVerse uses VIRNECT's visual XR tools to build experiences around different fears. Our first simulation, completed for Meta Quest 3, explores fear of darkness. The environment responds to the way a person interacts with it, using those reactions to shape the experience. The aim is to help people understand a fear they may not have experienced themselves. The work also explores how visual scenes and interaction can communicate the feelings behind a fear, not just its appearance.\n\nWe are now developing more simulations and exploring how far we can take a platform originally built for training and demonstrations. Members can help create environments, plan interactions, and build 3D assets. No prior experience is required, and the team provides training on VIRNECT. Blender experience is helpful, but willingness to learn matters too. The videos show the first simulation and a member's experience working with the platform.",
+    "tier": "Gateway",
+    "equipment": "Quest 3",
+    "estimated_completion": "May 2026",
+    "people": [
+      "Dinushka Jagodige",
+      "Ronit Munshi",
+      "Ricky Jiang",
+      "Oliver Blevins",
+      "Katherine Hong",
+      "Simran Sidhu"
+    ],
+    "contact_name": "Dinushka Jagodige",
+    "contact_email": "djagodig@umd.edu",
+    "website": "https://virnect.com/"
+  },
+  {
+    "name": "Vuse XR - StructureSpace",
+    "summary": "StructureSpace helps people learn data structures by interacting with them in VR. A guided narrator introduces concepts, while 3D objects let learners see how a structure works and try it for themselves. Instead of only reading a diagram, they can move and change objects to check their understanding. Our first working prototype focuses on trees. The exercises ask learners to use what they have just seen, making interaction part of understanding the subject.\n\nThe project uses Vuse XR's visual tools and runs in the browser on Meta Quest 2 and Quest 3. Learners do not need to install an app or create an account. The team is expanding the prototype to cover more data structures and build richer exercises. No prior experience is required, and training on Vuse XR is provided. Basic 3D modeling knowledge is helpful. We are also looking for a project lead.",
+    "tier": "Gateway",
+    "equipment": "Quest 3",
+    "estimated_completion": "May 2026",
+    "people": [
+      "Juan Hernandez",
+      "Abdullah Waris",
+      "Rylee Cutter",
+      "Nate Zhang"
+    ],
+    "contact_name": "Juan Hernandez",
+    "contact_email": "jherna32@umd.edu",
+    "website": "https://www.vuse-xr.de/"
+  },
+  {
+    "name": "UMD Athletics - Game Day",
+    "summary": "Game Day builds on XR Club's partnership with UMD Athletics IT. The project will explore how immersive media can become part of game day events and athletic programs. Possible directions include 360 video, interactive VR experiences, and ways for fans to engage with sports through spatial media. These directions leave room for both recorded content and experiences that respond as people use them at an event.\n\nMeta Quest headsets are part of the planned setup. The specific experience is still being developed, so the project offers room to help shape how the technology fits an event. The focus is on creating something people can take part in, rather than only watching on a screen. This work continues the club's collaboration with Athletics through a new set of immersive experiences.",
+    "tier": "Advanced",
+    "equipment": "TBD",
+    "estimated_completion": "December 2026",
+    "people": [
+      "Amedeo Ercole",
+      "Karon Jones",
+      "Jacob Hauptman"
+    ],
+    "contact_name": "Amedeo Ercole",
+    "contact_email": "aercole@terpmail.umd.edu",
+    "website": "https://athleticsit.umd.edu/"
+  },
+  {
+    "name": "UMD Athletics - The Athlete's Eye",
+    "summary": "The Athlete's Eye is a collaboration with UMD Athletics IT to create immersive experiences for prospective student athletes. We use Insta360 cameras to record stadiums, training facilities, and live games. Viewed on Meta Quest 3, the footage lets recruits look around these spaces from a perspective that a standard video or campus tour cannot provide. The recordings give viewers a sense of the places where they could train, compete, and spend time as a student athlete.\n\nThe team is also exploring 360 filmmaking as a form of storytelling. We experiment with camera placement, movement, and framing to decide how a scene feels when the viewer can look in any direction. Demo footage is complete, and production continues at games and events. No prior experience is required. A background in video production or 3D work is useful, but members can also learn these skills through the project.",
+    "tier": "Gateway",
+    "equipment": "Insta360, Quest 3",
+    "estimated_completion": "1 year",
+    "people": [
+      "Victor Casado",
+      "Jonathan Rich",
+      "Raymond Le"
+    ],
+    "contact_name": "Victor Casado",
+    "contact_email": "vcasado@umd.edu",
+    "website": "https://athleticsit.umd.edu/"
+  },
+  {
+    "name": "Tron XR",
+    "summary": "Tron XR is a mixed reality disc battle game for Meta Quest 3. Built in Unity, it brings a digital world into the player's physical room. A wall opens into that world, objects cross into the room, and the player uses a disc to battle an NPC opponent. The project combines game mechanics with visual effects that connect the two spaces. The physical room stays part of the action, giving the team space to explore interactions between real and digital objects.\n\nThe team is in early development, testing interactions, custom shaders, and ways to make the room feel like part of the game. Members can help build gameplay or contribute to its visual direction. We are looking for two Unity developers, and people who are willing to learn are welcome. This is an independent fan project. It is not affiliated with or endorsed by Disney or the Tron franchise.",
+    "tier": "Gateway",
+    "equipment": "Quest 3",
+    "estimated_completion": "1 year",
+    "people": [
+      "Mei Lu",
+      "Abdur-Rahman Shakir",
+      "Andy Diep",
+      "Alice Wang"
+    ],
+    "contact_name": "Andy Diep",
+    "contact_email": "adiep@umd.edu",
+    "website": null
+  },
+  {
+    "name": "Tanit XR",
+    "summary": "Tanit XR is a nonprofit initiative that preserves endangered cultural heritage through 3D scanning and immersive storytelling. The collaboration gives students a way to work with scans of real artifacts and sites, then turn them into interactive experiences in Unity. The work includes preparing 3D assets, designing scenes, and adding the historical context that helps people understand what they are seeing. The work also includes preparing scans for use in Unity and making sure the supporting information is clear and accurate.\n\nThe team is looking for contributors in project management, Unity development, 3D modeling, research, and experience design. A UMD project manager will coordinate the student team and help prepare a finished project for Demo Day. Other roles support scan cleanup, virtual museum assets, storytelling, and community partnerships. Students can contribute technical, creative, or research skills while working with the Tanit XR team on cultural preservation.",
+    "tier": "Intermediate",
+    "equipment": "",
+    "estimated_completion": "Lifelong",
+    "people": [],
+    "contact_name": "Ines Said",
+    "contact_email": "ines@tanitxr.org",
+    "website": "https://tanitxr.org/"
+  },
+  {
+    "name": "Great Teacher Simulator",
+    "summary": "Great Teacher Simulator gives aspiring educators a place to practice teaching in VR. Led by a PhD student in Education, the project studies how people learn in interactive environments. The current Unity prototype runs on Meta Quest 3 and includes a classroom with AI student characters that respond during a lesson. The different classroom settings will let the team explore how visual realism affects the experience of practicing a lesson.\n\nThe team is now working on coaching that adapts to the teacher, additional classrooms, and more natural student behavior. This includes better character animation, lip sync, and the systems that guide how students respond. The research is not limited to one school subject. It asks how XR and AI can support useful teaching practice. The project is also pursuing research funding. Unity experience is needed, with roles in development, gameplay and AI, and classroom and interaction design.",
+    "tier": "Intermediate",
+    "equipment": "Quest 3",
+    "estimated_completion": "2 years",
+    "people": [
+      "Dean Haynes"
+    ],
+    "contact_name": "Dean Haynes",
+    "contact_email": "jhaynes2@umd.edu",
+    "website": null
+  },
+  {
+    "name": "Sisu VR - Build Your Own Reality",
+    "summary": "Build Your Own Reality is a creative project using SisuVR's visual authoring platform. The tools let a team make interactive stories, adventure games, and role playing experiences that work in VR without writing code in Unity. SisuVR develops immersive training and storytelling experiences, and this project gives members a chance to build an original experience with its platform. Members can use characters, scenes, and choices to try a story idea without needing to start from a programming background.\n\nThe theme and direction are open for the team to choose. Members can shape the story, decide how people move through it, and build the interactions that make their choices matter. The project starts with the idea and carries it through to a working experience. It is a way to take part in creating VR content through visual tools and collaborative design.",
+    "tier": "Gateway",
+    "equipment": "Quest 3",
+    "estimated_completion": "December 2026",
+    "people": [],
+    "contact_name": "",
+    "contact_email": "",
+    "website": "https://www.sisuvr.com/nocode/"
+  },
+  {
+    "name": "Paraverse Technology",
+    "summary": "We are working with Paraverse Technology to explore cloud rendering for XR. Its LarkXR platform runs the demanding graphics work on a powerful computer and streams the result to the device a person is using. This lets the team investigate experiences that would otherwise depend on having powerful hardware in the headset or local device. The lab hardware includes RTX 2080 and RTX 3070 GPUs, giving the team resources to explore these rendering workflows.\n\nMembers will have access to LarkXR and the club's lab GPUs to experiment with the setup and develop a project around it. The work brings together cloud computing, graphics, and interactive streaming. A central question is how to keep an immersive experience responsive when its rendering happens elsewhere. The project is suited to people interested in the systems that make XR possible as well as the experience a user sees.",
+    "tier": "Intermediate",
+    "equipment": "RTX 2080, RTX 3070",
+    "estimated_completion": "",
+    "people": [
+      "Ashish Kumar",
+      "Ryan Joseph",
+      "Sophia Cheng",
+      "Saanvi Veera Bomma",
+      "Zhe Shen"
+    ],
+    "contact_name": "Ashish Kumar",
+    "contact_email": "ackumar@umd.edu",
+    "website": "https://paraverse.cc/larkxr/"
+  },
+  {
+    "name": "Augmental World",
+    "summary": "We are partnering with Augmental World to create an AR experience for live events and entertainment. The company is providing XREAL One Pro glasses and access to its platform. The team will use them to explore how digital content can fit into a physical event and give people something new to interact with. The glasses provide a way to keep digital interactions connected to the people and surroundings at a live event.\n\nThe creative direction is open, so members can help decide what to build and how the glasses should be part of it. The project offers room to work on ideas, visual content, and the flow of the experience. No coding experience is required, and the team will receive training on the platform and tools. The aim is to develop an original use of AR in a shared physical setting.",
+    "tier": "Gateway",
+    "equipment": "XREAL One Pro Glasses",
+    "estimated_completion": "December 2026",
+    "people": [
+      "Thejitha Rajapakshe",
+      "Matthew Kintu",
+      "Neeraja Yasam",
+      "Justyn Jung"
+    ],
+    "contact_name": "Thejitha Rajapakshe",
+    "contact_email": "trajapa2@umd.edu",
+    "website": "https://augmental.world/"
+  },
+  {
+    "name": "Immersive Installations",
+    "summary": "Immersive Installations turns physical spaces into interactive experiences using projection, sound, and responsive visuals. The team explores how a room can change around the people inside it, whether through an interactive light show or an audiovisual piece for an event. These experiences can be shared without everyone needing to wear a headset. The room itself becomes part of the work, with media arranged around the people experiencing it together.\n\nThe project uses TouchDesigner, creative coding, and physical computing to connect digital media with the environment. Members can help develop a concept, build the visuals and interactions, or work on how the installation is arranged in the space. Projection mapping and spatial audio are part of the approach. TouchDesigner creators with any amount of experience are welcome to contribute and learn through making an installation together.",
+    "tier": "Intermediate",
+    "equipment": "Projectors",
+    "estimated_completion": "2 years",
+    "people": [
+      "Dean Haynes"
+    ],
+    "contact_name": "Xael Shan",
+    "contact_email": "xaelshan@umd.edu",
+    "website": null
+  }
+]

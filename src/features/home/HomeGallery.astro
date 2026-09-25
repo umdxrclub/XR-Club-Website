@@ -1,0 +1,110 @@
+---
+import { Image, getImage } from 'astro:assets';
+import ProjectFolder from '../projects/ProjectFolder.astro';
+import { portraitPhotoContour as photoContour, portraitPhotoMask as photoMask } from '../../lib/folderShape';
+import haptics from '../../assets/home/haptic-glove.jpeg';
+import people from '../../assets/home/lab-conversation.jpeg';
+import demo from '../../assets/home/vr-demo.jpeg';
+import projection from '../../assets/home/immersive-projection.jpeg';
+import hololens from '../../assets/sky/hololens-demo.jpg';
+import fieldDemo from '../../assets/home/nasa-field-demo.jpg';
+import presentation from '../../assets/home/nasa-presentation.jpg';
+import treadmill from '../../assets/home/vr-treadmill.jpeg';
+import installation from '../../assets/home/immersive-light-installation.jpeg';
+
+const photos = await Promise.all([
+  { image: hololens, name: 'HoloLens demo', alt: 'A student using a HoloLens at an XR demonstration under red lights.' },
+  { image: installation, name: 'Immersive light installation', alt: 'A person holding up a phone beneath glowing pink and purple lights in an immersive installation.' },
+  { image: haptics, name: 'Haptic glove', alt: 'A hand wearing a prototype haptic glove with small motors and orange straps.' },
+  { image: projection, name: 'Immersive projection', alt: 'Code and a purple digital artwork projected across the wall of an immersive room.' },
+  { image: demo, name: 'VR teaching simulator', alt: 'A VR teaching simulator running on a laptop and tablet beside a white headset.' },
+  { image: people, name: 'Lab conversation', alt: 'Students discussing their work with a visitor beside a table of demos.' },
+  { image: treadmill, name: 'VR treadmill demo', alt: 'A person using a VR headset and controllers on a movement platform while visitors watch in the lab.' },
+  { image: fieldDemo, name: 'NASA field demo', alt: 'Students testing an augmented reality headset outdoors at NASA SUITS.' },
+  { image: presentation, name: 'Student presentation', alt: 'Students presenting their work with a microphone in front of a projection.' },
+].map(async photo => ({ ...photo, full: await getImage({ src: photo.image, width: 1600, format: 'webp', quality: 86 }) })));
+---
+
+<section class="home-gallery" aria-label="Photos from XR Labs" aria-roledescription="carousel" data-home-gallery>
+  <script is:inline>
+    // Set before the photo is parsed, so a cold load cannot paint its fallback size.
+    document.currentScript.closest('[data-home-gallery]')?.setAttribute('data-layout-pending', '');
+  </script>
+  <div class="home-gallery__flight" data-project-flight>
+  <div class="home-gallery__carousel" data-home-carousel aria-describedby="home-photo-instructions" style={`--photo-mask: ${photoMask}; --photo-ratio: ${photos[0].image.width / photos[0].image.height}`}>
+    {photos.map((photo, index) => (
+      <a class="home-gallery__slide" href={photo.full.src} data-gallery-photo data-photo-ratio={photo.image.width / photo.image.height} hidden={index !== 0} tabindex={index === 0 ? 0 : -1} aria-label={`View ${photo.name.toLowerCase()} photo, ${index + 1} of ${photos.length}`}>
+        <Image src={photo.image} alt={photo.alt} width={1600} widths={[320, 640, 960, 1280, 1600]} sizes="(max-width: 900px) calc(100vw - 48px), 58vw" format="webp" quality={86} loading={index === 0 ? "eager" : "lazy"} fetchpriority={index === 0 ? "high" : "auto"} decoding="async" />
+      </a>
+    ))}
+    <svg class="home-gallery__contour" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+      <path d={photoContour} vector-effect="non-scaling-stroke" />
+    </svg>
+  </div>
+  <div class="home-gallery__reverse" data-project-reverse aria-hidden="true"><ProjectFolder decorative /></div>
+  </div>
+  <p class="visually-hidden" id="home-photo-instructions">Photos change automatically. Hover or focus to pause. Use the left and right arrow keys or swipe to browse. Select a photo to view it in full.</p>
+  <dialog class="photo-viewer" aria-label="XR Labs photo viewer" data-photo-viewer>
+    <button type="button" class="photo-viewer__close" aria-label="Close photo" data-photo-close autofocus>
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+    </button>
+    <img class="photo-viewer__image" alt="" data-photo-image />
+  </dialog>
+</section>
+
+<style>
+  .home-gallery { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .home-gallery[data-layout-pending] .home-gallery__carousel { visibility: hidden; }
+  .home-gallery__flight { display: contents; }
+  .home-gallery__reverse { display: none; }
+  .home-gallery[data-flight] { z-index: 4; perspective: 1600px; }
+  .home-gallery[data-flight] .home-gallery__flight { display: block; position: absolute; left: 0; top: 0; transform-origin: 50% 50%; transform-style: preserve-3d; will-change: transform; }
+  .home-gallery[data-flight] .home-gallery__carousel { left: 0; top: 0; width: 100%; height: 100% !important; transition: none; pointer-events: none; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .home-gallery[data-flight] .home-gallery__reverse { display: block; position: absolute; inset: 0; pointer-events: none; transform: rotateY(180deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .home-gallery__carousel {
+    position: absolute;
+    left: var(--photo-left, max(clamp(24px, 5vw, 76px), calc((100% - 1280px) / 2)));
+    top: var(--photo-top, 122px);
+    width: var(--photo-width, min(58vw, 760px));
+    aspect-ratio: var(--photo-ratio);
+    overflow: hidden;
+    mask-image: var(--photo-mask);
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    -webkit-mask-image: var(--photo-mask);
+    -webkit-mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    isolation: isolate;
+    pointer-events: auto;
+    touch-action: pan-y;
+  }
+  .home-gallery__slide { position: absolute; top: 0; left: 0; width: 100%; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
+  .home-gallery__slide[hidden] { display: none; }
+  .home-gallery__slide img { display: block; width: 100%; height: auto; }
+  .home-gallery__contour { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; fill: none; stroke: transparent; stroke-width: 2px; stroke-linejoin: round; pointer-events: none; }
+  .home-gallery__carousel:has(.home-gallery__slide:focus-visible) .home-gallery__contour { stroke: #fff; stroke-width: 4px; }
+  .home-gallery__slide:focus-visible { outline: none; }
+  @media (max-width: 900px) { .home-gallery__carousel { left: var(--photo-left, 32px); } }
+  @media (max-width: 640px) { .home-gallery__carousel { left: var(--photo-left, 24px); width: var(--photo-width, 52vw); top: var(--photo-top, 154px); } }
+  @media (max-width: 360px) { .home-gallery__carousel { left: var(--photo-left, 20px); } }
+  .photo-viewer { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 64px 28px 28px; border: 0; color: #eee; background: #111114f5; pointer-events: auto; }
+  .photo-viewer[open] { display: grid; place-items: center; }
+  .photo-viewer::backdrop { background: #000a; }
+  .photo-viewer__image { display: block; width: min(100%, 1600px); height: auto; max-height: calc(100dvh - 92px); object-fit: contain; }
+  .photo-viewer__close { position: absolute; top: 12px; right: 16px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: #eee; }
+  .photo-viewer__close:hover { background: #ffffff14; }
+  .photo-viewer__close:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+  @media (max-width: 700px) { .photo-viewer { padding-inline: 16px; } }
+  @media (prefers-reduced-motion: reduce) { .home-gallery__carousel { transition: none; } }
+</style>
+
+<script>
+  import { mountHomeCarousel } from './homeCarousel';
+  let cleanup: (() => void) | undefined;
+  document.addEventListener('astro:page-load', () => {
+    cleanup?.(); cleanup = undefined;
+    const gallery = document.querySelector<HTMLElement>('[data-home-gallery]');
+    if (gallery) cleanup = mountHomeCarousel(gallery);
+  });
+  document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = undefined; });
+</script>

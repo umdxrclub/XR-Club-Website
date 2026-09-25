@@ -1,0 +1,25 @@
+---
+import { waveAccent, waveAccentSpectrum, waveLayers, wavePath } from './waveSettings';
+const { muted = false } = Astro.props;
+---
+<svg class="angled-waves" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="wave-accent-spectrum" gradientUnits="userSpaceOnUse" x1="100" y1="800" x2="1500" y2="100">
+      {waveAccentSpectrum.map((color,index) => <stop offset={index/(waveAccentSpectrum.length-1)} stop-color={color} />)}
+    </linearGradient>
+    <filter id="wave-edge-shadow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="-9" dy="-9" stdDeviation="12" flood-color="#000" flood-opacity="0.45" />
+    </filter>
+    <filter id="wave-inset-shadow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="-1.5" dy="-1.5" stdDeviation="3" flood-color="#000" flood-opacity="0.38" />
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="#000" />
+  {waveLayers.map((layer, index) => (
+    <path d={wavePath(layer.boundary, layer.phase, index === waveAccent.layer)} fill={index === waveAccent.layer ? (muted ? '#737373' : 'url(#wave-accent-spectrum)') : layer.color}
+      filter={index === waveAccent.layer + 1 ? 'url(#wave-inset-shadow)' : 'url(#wave-edge-shadow)'} />
+  ))}
+</svg>
+<style>
+  .angled-waves { display: block; width: 100%; height: 100%; }
+</style>

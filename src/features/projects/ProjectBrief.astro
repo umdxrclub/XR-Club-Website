@@ -1,0 +1,48 @@
+---
+import type projects from '../../data/projects.json';
+
+interface Props { project: typeof projects[number]; }
+
+const { project } = Astro.props;
+const cleanText = (text: string) => text.replace(/\s+[\u2013\u2014]+\s+/g, ', ').replace(/[-\u2010-\u2015\u2212]+/g, ' ').replace(/[^\S\n]{2,}/g, ' ');
+---
+<div class="project-brief">
+  <div class="project-brief__description">{project.summary.split(/\n\s*\n/).map(paragraph => <p>{cleanText(paragraph)}</p>)}</div>
+  <div class="project-brief__footer">
+  <dl class="project-brief__facts">
+    {project.equipment && <div><dt>Equipment</dt><dd>{cleanText(project.equipment)}</dd></div>}
+    {project.estimated_completion && <div><dt>Timeline</dt><dd>{cleanText(project.estimated_completion)}</dd></div>}
+  </dl>
+  <div class="project-brief__people">
+  {!!project.people.length && <p class="project-brief__team"><span>Team</span>{project.people.join(', ')}</p>}
+  {(project.contact_name || project.website) && <div class="project-brief__links">
+    {project.contact_name && (project.contact_email ? <a href={`mailto:${project.contact_email}`}>Contact {project.contact_name}</a> : <span>Contact {project.contact_name}</span>)}
+    {project.website && <a href={project.website} target="_blank" rel="noopener noreferrer">Affiliate website</a>}
+  </div>}
+  </div>
+  </div>
+</div>
+<style>
+  .project-brief { display: flex; flex-direction: column; min-height: 100%; color: #424c46; font-family: var(--font-site); font-size: clamp(18px, 1.4vw, 20px); line-height: 1.52; letter-spacing: -.018em; }
+  .project-brief__description p + p { margin-top: 14px; }
+  .project-brief__footer { display: grid; grid-template-columns: 1fr 1.2fr; gap: 28px; margin-top: auto; padding-top: 20px; }
+  .project-brief__facts { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr); align-content: start; gap: 12px 20px; padding-top: 14px; border-top: 1px solid #263c2926; }
+  .project-brief__people { padding-top: 14px; border-top: 1px solid #263c2926; }
+  .project-brief dt, .project-brief__team > span { display: block; font-size: 14px; font-weight: 500; color: #68736b; margin-bottom: 7px; }
+  .project-brief dd { font-size: 18px; line-height: 1.45; color: #28392e; overflow-wrap: anywhere; }
+  .project-brief__team { font-size: 17px; line-height: 1.5; }
+  .project-brief__links { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 22px; margin-top: 12px; font-size: 16px; color: #263c2d; }
+  .project-brief__links a { display: inline-flex; align-items: center; min-height: 38px; text-decoration: underline; text-decoration-color: #71827570; text-underline-offset: 5px; }
+  .project-brief__links a:hover { text-decoration-color: currentColor; }
+  .project-brief a:focus-visible { outline: 2px solid #52745c; outline-offset: 3px; }
+  @media(max-width:640px) {
+    .project-brief { font-size: 15px; line-height: 1.6; }
+    .project-brief__footer { grid-template-columns: 1fr; gap: 18px; padding-top: 20px; }
+    .project-brief__facts { gap: 12px; padding-top: 14px; }
+    .project-brief dd { font-size: 15px; }
+    .project-brief dt, .project-brief__team > span { font-size: 13px; }
+    .project-brief__team { font-size: 15px; }
+    .project-brief__links { font-size: 15px; gap: 0 18px; }
+    .project-brief__links a { min-height: 44px; }
+  }
+</style>

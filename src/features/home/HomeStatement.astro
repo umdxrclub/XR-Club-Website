@@ -1,0 +1,121 @@
+---
+import DesignTitle from './DesignTitle.astro';
+import { designPalette as ink } from './designPalette';
+import { siteLinks } from '../../config/site';
+import FolderButtonShape from '../../components/FolderButtonShape.astro';
+---
+
+<div class="home-statement-block">
+  <a class="home-funding" data-home-funding href={siteLinks.ideate}><FolderButtonShape /><span>Apply for funding</span></a>
+  <h2 class="home-statement" aria-label="Design. Engineer. Create.">
+    <span class="home-statement__design" aria-hidden="true"><DesignTitle /><span class="home-statement__period" style={`--design-dot-fill: ${ink.dot}`}><svg viewBox="60 -162 175 178" aria-hidden="true" focusable="false"><path transform="scale(1 -1)" d="M148 -10Q112 -10 89 14Q66 38 66 73Q66 108 89 132Q112 156 148 156Q183 156 206 132Q229 108 229 73Q229 38 206 14Q183 -10 148 -10Z" fill={ink.dot} stroke={ink.dot} stroke-width="12" /></svg></span></span>
+    <span class="home-statement__engineer" aria-hidden="true">Engineer.</span>
+    <span class="home-statement__create" aria-hidden="true">Create.</span>
+  </h2>
+</div>
+
+<style>
+  .home-statement-block {
+    position: absolute;
+    z-index: 1;
+    right: max(clamp(24px, 5vw, 76px), calc((100% - 1280px) / 2));
+    bottom: calc(clamp(36px, 7svh, 80px) + var(--site-footer-height, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(18px, 2.5svh, 28px);
+  }
+  .home-funding {
+    position: relative;
+    isolation: isolate;
+    --folder-button-fill: #f3f2ed;
+    --folder-button-stroke: rgb(255 255 255 / .85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    min-height: 68px;
+    padding: 21px 28px 17px;
+    border: 0;
+    background: none;
+    color: #232527;
+    font: 550 23px/1.2 var(--font-site);
+    letter-spacing: -.025em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .home-funding :global(.folder-button-shape) { filter: drop-shadow(0 5px 8px rgb(0 0 0 / .14)) drop-shadow(0 1px 2px rgb(0 0 0 / .09)); }
+  .home-funding > span { position: relative; z-index: 1; }
+  .home-funding:hover { --folder-button-fill: #fff; --folder-button-stroke: #fff; }
+  .home-funding:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 8px; }
+  .home-statement {
+    --statement-tracking: .008em;
+    --statement-ink: .012em;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .025em;
+    margin: 0;
+    color: #18191b;
+    font-family: var(--font-title);
+    font-size: clamp(38px, min(6.4vw, 10.8svh), 100px);
+    line-height: 1.12;
+    letter-spacing: var(--statement-tracking);
+    font-weight: 600;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+  }
+  .home-statement > span {
+    display: block;
+    padding: .04em .07em .15em 0;
+    margin-bottom: -.15em;
+  }
+  .home-statement > span:not(:last-child) { margin-bottom: -.205em; }
+  .home-statement > .home-statement__design { display: flex; align-items: flex-start; color: #f2f0e9; }
+  .home-statement__design .home-statement__period { margin-top: .798em; }
+  .home-statement__period {
+    display: inline-block;
+    width: .175em;
+    height: .178em;
+    margin-left: .025em;
+    border-radius: 50%;
+    flex: 0 0 .175em;
+    background: var(--design-dot-fill);
+  }
+  .home-statement__period svg { display: block; width: 100%; height: 100%; }
+  .home-statement__period[aria-hidden='true'] svg { display: none; }
+  .home-statement__engineer, .home-statement__create { -webkit-text-stroke: var(--statement-ink) currentColor; paint-order: stroke fill; }
+  .home-statement__engineer {
+    color: #ffffff;
+  }
+  .home-statement__create { color: #111111; letter-spacing: calc(-.045em + var(--statement-tracking)); }
+  @media (max-width: 900px) { .home-statement-block { right: 32px; } }
+  @media (max-width: 640px) {
+    .home-statement-block { right: 24px; bottom: calc(max(44px, 6svh) + var(--site-footer-height, 0px)); }
+    .home-statement { font-size: clamp(36px, min(11vw, 7.7svh), 62px); }
+    .home-funding { font-size: 21px; min-height: 64px; padding-inline: 22px; }
+  }
+  @media (max-width: 360px) { .home-statement-block { right: 20px; } }
+  @media (max-width: 900px) and (min-height: 600px) {
+    .home-statement-block { width: min(400px, calc(100% - 48px)); right: 24px; bottom: calc(var(--site-footer-height, 0px) + 24px); gap: 14px; }
+    .home-statement { font-size: clamp(36px, min(12vw, 6.4svh), 54px); }
+    .home-funding { min-height: 64px; padding: 19px 22px 16px; font-size: 21px; }
+  }
+  @media (max-width: 900px) and (min-height: 600px) and (max-height: 740px) {
+    .home-statement-block { bottom: calc(var(--site-footer-height, 0px) + 18px); gap: 12px; }
+    .home-statement { font-size: 34px; }
+    .home-funding { min-height: 62px; }
+  }
+  @media (forced-colors: active) {
+    .home-statement span { color: CanvasText; background: none; -webkit-text-fill-color: CanvasText; }
+    .home-statement .home-statement__period { background: CanvasText; }
+    .home-statement__period path { fill: CanvasText; stroke: CanvasText; }
+    .home-funding { color: LinkText; --folder-button-stroke: LinkText; --folder-button-fill: Canvas; }
+  }
+  @media (max-width: 640px) {
+    :global(body:has([data-home-sculpture])) .home-statement { align-self: flex-end; width: calc(100% - 116px); font-size: clamp(26px, 8.3vw, 42px); }
+  }
+  @media (max-width: 360px) {
+    :global(body:has([data-home-sculpture])) .home-statement { width: calc(100% - 100px); }
+  }
+</style>

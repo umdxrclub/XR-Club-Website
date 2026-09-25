@@ -1,0 +1,16 @@
+{
+  "source": "Wallpaper Engine 2335369259",
+  "width": 2560,
+  "height": 1440,
+  "mirrored": true,
+  "crop": {
+    "left": 128,
+    "top": 432,
+    "width": 1306,
+    "height": 461
+  },
+  "sun": {
+    "x": 1161,
+    "y": 323
+  }
+}

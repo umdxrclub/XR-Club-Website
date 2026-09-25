@@ -1,0 +1,126 @@
+---
+import IdeasTitle from './IdeasTitle.astro';
+import CloudPhotoStory from './CloudPhotoStory.astro';
+import ScrollTitle from '../../components/ScrollTitle.astro';
+import titleKerning from '../../assets/fonts/title-kerning.json';
+import { clubStory } from '../../data/clubStory';
+const pairs: Record<string, number> = titleKerning;
+const letterSpace = (word: string[], index: number) => {
+  const value = pairs[word[index] + (word[index + 1] ?? '')];
+  return value ? `margin-inline-end:${value / 1000}em` : undefined;
+};
+const wordLines = (lines: readonly string[]) => lines.map(line => line.split(' ').map(word => [...word]));
+---
+<section class="sky-story" data-sky-story hidden>
+  <svg class="sky-story__veil" data-story-veil viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <mask id="club-story-focus" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+        <rect data-story-mask-base x="0" y="0" width="100%" height="100%" fill="white" />
+        <circle data-story-aperture cx="0" cy="0" r="0" fill="black" />
+      </mask>
+      <filter id="club-story-shadow" data-story-shadow-filter filterUnits="userSpaceOnUse" x="-64" y="-64" width="1" height="1" color-interpolation-filters="sRGB">
+        <!-- Both soft shadows follow the masked sheet, preserving the single clean aperture. -->
+        <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="soft-blur" />
+        <feOffset in="soft-blur" dx="0" dy="10" result="soft-offset" />
+        <feFlood data-story-shadow-soft flood-color="#123966" flood-opacity="0" />
+        <feComposite in2="soft-offset" operator="in" result="soft-shadow" />
+        <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="near-blur" />
+        <feOffset in="near-blur" dx="0" dy="4" result="near-offset" />
+        <feFlood data-story-shadow flood-color="#0e356b" flood-opacity="0" />
+        <feComposite in2="near-offset" operator="in" result="near-shadow" />
+        <feMerge>
+          <feMergeNode in="soft-shadow" />
+          <feMergeNode in="near-shadow" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <g data-story-paper filter="url(#club-story-shadow)"><path data-story-sheet fill="#f3f2ed" mask="url(#club-story-focus)" /></g>
+  </svg>
+  <div class="sky-story__intro" data-story-intro aria-hidden="true">
+    <h2 class="sky-story__title" data-story-heading aria-label="Where ideas take off.">
+      {wordLines(['Where']).map(line => <span class="sky-story__line" aria-hidden="true"><ScrollTitle>{line.map(word => <span class="sky-story__word">{word.map((letter, index) => <span class="sky-story__letter" style={letterSpace(word, index)}>{letter}</span>)}</span>)}</ScrollTitle></span>)}
+      <span class="sky-story__line" aria-hidden="true"><ScrollTitle><span class="sky-story__word sky-story__ideas"><IdeasTitle /></span></ScrollTitle></span>
+      {wordLines(['take off.']).map(line => <span class="sky-story__line" aria-hidden="true"><ScrollTitle>{line.map(word => <><span class="sky-story__word">{word.map((letter, index) => <span class="sky-story__letter" style={letterSpace(word, index)}>{letter}</span>)}</span>{' '}</>)}</ScrollTitle></span>)}
+    </h2>
+    <p class="sky-story__intro-lead" data-story-intro-detail>XR Club brings UMD students together to explore and build with immersive technology.</p>
+  </div>
+  <div class="sky-story__copy-window" data-story-copy-window>
+    <div class="sky-story__copy-track" data-story-copy-track>
+      {clubStory.map(chapter => (
+        <article class="sky-story__chapter" data-story-chapter={chapter.id} data-layout={chapter.layout} data-tone={chapter.tone} aria-hidden="true" inert>
+          <CloudPhotoStory chapter={chapter} />
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+<section class="visually-hidden" aria-labelledby="club-story-accessible-title">
+  <h2 id="club-story-accessible-title">Where ideas take off.</h2>
+  <p>XR Club brings UMD students together to explore and build with immersive technology.</p>
+  {clubStory.map(chapter => <section data-story-accessible-chapter={chapter.id}>
+    <h3>{chapter.title.join(' ')}</h3>
+    {chapter.lead && <p>{chapter.lead}</p>}
+    {chapter.description && <p>{chapter.description}</p>}
+    {chapter.id === 'sponsors' && <p>Contact: umd.xr.club@gmail.com</p>}
+  </section>)}
+</section>
+<style>
+  .sky-story { position: absolute; inset: 0; z-index: 7; overflow: clip; pointer-events: none; contain: layout style; font-family: var(--font-site); --story-gutter: 7%; }
+  .sky-story[hidden] { display: none; }
+  .sky-story__veil { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: hidden; }
+  .sky-story__intro { position: absolute; z-index: 2; top: 50%; left: var(--story-gutter); width: 39%; translate: 0 -50%; color: #242526; }
+  /* Fill the sheet, but stop short of the porthole: the story script publishes
+     its left edge as --story-focus-left and "take off." runs about 3.6em wide. */
+  .sky-story__intro .sky-story__title { font-size: clamp(44px, min(9vw, 14.4svh, calc((var(--story-focus-left, 60vw) - var(--story-gutter, 7vw) - 28px) / 3.65)), 176px); line-height: .86; letter-spacing: -.045em; }
+  .sky-story__intro-lead { max-width: 26em; margin: clamp(22px, 3svh, 34px) 0 0; font: 450 clamp(17px, 1.3vw, 23px)/1.45 var(--font-site); letter-spacing: -.022em; color: #3b3c40; text-wrap: pretty; text-shadow: 0 1px 2px rgb(0 0 0 / .06); }
+  .sky-story__copy-window { position: absolute; inset: 0; z-index: 0; overflow: clip; clip-path: inset(var(--story-header-bottom, 110px) 0 var(--story-footer-height, 54px) 0); }
+  .sky-story__copy-track { position: absolute; inset: 0 0 auto; height: 400%; }
+  .sky-story__chapter { position: absolute; top: 0; left: var(--story-gutter); width: min(73%, 1040px); color: #fff;  }
+  .sky-story__chapter[data-story-chapter='about'] { width: calc(100% - var(--story-gutter) * 2); }
+  .sky-story__chapter[data-layout='right'] { left: auto; right: var(--story-gutter); width: min(66%, 940px); }
+  .sky-story__chapter[data-layout='wide'] { width: calc(100% - var(--story-gutter) * 2); }
+  .sky-story__chapter[data-tone='light'] { color: #fff; }
+  .sky-story__chapter[data-tone='pearl'] { color: #f5f3ef;  }
+  .sky-story__chapter .sky-story__title { color: #fff7e8;  }
+  .sky-story__title { margin: 0; font-size: clamp(58px, min(8vw, 13svh), 136px); font-family: var(--font-title); font-weight: 600; line-height: .86; letter-spacing: 0; }
+  .sky-story__line { display: block; }
+  .sky-story__word { display: inline-block; white-space: nowrap; }
+  .sky-story__ideas { position: relative; width: 2.5em; height: .86em; transform-origin: 50% 85%; }
+  .sky-story__letter { display: inline-block; transform-origin: 50% 85%; backface-visibility: hidden; }
+  .sky-story__letter, [data-story-reveal], [data-story-intro-detail] { transition: none; }
+  .sky-story__lead { margin: 22px 0 0; max-width: 860px; font-size: clamp(26px, 2.6vw, 38px); font-weight: 600; line-height: 1.24; letter-spacing: -.01em; text-wrap: balance; }
+  .sky-story__description { max-width: 870px; margin: 24px 0 0; font-size: clamp(24px, 2.05vw, 32px); font-weight: 500; line-height: 1.35; letter-spacing: 0; text-wrap: pretty; }
+  .sky-story__chapter, .sky-story__chapter[data-tone='pearl'], .sky-story__chapter .sky-story__title { text-shadow: 0 2px 2px #08294deb, 0 4px 9px #0e356ba6, 0 10px 24px #12396666; }
+  .sky-story__description { letter-spacing: -.012em; font-weight: 400; }
+  .sky-story__title { letter-spacing: 0; }
+  @media (min-width: 641px) and (max-width: 900px) {
+    .sky-story__chapter, .sky-story__chapter[data-layout='right'] { width: calc(100% - var(--story-gutter) * 2); }
+    .sky-story__title { font-size: 7.7vw; }
+  }
+  @media (max-width: 640px) {
+    .sky-story__intro { top: var(--story-intro-copy-top, 56%); width: calc(100% - var(--story-gutter) * 2); translate: none; }
+    .sky-story__intro .sky-story__title { font-size: clamp(38px, 12.5vw, 66px); text-wrap: balance; }
+    .sky-story__intro-lead { margin-top: 16px; font-size: 16px; line-height: 1.4; }
+    .sky-story__intro .sky-story__line { display: inline; }
+    .sky-story__intro .sky-story__line::after { content: ' '; }
+    .sky-story__chapter, .sky-story__chapter[data-layout='right'] { width: calc(100% - var(--story-gutter) * 2); }
+    .sky-story__title { font-size: clamp(36px, 10.5vw, 68px); line-height: .92; }
+    .sky-story__lead { margin-top: 20px; font-size: 25px; }
+    .sky-story__description { margin-top: 20px; font-size: 21px; line-height: 1.4; }
+    .sky-story__chapter[data-tone='light'] { color: #fff; }
+  }
+  @media (max-width: 640px) and (max-height: 620px) { .sky-story__intro-lead { display: none; } }
+  @media (min-width: 641px) and (max-height: 500px) { .sky-story__intro-lead { display: none; } }
+  @media (min-width: 641px) and (max-height: 540px) {
+    .sky-story__title { font-size: 9svh; }
+    .sky-story__lead { font-size: 25px; margin-top: 16px; }
+    .sky-story__description { font-size: 22px; margin-top: 18px; }
+  }
+
+
+  .sky-story .sky-story__chapter {
+    left: var(--story-gutter); right: auto;
+    width: calc(100% - var(--story-gutter) * 2);
+  }
+</style>

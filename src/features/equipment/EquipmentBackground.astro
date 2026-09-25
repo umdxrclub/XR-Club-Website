@@ -1,0 +1,22 @@
+---
+import { equipmentWaveBase, equipmentWaveLayers, equipmentWavePath } from './equipmentWaveSettings';
+---
+<div class="equipment-background" aria-hidden="true">
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" focusable="false">
+    <defs>
+      <filter id="equipment-wave-shadow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <feDropShadow dx="-1" dy="-3" stdDeviation="10" flood-color="#8d8779" flood-opacity=".07" />
+      </filter>
+    </defs>
+    <rect width="1600" height="1000" fill={equipmentWaveBase} />
+    {equipmentWaveLayers.map(layer => <path d={equipmentWavePath(layer.boundary, layer.phase)} fill={layer.color} filter="url(#equipment-wave-shadow)" />)}
+  </svg>
+  <canvas data-equipment-background></canvas>
+</div>
+<style>
+  .equipment-background { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #ebe8e0; }
+  svg, canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  canvas { visibility: hidden; }
+  canvas[data-ready] { visibility: visible; }
+  .equipment-background:has(canvas[data-ready]) svg { visibility: hidden; }
+</style>

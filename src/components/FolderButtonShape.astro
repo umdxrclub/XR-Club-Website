@@ -1,0 +1,14 @@
+---
+import { folderContour } from '../lib/folderShape';
+interface Props { shortTab?: boolean }
+const { shortTab = false } = Astro.props;
+const shortTabContour = 'M.038 0H.705C.721 0 .726 .008 .739 .024L.788 .085Q.801 .10 .818 .10H.963Q1 .10 1 .166V.936Q1 1 .963 1H.086Q.066 1 .054 .975L.012 .878Q0 .853 0 .824V.065Q0 0 .038 0Z';
+---
+<svg class="folder-button-shape" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+  <path d={shortTab ? shortTabContour : folderContour} transform="translate(1 0) scale(-1 1)" vector-effect="non-scaling-stroke" />
+</svg>
+<style>
+  .folder-button-shape { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  path { fill: var(--folder-button-fill, #eeede9); stroke: var(--folder-button-stroke, none); stroke-width: 1px; transition: fill 180ms ease, stroke 180ms ease; }
+  @media(prefers-reduced-motion:reduce) { path { transition: none; } }
+</style>

@@ -1,0 +1,70 @@
+---
+import AngledWaves from './AngledWaves.astro';
+import SkyJourney from '../sky/SkyJourney.astro';
+import SkyStory from '../sky/SkyStory.astro';
+import EquipmentJourney from '../equipment/EquipmentJourney.astro';
+import { EQUIPMENT_DISTANCE } from '../equipment/equipmentMotion';
+import { SKY_PROJECT_HOLD, SKY_TRANSITION_DISTANCE } from '../sky/skyTimeline';
+import { SKY_STORY_DISTANCE } from '../sky/skyStoryMotion';
+const base = import.meta.env.BASE_URL;
+---
+<link rel="preload" as="image" href={`${base}scenes/clean-waves.webp`} />
+<link rel="preload" as="image" href={`${base}scenes/orange/orange-waves-shaded.svg`} />
+<link rel="preload" as="image" href={`${base}scenes/aria/aria-render-original.webp`} />
+<div class="home-waves" data-home-waves style={`--home-story-length: ${2.8 + SKY_PROJECT_HOLD + SKY_TRANSITION_DISTANCE + SKY_STORY_DISTANCE + EQUIPMENT_DISTANCE}; --home-story-length-reduced: ${2.8 + SKY_STORY_DISTANCE + EQUIPMENT_DISTANCE}`}>
+  <div class="home-waves__stage" data-home-waves-stage>
+    <div class="home-waves__still" aria-hidden="true"><AngledWaves muted /></div>
+    <div class="home-waves__next" style={`background-image: url('${base}scenes/clean-waves-small.webp')`} aria-hidden="true"></div>
+    <canvas data-home-waves-canvas aria-hidden="true"></canvas>
+    <slot />
+    <EquipmentJourney />
+    <div class="home-waves__sky" data-sky-stage>
+      <div class="home-waves__sky-surface" data-sky-surface>
+        <SkyJourney />
+        <SkyStory />
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .home-waves { --home-stage-height: 100svh; position: relative; width: 100%; background: #000; }
+  .home-waves__stage { position: relative; width: 100%; height: var(--home-stage-height); overflow: clip; }
+  .home-waves.has-project-story { height: calc(var(--home-stage-height) * 2.8); }
+  .home-waves.has-project-story.has-sky-journey { height: calc(var(--home-stage-height) * var(--home-story-length)); }
+  .home-waves.has-project-story .home-waves__stage { position: sticky; top: 0; }
+  .home-waves__sky { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  .home-waves__sky-surface { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .home-waves[data-equipment] .home-waves__sky-surface { backface-visibility: hidden; }
+  .home-waves__sky[hidden] { display: none; }
+  .home-waves__next { position: absolute; inset: 0; z-index: 1; background-size: cover; background-position: 50% 58%; opacity: var(--project-background, 0); pointer-events: none; }
+  .home-waves.has-clean-waves .home-waves__next { display: none; }
+  .home-waves__still, canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  canvas { display: block; visibility: hidden; }
+  .home-waves.is-ready canvas { visibility: visible; }
+  .home-waves.is-ready .home-waves__still { visibility: hidden; }
+  /* Keep dragging and snap placement, without separate recessed dock boxes. */
+  :global(body:has([data-home-waves]) .drag-dock),
+  :global(body:has([data-home-waves]) .drag-dock[data-active]) { background: none; box-shadow: none; }
+  :global(body:has([data-home-waves]) .drag-dock::after) { display: none; }
+  @media(prefers-reduced-motion:reduce) { .home-waves.has-project-story { height: calc(var(--home-stage-height) * 1.9); } .home-waves.has-project-story.has-sky-journey { height: calc(var(--home-stage-height) * var(--home-story-length-reduced)); } }
+</style>
+<script>
+  let dispose: (() => void) | undefined;
+  let generation = 0;
+  async function mount() {
+    dispose?.(); dispose = undefined;
+    const current = ++generation;
+    const root = document.querySelector<HTMLElement>('[data-home-waves]');
+    if (!root) return;
+    try {
+      const { mountHomeWaves } = await import('./homeWaves');
+      if (current !== generation || !root.isConnected) return;
+      const cleanup = await mountHomeWaves(root, () => current === generation && root.isConnected);
+      if (current !== generation) cleanup(); else dispose = cleanup;
+    } catch (error) {
+      console.warn('Showing the still wave background.', error);
+    }
+  }
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', () => { generation++; dispose?.(); dispose = undefined; });
+</script>

@@ -1,0 +1,15 @@
+<div class="equipment-ripple" data-equipment-ripple aria-hidden="true">
+  <div class="equipment-ripple__fallback" data-equipment-ripple-fallback></div>
+  <canvas data-equipment-ripple-canvas></canvas>
+</div>
+<style>
+  .equipment-ripple { position: absolute; inset: 0; z-index: 4; opacity: 0; overflow: hidden; pointer-events: none; }
+  canvas, .equipment-ripple__fallback { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+  canvas { visibility: hidden; }
+  canvas[data-ready] { visibility: visible; }
+  .equipment-ripple__fallback {
+    opacity: 0;
+    background: radial-gradient(ellipse at 50% 72%, #30224b 0%, #171326 42%, #10101c 76%);
+  }
+  .equipment-ripple:has(canvas[data-ready]) .equipment-ripple__fallback { visibility: hidden; }
+</style>

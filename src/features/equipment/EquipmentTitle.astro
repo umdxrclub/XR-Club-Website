@@ -1,0 +1,44 @@
+---
+// Plain black type in the title face. While the folder settles, the word
+// types itself in from the left behind a block cursor.
+---
+<span class="equipment-title" data-equipment-title aria-hidden="true">
+  <svg class="equipment-title__ink" viewBox="0 0 453 110" focusable="false"><text x="0" y="86">Equipment</text></svg>
+  <i class="equipment-title__cursor"></i>
+</span>
+<style>
+  .equipment-title { position: relative; display: block; width: 4.53em; height: 1.1em; margin: 0 auto; }
+  .equipment-title__ink { display: block; width: 100%; height: 100%; overflow: visible; clip-path: inset(-.1em calc((1 - var(--equipment-heading, 1)) * 100% - .04em) -.1em -.04em); }
+  .equipment-title__ink text { font-family: var(--font-title); font-size: 100px; font-weight: 600; letter-spacing: -.045em; fill: #000; }
+  .equipment-title__cursor { position: absolute; top: .2em; bottom: .24em; left: calc(var(--equipment-heading, 1) * 100%); width: .06em; background: #000; opacity: clamp(0, (1 - var(--equipment-heading, 1)) * 30, 1); }
+  @media (prefers-reduced-motion: reduce) {
+    .equipment-title__ink { clip-path: none; }
+    .equipment-title__cursor { display: none; }
+  }
+  @media (forced-colors: active) {
+    .equipment-title__ink text { fill: CanvasText; }
+    .equipment-title__cursor { background: CanvasText; }
+  }
+</style>
+<script>
+  let disposed = false;
+  document.addEventListener('astro:page-load', () => {
+    disposed = false;
+    const title = document.querySelector<HTMLElement>('[data-equipment-title]');
+    const svg = title?.querySelector<SVGSVGElement>('svg');
+    if (!title || !svg) return;
+    // The section starts hidden, so the text cannot measure itself; a canvas
+    // measures the same face and the tracking is removed from each letter.
+    const font = `600 100px ${getComputedStyle(document.documentElement).getPropertyValue('--font-title')}`;
+    document.fonts.load(font, 'Equipment').then(() => {
+      if (disposed) return;
+      const context = document.createElement('canvas').getContext('2d');
+      if (!context) return;
+      context.font = font;
+      const width = Math.round(context.measureText('Equipment').width - 4.5 * 'Equipment'.length);
+      if (!(width > 0)) return;
+      svg.setAttribute('viewBox', `0 0 ${width} 110`); title.style.width = `${width / 100}em`;
+    });
+  });
+  document.addEventListener('astro:before-swap', () => { disposed = true; });
+</script>

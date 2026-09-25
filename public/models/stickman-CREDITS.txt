@@ -1,0 +1,5 @@
+Stickman by KOMIRA.studio
+https://sketchfab.com/3d-models/stickman-cd59f48ed6a7492da639efdc55f2c1f8
+CC BY 4.0
+https://creativecommons.org/licenses/by/4.0/
+Changes: Original geometry, rig, colors and idle animation preserved. Unused run animation omitted and palette texture resized for a small web preview. Lighting, shadow and hover head tilt added.

@@ -1,0 +1,48 @@
+---
+import { equipment } from '../../data/equipment';
+import EquipmentTitle from './EquipmentTitle.astro';
+import EquipmentCat from './EquipmentCat.astro';
+import { equipmentFolderPath } from './equipmentMotion';
+const imageFolderMask = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9" preserveAspectRatio="none"><path fill="white" d="${equipmentFolderPath(16, 9)}"/></svg>`)}")`;
+const base = import.meta.env.BASE_URL;
+const first = equipment[0];
+---
+<section class="equipment" style={`--equipment-image-mask: ${imageFolderMask}`} data-equipment-journey aria-label="Equipment" hidden>
+  <EquipmentCat />
+  <div class="equipment__face" data-equipment-face aria-hidden="true">
+    <div class="equipment__surface" data-equipment-surface>
+      <img class="equipment__product" data-src={`${base}equipment/${first.id}.webp`} width={first.width} height={first.height} decoding="async" alt="" />
+      <span class="equipment__name">{first.name}</span>
+    </div>
+  </div>
+  <h2 class="equipment__heading" data-equipment-heading><span class="visually-hidden">Equipment</span><EquipmentTitle /></h2>
+  <div class="equipment__cards" data-equipment-cards role="group" aria-label="Equipment rotates automatically. Press Space to pause or resume rotation. Use left and right arrow keys to browse." tabindex="0">
+    {equipment.map((item, index) => <article class="equipment__card" data-equipment-card={index} aria-label={item.name} aria-hidden="true" hidden>
+      <div class="equipment__card-fill" data-equipment-card-fill>
+        <img class:list={["equipment__product", { "equipment__product--folder": item.id === "spatial-reality-display" }]} data-src={`${base}equipment/${item.id}.webp`} width={item.width} height={item.height} alt="" decoding="async" />
+        <h3 class="equipment__name">{item.name}</h3>
+      </div>
+    </article>)}
+  </div>
+</section>
+<section class="visually-hidden" aria-label="Equipment inventory">
+  <ul>{equipment.map(item => <li>{item.name}</li>)}</ul>
+</section>
+<style>
+  .equipment { --equipment-folder: #e8e3d4; position: absolute; inset: 0; z-index: 5; overflow: clip; background: #fff; pointer-events: none; font-family: var(--font-site); contain: layout style; }
+  .equipment[hidden], .equipment [hidden] { display: none; }
+  .equipment__face { position: absolute; z-index: 2; left: 0; top: 0; overflow: clip; background: var(--equipment-folder); }
+  .equipment__surface { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #242526; }
+  .equipment__card-fill { position: absolute; inset: 0; background: var(--equipment-folder); color: #242526; overflow: clip; }
+  .equipment__heading { position: absolute; z-index: 3; top: var(--equipment-top, 126px); left: 0; width: 100%; margin: 0; color: #242526; font-size: clamp(50px, min(7.2vw, 11svh), 112px); line-height: 1; }
+  .equipment__cards { position: absolute; inset: 0; z-index: 2; perspective: none; pointer-events: auto; }
+  .equipment__cards:focus-visible { outline: 2px solid #242526; outline-offset: -8px; }
+  .equipment__card { position: absolute; left: 0; top: 0; margin: 0; border: 0; padding: 0; background: transparent; font: inherit; transform-origin: 0 0; backface-visibility: hidden; filter: drop-shadow(0 20px 22px rgb(35 31 24 / .19)) drop-shadow(0 5px 6px rgb(35 31 24 / .09)); }
+  .equipment__product { position: absolute; left: 9%; top: 9%; width: 82%; height: 65%; object-fit: contain; object-position: center; }
+  .equipment__product--folder { top: 41.5%; height: auto; aspect-ratio: 16 / 9; transform: translateY(-50%); mask: var(--equipment-image-mask) center / 100% 100% no-repeat; -webkit-mask: var(--equipment-image-mask) center / 100% 100% no-repeat; }
+  .equipment__name { position: absolute; left: 9%; right: 9%; bottom: 8%; margin: 0; font-size: clamp(18px, 1.8vw, 27px); line-height: 1.08; font-weight: 500; letter-spacing: -.025em; text-align: left; text-wrap: balance; }
+  @media(max-width:640px) {
+    .equipment__heading { font-size: clamp(42px, 11vw, 70px); }
+    .equipment__name { font-size: clamp(14px, 4vw, 20px); }
+  }
+</style>

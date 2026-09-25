@@ -1,0 +1,132 @@
+---
+const base = import.meta.env.BASE_URL;
+const art = (name: string) => `${base}scenes/sky/${name}.webp`;
+const birds = [
+  { x: 53, y: 11, size: 40, depth: .02, start: -.1, direction: -1, delay: -.2 },
+  { x: 57, y: 10.6, size: 31, depth: .018, start: -.1, direction: -1, delay: -.43 },
+  { x: 62, y: 11.7, size: 25, depth: .014, start: -.1, direction: -1, delay: -.08 },
+  { x: 29, y: 32, size: 48, depth: .055, start: .13, direction: 1, delay: -.34 },
+  { x: 25, y: 32.9, size: 34, depth: .04, start: .13, direction: 1, delay: -.16 },
+  { x: 20, y: 31.3, size: 29, depth: .025, start: .13, direction: 1, delay: -.51 },
+  { x: 66, y: 52, size: 38, depth: .04, start: .42, direction: -1, delay: -.26 },
+  { x: 70, y: 51.5, size: 31, depth: .026, start: .42, direction: -1, delay: -.44 },
+  { x: 74, y: 53.4, size: 23, depth: .02, start: .42, direction: -1, delay: -.05 },
+  { x: 44, y: 69, size: 43, depth: .04, start: .64, direction: 1, delay: -.31 },
+  { x: 39, y: 70, size: 32, depth: .025, start: .64, direction: 1, delay: -.13 },
+  { x: 63, y: 86, size: 28, depth: .02, start: .88, direction: -1, delay: -.37 },
+  { x: 67, y: 85, size: 20, depth: .013, start: .88, direction: -1, delay: -.12 },
+  { x: 21, y: 10, size: 26, depth: .01, start: 0, direction: 1, delay: -.18, companion: 0 },
+  { x: 22, y: 10.5, size: 19, depth: .01, start: 0, direction: 1, delay: -.42, companion: 1 },
+];
+const rotors = [
+  { n: 1, x: 790.64935, y: 1209.10034, size: 428, duration: 17 },
+  { n: 2, x: 1187.15918, y: 1412.73352, size: 279, duration: 20 },
+  { n: 3, x: 1436.05225, y: 1520.51318, size: 227, duration: 23 },
+  { n: 4, x: 1626.42102, y: 1621.77524, size: 149, duration: 26 },
+];
+const reflections = [
+  { n: 1, x: 788.03064, y: 1991.24268, size: 428, duration: 17 },
+  { n: 2, x: 1186.84106, y: 1934.49584, size: 279, duration: 20 },
+  { n: 3, x: 1437.17627, y: 1877.13951, size: 227, duration: 23 },
+  { n: 4, x: 1626.11279, y: 1853.79019, size: 149, duration: 26 },
+];
+const placement = (x: number, y: number, width: number) => `left:${x / 38.4}%;top:${y / 21.6}%;width:${width / 38.4}%;`;
+---
+<div class="sky-world" data-sky-world data-sky-active="false" aria-hidden="true">
+  <div class="sky-world__track" data-sky-track>
+    <div class="sky-world__sunlight"></div>
+
+    <div class="sky-world__bank sky-world__bank--distant-a" data-sky-parallax=".025"><img src={art('clouds-distant-sky')} alt="" width="2560" height="649" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--entry" data-sky-parallax="-.06"><img src={art('clouds-sky')} alt="" width="2560" height="940" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--entry-left" data-sky-parallax="-.025"><img src={art('cloud-crown')} alt="" width="980" height="917" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__wisp sky-world__wisp--first" data-sky-parallax=".05"><img src={art('cloud-wisp-1')} alt="" width="2560" height="75" decoding="async" loading="lazy" /></div>
+
+    <div class="sky-world__bank sky-world__bank--distant-b" data-sky-parallax=".035"><img src={art('clouds-distant-sky')} alt="" width="2560" height="649" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--left" data-sky-parallax="-.08"><img src={art('clouds-sky')} alt="" width="2560" height="940" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__wisp sky-world__wisp--second" data-sky-parallax=".025"><img src={art('cloud-wisp-4')} alt="" width="2560" height="57" decoding="async" loading="lazy" /></div>
+
+    <div class="sky-world__bank sky-world__bank--right" data-sky-parallax="-.045"><img src={art('clouds-sky')} alt="" width="2560" height="940" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--middle" data-sky-parallax="-.055"><img src={art('cloud-crown')} alt="" width="980" height="917" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--distant-c" data-sky-parallax=".04"><img src={art('clouds-distant-sky')} alt="" width="2560" height="649" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__bank sky-world__bank--low" data-sky-parallax="-.035"><img src={art('clouds-sky')} alt="" width="2560" height="940" decoding="async" loading="lazy" /></div>
+    <div class="sky-world__wisp sky-world__wisp--third" data-sky-parallax=".03"><img src={art('cloud-wisp-2')} alt="" width="2560" height="98" decoding="async" loading="lazy" /></div>
+
+    <div class="sky-world__horizon">
+      <div class="sky-world__landscape">
+        <img class="sky-world__layer sky-world__back-clouds" style={placement(0, 857, 3840)} src={art('clouds-distant')} alt="" width="2560" height="649" decoding="async" loading="lazy" />
+        <img class="sky-world__layer sky-world__horizon-clouds" style={placement(0, 332.39307, 3840)} src={art('clouds-hero')} alt="" width="2560" height="1337" decoding="async" loading="lazy" />
+        <img class="sky-world__layer" style={placement(939.87659, 1385.48383, 815)} src={art('windmills')} alt="" width="815" height="774" decoding="async" loading="lazy" />
+        {reflections.map(rotor => <img class="sky-world__layer sky-world__rotor sky-world__rotor--reflection" style={`${placement(rotor.x, rotor.y, rotor.size)}--rotor-duration:${rotor.duration}s;`} src={art(`windmill-reflection-${rotor.n}`)} alt="" width={rotor.size} height={rotor.size} decoding="async" loading="lazy" />)}
+        {rotors.map(rotor => <img class="sky-world__layer sky-world__rotor" style={`${placement(rotor.x, rotor.y, rotor.size)}--rotor-duration:${rotor.duration}s;`} src={art(`windmill-blade-${rotor.n}`)} alt="" width={rotor.size} height={rotor.size} decoding="async" loading="lazy" />)}
+        <div class="sky-world__lake-light"></div>
+        <img class="sky-world__layer sky-world__grass" style={placement(1613.10791, 1466.17139, 2315)} src={art('grasses')} alt="" width="2315" height="694" decoding="async" loading="lazy" />
+      </div>
+    </div>
+
+    {birds.map((bird, index) => <div class="sky-world__bird" data-sky-bird data-sky-companion={'companion' in bird ? bird.companion : undefined} data-sky-focus={index < 3 ? "" : undefined} data-flight-start={bird.start} data-flight-direction={bird.direction} data-flight-depth={bird.depth} style={`--bird-x:${bird.x}%;top:${bird.y}%;--bird-focus-x:${bird.x - 27}%;--bird-size:${bird.size}px;--bird-facing:${bird.direction};--bird-delay:${bird.delay}s;`}><span class="sky-world__bird-frame" style={`background-image:url('${art('bird-flight')}')`}></span></div>)}
+  </div>
+</div>
+
+<style>
+  .sky-world { position: absolute; inset: 0; overflow: hidden; contain: layout paint; background: #0964ec; pointer-events: none; }
+  .sky-world__track { position: absolute; inset: 0 0 auto; height: 400%; overflow: hidden; background: linear-gradient(180deg, #0647d9 0%, #0963eb 17%, #0c74eb 40%, #177feb 67%, #0750d2 80%, #3b94ed 95%, #1977e0 100%); will-change: transform; }
+  .sky-world__sunlight { position: absolute; left: -30%; top: -8%; width: 120%; height: 105%; transform: rotate(-18deg); transform-origin: 50% 0; background: linear-gradient(90deg, transparent 15%, #d9f7ff0b 22%, transparent 24%, #ebffff0a 31%, transparent 37%, #fff9e909 51%, transparent 64%); mix-blend-mode: screen; }
+  .sky-world__bank, .sky-world__wisp { position: absolute; will-change: transform; }
+  .sky-world__bank img, .sky-world__wisp img { display: block; width: 100%; height: auto; user-select: none; animation: sky-cloud-drift 24s ease-in-out infinite alternate; }
+  .sky-world__bank--entry { top: 7%; width: 126%; left: -9%; }
+  .sky-world__bank--entry img { animation-duration: 29s; }
+  .sky-world__bank--entry-left { top: 7.9%; width: 43%; left: 1.5%; }
+  .sky-world__bank--entry-left img { scale: -1 1; animation-duration: 34s; animation-delay: -12s; }
+  .sky-world__bank--distant-a { top: 10%; width: 110%; left: -7%; opacity: .7; }
+  .sky-world__bank--left { top: 26%; width: 130%; left: -65%; }
+  .sky-world__bank--left img { scale: -1 1; animation-delay: -7s; }
+  .sky-world__bank--distant-b { top: 30%; width: 120%; left: 18%; opacity: .5; }
+  .sky-world__bank--right { top: 45%; width: 133%; left: 33%; }
+  .sky-world__bank--right img { animation-duration: 33s; animation-delay: -11s; }
+  .sky-world__bank--middle { top: 48%; width: 41%; left: 14%; opacity: .86; }
+  .sky-world__bank--middle img { scale: -1 1; animation-delay: -9s; animation-duration: 31s; }
+  .sky-world__bank--distant-c { top: 58%; width: 118%; left: -32%; opacity: .65; }
+  .sky-world__bank--low { top: 61%; width: 112%; left: -27%; opacity: .9; }
+  .sky-world__bank--low img { scale: -1 1; animation-delay: -4s; animation-duration: 34s; }
+  .sky-world__wisp { width: 160%; opacity: .72; }
+  .sky-world__wisp img { animation-name: sky-wisp-drift; animation-duration: 22s; }
+  .sky-world__wisp--first { top: 16%; left: -30%; }
+  .sky-world__wisp--second { top: 39%; left: -5%; opacity: .5; }
+  .sky-world__wisp--third { top: 66%; left: -42%; }
+  .sky-world__horizon { position: absolute; left: 0; bottom: 0; width: 100%; height: 25%; overflow: hidden; mask-image: linear-gradient(180deg, transparent, #000 18%, #000); }
+  .sky-world__landscape { position: absolute; left: 50%; bottom: 0; width: max(100%, calc(var(--sky-height, 100svh) * 1.777778)); aspect-ratio: 16 / 9; transform: translateX(-50%); }
+  .sky-world__layer { display: block; position: absolute; height: auto; user-select: none; }
+  .sky-world__horizon-clouds { animation: sky-horizon-breathe 15s ease-in-out infinite alternate; transform-origin: 50% 75%; }
+  .sky-world__rotor { animation: sky-rotor var(--rotor-duration, 20s) linear infinite; }
+  .sky-world__rotor--reflection { animation-direction: reverse; opacity: .65; }
+  .sky-world__grass { transform-origin: 50% 100%; animation: sky-grass-sway 5.5s ease-in-out infinite alternate; }
+  .sky-world__lake-light { position: absolute; left: 0; top: 84%; width: 100%; height: 16%; background: repeating-linear-gradient(178deg, transparent 0 13px, #c6f2ff0a 15px, transparent 17px 26px); animation: sky-lake-shimmer 7s ease-in-out infinite alternate; mix-blend-mode: screen; }
+  .sky-world__bird { position: absolute; left: var(--bird-x); width: calc(var(--bird-size) * var(--bird-scale, 1)); height: calc(var(--bird-size) * var(--bird-scale, 1)); will-change: transform; }
+  .sky-world__bird-frame { display: block; width: 100%; height: 100%; background-repeat: no-repeat; background-size: calc(var(--bird-size) * var(--bird-scale, 1) * 16) calc(var(--bird-size) * var(--bird-scale, 1)); transform: scaleX(var(--bird-facing)); animation: sky-bird-flap .72s steps(16) infinite; animation-delay: var(--bird-delay); }
+  .sky-world[data-sky-active='false'] *, .sky-world[data-sky-reduced='true'] * { animation-play-state: paused !important; }
+  .sky-world[data-sky-folded='true'] .sky-world__bank img,
+  .sky-world[data-sky-folded='true'] .sky-world__wisp img,
+  .sky-world[data-sky-folded='true'] .sky-world__horizon * { animation-play-state: paused !important; }
+  @keyframes sky-cloud-drift { from { transform: translate3d(-1.2%, 0, 0); } to { transform: translate3d(1.2%, -1.5%, 0); } }
+  @keyframes sky-wisp-drift { from { transform: translate3d(-3%, 0, 0); } to { transform: translate3d(3%, 0, 0); } }
+  @keyframes sky-horizon-breathe { from { transform: scale(1); } to { transform: scale(1.01, 1.015); } }
+  @keyframes sky-rotor { to { transform: rotate(360deg); } }
+  @keyframes sky-grass-sway { from { transform: skewX(-.8deg); } to { transform: skewX(.8deg); } }
+  @keyframes sky-lake-shimmer { from { transform: translateY(-2px); opacity: .35; } to { transform: translateY(2px); opacity: .65; } }
+  .sky-world[data-sky-reading='true'] .sky-world__bird { visibility: hidden; }
+  .sky-world[data-sky-reading='true'] .sky-world__bird-frame { animation-play-state: paused; }
+  @keyframes sky-bird-flap { to { background-position-x: calc(var(--bird-size) * var(--bird-scale, 1) * -16); } }
+  @media (max-width: 640px) {
+    .sky-world__bank--entry { top: 9%; width: 235%; left: -52%; }
+    .sky-world__bank--entry-left { top: 10.2%; width: 75%; left: -15%; }
+    .sky-world__bank--left { top: 29%; width: 225%; left: -119%; }
+    .sky-world__bank--right { top: 47%; width: 240%; left: 8%; }
+    .sky-world__bank--middle { top: 46%; width: 97%; left: -38%; }
+    .sky-world__bank--low { top: 63%; width: 210%; left: -64%; }
+    .sky-world__bank--distant-a, .sky-world__bank--distant-b, .sky-world__bank--distant-c { width: 220%; }
+    .sky-world__bird { --bird-scale: .7; }
+    .sky-world__bird[data-sky-focus] { left: var(--bird-focus-x); }
+    .sky-world__landscape { left: 60%; width: 160%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sky-world * { animation: none !important; } }
+</style>

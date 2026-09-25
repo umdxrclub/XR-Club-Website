@@ -1,0 +1,28 @@
+---
+import ProjectCabinet from './ProjectCabinet.astro';
+---
+<section class="project-scene" id="projects" data-project-scene aria-label="Projects" inert>
+  <div class="project-scene__layout"><ProjectCabinet id="home-project-files" overview /></div>
+</section>
+<style>
+  .project-scene { position: absolute; inset: 0; z-index: 2; isolation: isolate; opacity: 0; pointer-events: none; color: #fff; }
+  .project-scene::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #11102b08 20%, #11102b4d); opacity: var(--project-scene-shade, 0); pointer-events: none; }
+  .project-scene__layout { --project-top: clamp(112px, 13svh, 176px); --project-bottom: clamp(24px, 4svh, 52px); position: relative; display: flex; flex-direction: column; width: min(1240px, calc(100% - 10vw)); height: calc(100svh - var(--site-footer-height)); margin: 0 auto; padding: var(--project-top) 0 var(--project-bottom); }
+  .project-scene__layout :global(.cabinet) { flex: 1; min-height: 0; }
+  .project-scene__layout :global(.cabinet__desk) { flex: 1; height: auto; min-height: 0; }
+  @media(max-width:640px) {
+    .project-scene__layout { --project-top: 148px; --project-bottom: 20px; width: calc(100% - 48px); }
+  }
+  @media(max-width:360px) { .project-scene__layout { --project-top: 140px; --project-bottom: 16px; width: calc(100% - 40px); } }
+  @media(max-height:480px) and (min-width:641px) { .project-scene__layout { --project-top: 104px; --project-bottom: 12px; } }
+</style>
+<script>
+  import { mountProjectStory } from './projectStory';
+  let dispose: (() => void) | undefined;
+  document.addEventListener('astro:page-load', () => {
+    dispose?.(); dispose = undefined;
+    const root = document.querySelector<HTMLElement>('[data-home-waves]');
+    if (root?.querySelector('[data-project-scene]')) dispose = mountProjectStory(root);
+  });
+  document.addEventListener('astro:before-swap', () => { dispose?.(); dispose = undefined; });
+</script>

@@ -1,0 +1,44 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<link rel="preload" href={`${base}models/stickman.glb`} as="fetch" crossorigin="anonymous" />
+<div class="home-assistant" data-home-assistant>
+  <button class="home-assistant__button" type="button" data-chat-toggle aria-label="Ask XR Club assistant" aria-description="Click to chat. Drag onto a highlighted area to dock." aria-expanded="false" aria-controls="chat-panel">
+    <span class="home-assistant__model">
+      <canvas data-assistant-canvas data-model-url={`${base}models/stickman.glb`} aria-hidden="true"></canvas>
+    </span>
+  </button>
+</div>
+<style>
+  .home-assistant { position: absolute; z-index: 5; left: max(5vw, calc((100% - 1280px) / 2)); bottom: calc(var(--site-footer-height, 0px) + 14px); width: clamp(150px, min(15vw, 25svh), 210px); pointer-events: none; }
+  .home-assistant[data-feet-aligned] { top: var(--assistant-top); bottom: auto; }
+  .home-assistant__button { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0; color: #f2f1ee; pointer-events: auto; -webkit-tap-highlight-color: transparent; touch-action: none; user-select: none; cursor: grab; }
+  .home-assistant[data-dragging] .home-assistant__button { cursor: grabbing; }
+  .home-assistant__model { position: relative; display: block; width: 100%; aspect-ratio: 1; }
+  .home-assistant canvas { position: relative; z-index: 1; display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 300ms ease; pointer-events: none; }
+  .home-assistant[data-ready] canvas { opacity: 1; }
+  .home-assistant__button:focus-visible { outline: 1px solid #e4e8e3; outline-offset: 3px; border-radius: 16px; }
+  @media(max-width:900px) { .home-assistant { left: 32px; width: 130px; } }
+  @media(max-width:640px) { .home-assistant { left: 20px; width: 122px; bottom: calc(var(--site-footer-height, 0px) + 16px); } }
+  @media(max-width:360px) { .home-assistant { left: 16px; width: 108px; } }
+  @media(max-height:600px) and (min-width:641px) { .home-assistant { width: 135px; bottom: calc(var(--site-footer-height, 0px) + 6px); } }
+  @media(prefers-reduced-motion:reduce) { .home-assistant canvas { transition: none; } }
+</style>
+<script>
+  let dispose: (() => void) | undefined;
+  let generation = 0;
+  async function mount() {
+    dispose?.(); dispose = undefined;
+    const current = ++generation;
+    const element = document.querySelector<HTMLElement>('[data-home-assistant]');
+    if (!element) return;
+    try {
+      const { mountHomeAssistant } = await import('./homeAssistant');
+      if (generation !== current || !element.isConnected) return;
+      const cleanup = await mountHomeAssistant(element, () => current === generation && element.isConnected);
+      if (generation !== current) cleanup(); else dispose = cleanup;
+    } catch (error) { console.warn('The assistant is available without its 3D preview.', error); }
+  }
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', () => { generation++; dispose?.(); dispose = undefined; });
+</script>

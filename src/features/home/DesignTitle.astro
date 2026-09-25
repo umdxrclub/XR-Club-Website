@@ -1,0 +1,58 @@
+---
+import { designPalette as ink } from './designPalette';
+---
+<svg class="design-title" data-design-title viewBox="0 0 315 120" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="design-fold-back" x1="0" y1="0" x2=".3" y2="1">
+      <stop offset="0" stop-color={ink.light} /><stop offset=".38" stop-color={ink.mid} /><stop offset="1" stop-color={ink.dark} />
+    </linearGradient>
+    <linearGradient id="design-fold-front" x1="0" y1="0" x2=".12" y2="1">
+      <stop offset="0" stop-color={ink.light} /><stop offset=".24" stop-color="#eeeeee" /><stop offset=".62" stop-color="#929292" /><stop offset="1" stop-color={ink.dark} />
+    </linearGradient>
+    <linearGradient id="design-fold-ink" x1="0" y1="0" x2=".7" y2="1">
+      <stop offset="0" stop-color="#737373" /><stop offset=".38" stop-color="#303030" /><stop offset="1" stop-color="#080808" />
+    </linearGradient>
+    <!-- Like the ideas title, these folds are vector artwork. A broader diagonal
+         composition gives Design its own shape. -->
+    <pattern id="design-folds" width="1" height="1" viewBox="0 0 360 120" preserveAspectRatio="none">
+      <rect width="360" height="120" fill="url(#design-fold-back)" />
+      <path fill="url(#design-fold-ink)" d="M-30 16C90 98 200 -14 390 45V150H-30Z">
+        <animate attributeName="d" values="M-30 16C90 98 200 -14 390 45V150H-30Z;M-30 36C105 2 240 102 390 18V150H-30Z;M-30 16C90 98 200 -14 390 45V150H-30Z" dur="9s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1" />
+      </path>
+      <path fill="url(#design-fold-front)" d="M-30 98C85 10 225 138 390 50V150H-30Z">
+        <animate attributeName="d" values="M-30 98C85 10 225 138 390 50V150H-30Z;M-30 62C120 138 235 12 390 92V150H-30Z;M-30 98C85 10 225 138 390 50V150H-30Z" dur="9s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1" />
+      </path>
+    </pattern>
+  </defs>
+  <text x="0" y="96" fill="url(#design-folds)">Design</text>
+</svg>
+<style>
+  .design-title { display: block; width: 3.15em; height: 1.2em; overflow: visible; }
+  .design-title text { font-family: var(--font-title); font-size: 100px; font-weight: 600; letter-spacing: var(--statement-tracking, 0); stroke: url(#design-folds); stroke-width: var(--statement-ink, 0); stroke-linejoin: round; paint-order: stroke fill; }
+  @media (forced-colors: active) { .design-title text { fill: CanvasText; stroke: CanvasText; } }
+</style>
+<script>
+  let dispose: (() => void) | undefined;
+  document.addEventListener('astro:page-load', () => {
+    dispose?.();
+    const svg = document.querySelector<SVGSVGElement>('[data-design-title]');
+    if (!svg) return;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const controller = new AbortController();
+    let visible = true;
+    const update = () => { if (reduced.matches || document.hidden || !visible) svg.pauseAnimations(); else svg.unpauseAnimations(); };
+    const observer = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; update(); });
+    observer.observe(svg);
+    reduced.addEventListener('change', update, { signal: controller.signal });
+    document.addEventListener('visibilitychange', update, { signal: controller.signal });
+    document.fonts.ready.then(() => {
+      if (controller.signal.aborted) return;
+      const width = svg.querySelector('text')!.getComputedTextLength();
+      svg.setAttribute('viewBox', '0 0 ' + width + ' 120');
+      svg.style.width = (width / 100) + 'em';
+    });
+    update();
+    dispose = () => { controller.abort(); observer.disconnect(); };
+  });
+  document.addEventListener('astro:before-swap', () => { dispose?.(); dispose = undefined; });
+</script>

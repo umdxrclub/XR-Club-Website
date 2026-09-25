@@ -1,0 +1,56 @@
+{
+  "title": "Minimal Noir 4k",
+  "workshop": "3736099508",
+  "uploader": "Drioyard",
+  "projection": {
+    "height": 2160,
+    "width": 3840
+  },
+  "parallax": {
+    "amount": 0.5,
+    "delay": 0.1,
+    "mouseInfluence": 0.5
+  },
+  "layers": [
+    {
+      "id": "body",
+      "source": "Cat 9",
+      "width": 862,
+      "height": 938,
+      "origin": "1880.72095 709.84741 0.00000",
+      "parallaxDepth": "0.00000 0.00000"
+    },
+    {
+      "id": "head",
+      "source": "Cat 8",
+      "width": 925,
+      "height": 1097,
+      "origin": "1932.13977 1216.08435 0.00000",
+      "parallaxDepth": "-0.05000 -0.05000"
+    },
+    {
+      "id": "eyes",
+      "source": "Cat 5",
+      "width": 759,
+      "height": 502,
+      "origin": "1945.50000 1095.00000 0.00000",
+      "parallaxDepth": "-0.05000 -0.05000"
+    },
+    {
+      "id": "pupils",
+      "source": "Cat 6",
+      "width": 574,
+      "height": 384,
+      "origin": "1961.00000 1091.50000 0.00000",
+      "parallaxDepth": "-0.13000 -0.13000"
+    },
+    {
+      "id": "whiskers",
+      "source": "Cat 3",
+      "width": 1139,
+      "height": 474,
+      "origin": "1948.50000 906.00000 0.00000",
+      "parallaxDepth": "-0.05000 -0.05000"
+    }
+  ]
+}

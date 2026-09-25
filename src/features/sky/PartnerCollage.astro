@@ -1,0 +1,45 @@
+---
+import { Image } from 'astro:assets';
+import { storyPartners } from './storyPartners';
+
+const folderMask = (viewBox: string, path: string) =>
+  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" preserveAspectRatio="none"><path fill="white" d="${path}"/></svg>`)}")`;
+const wideMask = folderMask('0 0 1100 100', 'M6 0H248Q252 0 255 3L259 7Q262 10 266 10H1094Q1100 10 1100 16V81Q1100 84 1097 87L1087 97Q1084 100 1081 100H6Q0 100 0 94V6Q0 0 6 0Z');
+const compactMask = folderMask('0 0 360 104', 'M6 0H104Q108 0 111 3L115 7Q118 10 122 10H354Q360 10 360 16V85Q360 88 357 91L347 101Q344 104 341 104H6Q0 104 0 98V6Q0 0 6 0Z');
+---
+<div class="partner-reel" aria-label="Selected sponsors and partners" style={`--partner-folder-mask:${wideMask};--partner-folder-mask-compact:${compactMask}`}>
+  <div class="partner-reel__window">
+    <div class="partner-reel__track">
+      {[0, 1].map(copy => <div class="partner-reel__group" aria-hidden={copy === 1 ? 'true' : undefined}>
+        {storyPartners.map(partner => <a href={partner.url} target="_blank" rel="noopener noreferrer" tabindex={copy === 1 ? -1 : undefined}
+          class:list={['partner-reel__logo', {'partner-reel__logo--light': partner.name === 'Neural Lab'}]}>
+          <Image src={partner.image} alt={copy === 0 ? partner.name : ''} width={320} format="webp" quality={95} loading="lazy" decoding="async" />
+        </a>)}
+      </div>)}
+    </div>
+  </div>
+</div>
+<style>
+  .partner-reel { position: relative; width: 100%; margin-top: 18px; isolation: isolate; text-shadow: none; pointer-events: auto; filter: drop-shadow(0 2px 2px rgb(8 33 70 / .12)) drop-shadow(0 7px 12px rgb(8 33 70 / .12)); }
+  .partner-reel__window { overflow: hidden; padding: 20px 0 16px; background: #f6f4ef; mask: var(--partner-folder-mask) 0 0 / 100% 100% no-repeat; -webkit-mask: var(--partner-folder-mask) 0 0 / 100% 100% no-repeat; }
+  .partner-reel__track { display: flex; width: max-content; animation: partner-drift 42s linear infinite; }
+  .partner-reel__group { display: flex; flex-shrink: 0; align-items: center; gap: 48px; padding-right: 48px; }
+  .partner-reel__logo { width: 170px; height: 64px; display: flex; align-items: center; justify-content: center; flex: none; border-radius: 10px; text-decoration: none; }
+  .partner-reel__logo img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 10px; }
+  .partner-reel__logo:focus-visible { outline: 2px solid #315b85; outline-offset: -2px; }
+  .partner-reel__logo--light img { filter: brightness(0); }
+  .partner-reel:is(:hover, :focus-within) .partner-reel__track { animation-play-state: paused; }
+  /* Keep focused logos in view instead of stopping them outside the strip. */
+  .partner-reel:focus-within .partner-reel__window { overflow-x: auto; scrollbar-width: thin; }
+  .partner-reel:focus-within .partner-reel__track { animation: none; }
+  .partner-reel:focus-within .partner-reel__group[aria-hidden='true'] { display: none; }
+  :global([data-story-chapter][aria-hidden='true']) .partner-reel__track { animation-play-state: paused; }
+  @keyframes partner-drift { to { transform: translateX(-50%); } }
+  @media (max-width: 640px) {
+    .partner-reel { order: 3; margin-top: 0; }
+    .partner-reel__window { padding: 22px 0 18px; mask-image: var(--partner-folder-mask-compact); -webkit-mask-image: var(--partner-folder-mask-compact); }
+    .partner-reel__group { gap: 30px; padding-right: 30px; }
+    .partner-reel__logo { width: 140px; height: 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .partner-reel__window { overflow-x: auto; } .partner-reel__track { animation: none; } .partner-reel__group[aria-hidden='true'] { display: none; } }
+</style>

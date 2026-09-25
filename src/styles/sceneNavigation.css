@@ -1,0 +1,15 @@
+html[data-scene-navigation] [data-home-waves-stage] { view-transition-name: home-scene; }
+html[data-scene-navigation] [data-header] { view-transition-name: home-navigation; }
+html[data-scene-navigation] .site-footer { view-transition-name: home-footer; }
+html[data-scene-navigation]::view-transition { pointer-events: none; }
+html[data-scene-navigation]::view-transition-group(*) { animation: none; }
+html[data-scene-navigation]::view-transition-old(*),
+html[data-scene-navigation]::view-transition-new(*) { animation: none; mix-blend-mode: normal; }
+html[data-scene-navigation]::view-transition-old(root),
+html[data-scene-navigation]::view-transition-old(home-navigation),
+html[data-scene-navigation]::view-transition-old(home-footer) { opacity: 0; }
+html[data-scene-navigation]::view-transition-new(home-scene) { clip-path: circle(0); }
+html[data-scene-navigation]::view-transition-group(home-scene) { z-index: 1; }
+html[data-scene-navigation]::view-transition-group(home-navigation),
+html[data-scene-navigation]::view-transition-group(home-footer) { z-index: 2; }
+[data-home-waves][data-navigating] [data-home-waves-stage] { pointer-events: none; }

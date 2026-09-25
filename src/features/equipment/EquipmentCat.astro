@@ -1,0 +1,106 @@
+---
+import source from '../../../public/scenes/cat/source.json';
+const base = import.meta.env.BASE_URL;
+// Keep the source image planes aligned in their original orthographic space.
+const layers = source.layers.map(layer => {
+  const [x, y] = layer.origin.split(' ').map(Number);
+  return { ...layer, x: x - layer.width / 2 - 1450, y: source.projection.height - y - layer.height / 2 - 500 };
+});
+const eye = layers.find(layer => layer.id === 'eyes')!;
+---
+<div class="equipment-cat" data-equipment-cat hidden>
+  <span class="visually-hidden">A cat pulls down the white page to reveal an animated ocean.</span>
+  <div class="equipment-cat__render" data-cat-render hidden>
+    <video data-cat-video data-src={`${base}scenes/ocean/Comp_3.mp4`} muted loop playsinline preload="none" aria-label="Ocean waves and a red navigation buoy" />
+    <svg class="equipment-cat__paper" data-cat-paper aria-hidden="true"><path data-cat-sheet fill="#fff"/><path data-cat-sheet-edge fill="none" stroke="#d9dde1" stroke-width="1.5"/></svg>
+  </div>
+  <svg class="equipment-cat__scene" data-cat-scene viewBox="-600 -1100 2200 2900" aria-hidden="true" overflow="visible" focusable="false">
+    <defs>
+      <linearGradient id="cat-rift-interior" x1="0" x2="1">
+        <stop offset="0" stop-color="#121314" />
+        <stop offset=".65" stop-color="#17191b" />
+        <stop offset="1" stop-color="#25272a" />
+      </linearGradient>
+      <linearGradient id="cat-rift-paper" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff" />
+        <stop offset=".65" stop-color="#fafafa" />
+        <stop offset="1" stop-color="#d4d4d4" />
+      </linearGradient>
+      <filter id="cat-rift-shadow" x="-80%" y="-20%" width="260%" height="150%">
+        <feGaussianBlur stdDeviation="4" />
+      </filter>
+      <filter id="cat-floor-softness" x="-30%" y="-150%" width="160%" height="400%">
+        <feGaussianBlur stdDeviation="13" />
+      </filter>
+
+      <clipPath id="cat-head-outside"><path data-cat-head-window /></clipPath>
+      <clipPath id="cat-body-outside"><path data-cat-body-window /></clipPath>
+      <clipPath id="cat-body-crop"><rect x="-10" y="0" width="1000" height="1100" /></clipPath>
+      <mask id="cat-eye-mask" maskUnits="userSpaceOnUse" x="200" y="400" width="600" height="350">
+        <image data-cat-image data-href={`${base}scenes/cat/eyes.webp`} x={eye.x} y={eye.y} width={eye.width} height={eye.height} />
+      </mask>
+    </defs>
+    <ellipse data-cat-floor cx="480" cy="1435" rx="330" ry="25" fill="#343638" opacity="0" filter="url(#cat-floor-softness)" />
+    <g data-cat-rift>
+      <path data-cat-rift-shadow fill="#18191a" opacity=".15" filter="url(#cat-rift-shadow)" />
+      <path data-cat-rift-opening fill="url(#cat-rift-interior)" />
+      <path data-cat-rift-crease fill="none" stroke="#b5b6b8" stroke-width="2" />
+    </g>
+    <path data-cat-rift-lip fill="none" stroke="#55585b" stroke-opacity=".5" stroke-width="2" />
+    <g data-cat-actor>
+      <g data-cat-grip visibility="hidden" fill="none" stroke-linecap="round">
+        <path data-cat-arm-left stroke="#000" stroke-width="74" />
+        <path data-cat-arm-right stroke="#000" stroke-width="74" />
+      </g>
+      <g clip-path="url(#cat-body-outside)" data-cat-body-front><g id="cat-body-art" data-cat-body-pose>
+        <g data-cat-tail>
+          <path d="M265 1224C166 1272 72 1241 33 1173C1 1117 22 1052 65 1019" fill="none" stroke="#000" stroke-width="65" stroke-linecap="round" />
+        </g>
+        {layers.filter(layer => layer.id === 'body').map(layer =>
+          <image data-cat-image data-href={`${base}scenes/cat/${layer.id}.webp`} x={layer.x} y={layer.y} width={layer.width} height={layer.height} clip-path="url(#cat-body-crop)" />)}
+        <path d="M234 1080L650 1080C664 1135 671 1180 645 1219Q626 1240 605 1240H275Q220 1240 205 1216C195 1190 210 1150 234 1080Z" fill="#000" />
+        <g data-cat-paw="left">
+          <path d="M290 1091C306 1078 376 1083 391 1104L411 1333C443 1348 449 1406 420 1416C385 1427 309 1429 278 1416C249 1404 257 1369 275 1352Z" fill="#000" />
+          <path d="M306 1401L306 1417M334 1404L334 1420" stroke="#424345" stroke-width="4" stroke-linecap="round" />
+        </g>
+        <g data-cat-paw="right">
+          <path d="M485 1102C505 1085 572 1086 591 1104L623 1343C650 1357 660 1406 629 1418C599 1429 526 1428 495 1418C464 1409 471 1372 487 1351Z" fill="#000" />
+          <path d="M572 1405L572 1421M602 1403L602 1420" stroke="#424345" stroke-width="4" stroke-linecap="round" />
+        </g>
+      </g></g>
+      <g clip-path="url(#cat-head-outside)" data-cat-head-front><g id="cat-head-art" data-cat-head-pose>
+        <g data-cat-head-aim>
+          {layers.filter(layer => ['head', 'eyes', 'whiskers'].includes(layer.id)).map(layer =>
+            <image data-cat-image data-href={`${base}scenes/cat/${layer.id}.webp`} x={layer.x} y={layer.y} width={layer.width} height={layer.height} />)}
+          <g mask="url(#cat-eye-mask)">
+            <g data-cat-pupils>
+              {layers.filter(layer => layer.id === 'pupils').map(layer =>
+                <image data-cat-image data-href={`${base}scenes/cat/${layer.id}.webp`} x={layer.x} y={layer.y} width={layer.width} height={layer.height} />)}
+            </g>
+          </g>
+          <g class="equipment-cat__glasses" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M244 482L184 455M756 484L796 460M481 516Q510 501 538 516" stroke="#e6e7e5" stroke-width="12" />
+            <path d="M273 433Q355 416 442 436Q472 443 478 478L479 632Q478 682 438 687L287 687Q244 685 243 644L242 481Q244 440 273 433ZM574 438Q645 422 718 438Q749 447 753 481L754 638Q752 684 718 689L576 689Q540 685 539 644L539 483Q541 447 574 438Z" fill="#fff" fill-opacity=".025" stroke="#111213" stroke-width="20" />
+            <path d="M273 433Q355 416 442 436Q472 443 478 478L479 632Q478 682 438 687L287 687Q244 685 243 644L242 481Q244 440 273 433ZM574 438Q645 422 718 438Q749 447 753 481L754 638Q752 684 718 689L576 689Q540 685 539 644L539 483Q541 447 574 438Z" stroke="#e6e7e5" stroke-width="9" />
+            <path d="M276 482L276 466L301 462M572 482L572 466L593 464" stroke="#fff" stroke-opacity=".55" stroke-width="5" />
+            <circle cx="773" cy="477" r="7" fill="#e6e7e5" stroke="none" />
+          </g>
+        </g>
+      </g></g>
+      <g data-cat-hands visibility="hidden" fill="none" stroke-linecap="round">
+        <g data-cat-hand-left><ellipse rx="58" ry="35" fill="#000"/><path d="M-20 -12V9M3 -15V8" stroke="#45494b" stroke-width="4"/></g>
+        <g data-cat-hand-right><ellipse rx="58" ry="35" fill="#000"/><path d="M-3 -15V8M20 -12V9" stroke="#45494b" stroke-width="4"/></g>
+      </g>
+    </g>
+  </svg>
+</div>
+<style>
+  .equipment-cat { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .equipment-cat__render, .equipment-cat__paper { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .equipment-cat__render { overflow: hidden; background: #20282e; }
+  .equipment-cat__render[hidden] { display: none; }
+  .equipment-cat__render video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  @media (max-aspect-ratio: 1/1) { .equipment-cat__render video { object-position: 27% center; } }
+  .equipment-cat[hidden] { display: none; }
+  .equipment-cat__scene { position: absolute; left: 50%; top: var(--cat-top, 0px); width: var(--cat-width, 650px); height: var(--cat-height, 860px); transform: translateX(-50%); }
+</style>

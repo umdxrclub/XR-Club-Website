@@ -1,0 +1,56 @@
+---
+import ProjectFolder from '../projects/ProjectFolder.astro';
+import SkyWorld from './SkyWorld.astro';
+import { folderContour } from '../../lib/folderShape';
+const base = import.meta.env.BASE_URL;
+---
+<div class="sky-journey" data-sky-journey aria-hidden="true" hidden>
+  <div class="sky-journey__orange" data-orange-reveal>
+    <img src={`${base}scenes/orange/orange-waves-shaded.svg`} width="3840" height="2160" alt="" decoding="async" />
+    <canvas class="sky-journey__orange-waves" data-orange-waves aria-hidden="true"></canvas>
+  </div>
+  <svg class="sky-journey__definitions" aria-hidden="true" width="0" height="0">
+    <defs>
+      <clipPath id="sky-orange-coverage" clipPathUnits="userSpaceOnUse"><path data-sky-orange-coverage /></clipPath>
+      <path id="sky-folder-source" d={folderContour} />
+      <path id="sky-folder-target" d="M.1 0H.60Q.63 0 .645 .025L.67 .065Q.68 .08 .70 .08H.95Q1 .08 1 .13V.95Q1 1 .95 1H.28Q.26 1 .245 .98L.20 .93Q.185 .915 .165 .915H.045Q0 .915 0 .87V.295Q0 .275 .02 .255L.05 .225V.05Q.05 0 .1 0Z" />
+      <clipPath id="sky-windows" clipPathUnits="userSpaceOnUse">
+        <path data-sky-window="main" />
+        <path data-sky-window="left" clip-path="url(#sky-orange-coverage)" />
+        <path data-sky-window="right" clip-path="url(#sky-orange-coverage)" />
+      </clipPath>
+    </defs>
+  </svg>
+  <svg class="sky-journey__shadows" data-sky-shadows aria-hidden="true">
+    <defs>
+      <filter id="sky-folder-shadow" filterUnits="userSpaceOnUse" x="-60" y="-60" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feGaussianBlur data-sky-shadow-blur in="SourceAlpha" stdDeviation="10" result="blur" />
+        <feOffset data-sky-shadow-offset in="blur" dx="0" dy="26" result="offset" />
+        <feFlood flood-color="#30180c" flood-opacity=".38" />
+        <feComposite in2="offset" operator="in" />
+      </filter>
+    </defs>
+    <g fill="#000" filter="url(#sky-folder-shadow)">
+      <path data-sky-shadow-window="main" />
+      <path data-sky-shadow-window="left" clip-path="url(#sky-orange-coverage)" />
+      <path data-sky-shadow-window="right" clip-path="url(#sky-orange-coverage)" />
+    </g>
+  </svg>
+  <div class="sky-journey__view" data-sky-view><SkyWorld /></div>
+  <div class="sky-journey__front" data-sky-front><ProjectFolder decorative exploded /></div>
+</div>
+<style>
+  .sky-journey { position: absolute; inset: 0; z-index: 6; visibility: hidden; pointer-events: none; contain: layout style; }
+  .sky-journey[hidden] { display: none; }
+  .sky-journey__definitions { position: absolute; overflow: hidden; }
+  .sky-journey__shadows { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .sky-journey__orange, .sky-journey__view { position: absolute; inset: 0; overflow: clip; }
+  .sky-journey__orange { background: #ffefd3; clip-path: inset(0 0 100%); }
+  .sky-journey__orange img { width: 100%; height: 100%; max-width: none; object-fit: cover; transform: scale(1.035); }
+  .sky-journey__orange-waves { position: absolute; inset: 0; width: 100%; height: 100%; display: block; visibility: hidden; }
+  .sky-journey__orange.has-orange-waves .sky-journey__orange-waves { visibility: visible; }
+  .sky-journey__orange.has-orange-waves img { visibility: hidden; }
+  .sky-journey__view { clip-path: url(#sky-windows); }
+  .sky-journey__front { position: absolute; top: 0; left: 0; transform-origin: center; backface-visibility: hidden; will-change: transform; }
+  @media(prefers-reduced-motion:reduce) { .sky-journey__front { will-change: auto; } }
+</style>

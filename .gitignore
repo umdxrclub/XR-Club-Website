@@ -1,8 +1,9 @@
 node_modules/
 dist/
-.env
 .astro/
-public/demo.mp4
-public/testimony.MOV
-supabase/.temp/
-raw-media/
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+work/

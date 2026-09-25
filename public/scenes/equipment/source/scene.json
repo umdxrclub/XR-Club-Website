@@ -1,0 +1,148 @@
+{
+	"camera" :
+	{
+		"center" : "0.00000 0.00000 -1.00000",
+		"eye" : "0.00000 0.00000 0.00000",
+		"up" : "0.00000 1.00000 0.00000"
+	},
+	"general" :
+	{
+		"ambientcolor" : "0.29804 0.28627 0.25882",
+		"bloom" : true,
+		"bloomhdrfeather" : 0.1,
+		"bloomhdriterations" : 8,
+		"bloomhdrscatter" : 1.619,
+		"bloomhdrstrength" : 2.0,
+		"bloomhdrthreshold" : 1.0,
+		"bloomstrength" : 0.76999998,
+		"bloomthreshold" : 0.64999998,
+		"camerafade" : true,
+		"cameraparallax" : true,
+		"cameraparallaxamount" : 0.0099999998,
+		"cameraparallaxdelay" : 0.1,
+		"cameraparallaxmouseinfluence" : -0.28,
+		"camerapreview" : true,
+		"camerashake" : false,
+		"camerashakeamplitude" : 0.5,
+		"camerashakeroughness" : 1.0,
+		"camerashakespeed" : 0.28,
+		"clearcolor" : "0.76863 0.74510 0.65882",
+		"clearenabled" : true,
+		"farz" : 10000.0,
+		"fov" : 50.0,
+		"hdr" : false,
+		"nearz" : 0.0099999998,
+		"orthogonalprojection" :
+		{
+			"height" : 1440,
+			"width" : 2560
+		},
+		"skylightcolor" : "0.30000 0.30000 0.30000",
+		"zoom" : 1.01
+	},
+	"objects" :
+	[
+		{
+			"alignment" : "center",
+			"alpha" : 1.0,
+			"angles" : "0.00000 0.00000 0.00000",
+			"brightness" : 1.0,
+			"color" : "1.00000 1.00000 1.00000",
+			"colorBlendMode" : 0,
+			"copybackground" : true,
+			"effects" :
+			[
+				{
+					"file" : "effects/vhs/effect.json",
+					"id" : 91,
+					"name" : "",
+					"passes" :
+					[
+						{
+							"constantshadervalues" :
+							{
+								"artifacts" : 1,
+								"chromatic" : 0.31,
+								"distortionspeed" : 0.81999999,
+								"distortionstrength" : 1.01,
+								"distortionwidth" : 0.81,
+								"scale" : 1,
+								"strength" : 0.16
+							},
+							"id" : 92
+						}
+					],
+					"visible" : true
+				},
+				{
+					"file" : "effects/scroll/effect.json",
+					"id" : 97,
+					"name" : "",
+					"passes" :
+					[
+						{
+							"constantshadervalues" :
+							{
+								"repeat" : "1 1",
+								"speedx" : -0.050000001,
+								"speedy" : 0
+							},
+							"id" : 98
+						}
+					],
+					"visible" : false
+				},
+				{
+					"file" : "effects/filmgrain/effect.json",
+					"id" : 155,
+					"name" : "",
+					"passes" :
+					[
+						{
+							"constantshadervalues" :
+							{
+								"exponent" : 0.67000002,
+								"scale" : 14.95,
+								"strength" : 0.050000001
+							},
+							"id" : 156
+						}
+					],
+					"visible" : true
+				}
+			],
+			"id" : 13,
+			"image" : "models/yorhabg.json",
+			"ledsource" : false,
+			"locktransforms" : true,
+			"name" : "yorhabg",
+			"origin" : "1280.00000 720.00000 0.00000",
+			"parallaxDepth" : "1.00000 1.00000",
+			"perspective" : false,
+			"scale" : "1.00000 1.00000 1.00000",
+			"size" : "2560.00000 1440.00000",
+			"solid" : true,
+			"visible" : true
+		},
+		{
+			"angles" : "0.00000 0.00000 0.00000",
+			"id" : 164,
+			"locktransforms" : false,
+			"maxtime" : 5.0,
+			"mintime" : 1.0,
+			"muteineditor" : false,
+			"name" : "onlymp3.to - Fortress of Lies (Vocals) [NieR Automata] 2B Bunker Bedroom Music and Ambience-xKrNDV4yG6Q-256k-1660423410231.mp3",
+			"origin" : "1279.61890 -289.40118 0.00000",
+			"parallaxDepth" : "1.00000 1.00000",
+			"playbackmode" : "loop",
+			"scale" : "8.24474 1.00000 1.00000",
+			"sound" :
+			[
+				"sounds/onlymp3.to - Fortress of Lies (Vocals) [NieR Automata] 2B Bunker Bedroom Music and Ambience-xKrNDV4yG6Q-256k-1660423410231.mp3"
+			],
+			"startsilent" : false,
+			"volume" : 0.5
+		}
+	],
+	"version" : 1
+}

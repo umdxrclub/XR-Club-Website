@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="cream" x2="0" y2="1">
+      <stop stop-color="#fff0d5"/><stop offset="1" stop-color="#ffedd0"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fabd35"/><stop offset="1" stop-color="#f9b332"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fc912c"/><stop offset="1" stop-color="#fb8626"/>
+    </linearGradient>
+    <linearGradient id="tangerine" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fc7825"/><stop offset="1" stop-color="#fb7422"/>
+    </linearGradient>
+    <filter id="layer-shadow" x="-10%" y="-15%" width="125%" height="135%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="2" dy="-3" stdDeviation="7" flood-color="#633214" flood-opacity=".3"/>
+    </filter>
+  </defs>
+  <path fill="url(#cream)" d="M0 0H1280V720H0Z"/>
+  <g filter="url(#layer-shadow)">
+    <path fill="url(#gold)" d="M-40 166C-15 128-9 130 18 120C83 98 190 72 242 79C338 76 397 145 439 273C472 376 518 384 646 380C724 379 799 368 855 380C955 397 1005 470 1038 558C1069 629 1055 733 1019 790H-40Z"/>
+  </g>
+  <g filter="url(#layer-shadow)">
+    <path fill="url(#orange)" d="M-40 257C39 239 116 190 223 199C313 195 329 272 354 347C384 430 466 425 552 446C690 470 816 484 875 548C923 600 936 665 929 790H-40Z"/>
+  </g>
+  <g filter="url(#layer-shadow)">
+    <path fill="url(#tangerine)" d="M-40 380C-18 341 37 337 89 328C183 311 210 326 248 361C296 416 287 464 337 477C445 494 529 516 623 565C707 614 739 643 730 790H-40Z"/>
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+<link rel="preload" as="image" href={`${base}scenes/home-folds/folds-still.webp`} />
+<div class="home-sculpture" data-home-sculpture aria-hidden="true">
+  <div class="home-sculpture__corner" data-home-artwork>
+    <img class="home-sculpture__fallback" src={`${base}scenes/home-folds/folds-still.webp`} width="2554" height="1944" alt="" decoding="async" fetchpriority="high" />
+  </div>
+</div>
+<style>
+  .home-sculpture { --sculpture-size: min(43vw, 48svh, 600px); position: absolute; inset: 0; z-index: 1; overflow: clip; pointer-events: none; }
+  .home-sculpture__corner { position: absolute; left: 0; bottom: 0; width: calc(var(--sculpture-size) * 1.094); height: calc(var(--sculpture-size) * .87); }
+  .home-sculpture__fallback { position: absolute; left: calc(var(--sculpture-size) * -.22); bottom: calc(var(--sculpture-size) * -.13); width: calc(var(--sculpture-size) * 1.313786); height: var(--sculpture-size); max-width: none; display: block; }
+  :global(.home-waves.is-ready.has-corner-sculpture) .home-sculpture__fallback { visibility: hidden; }
+  @media(max-width:640px) { .home-sculpture { --sculpture-size: 132px; } }
+  @media(max-width:360px) { .home-sculpture { --sculpture-size: 114px; } }
+</style>
+<script>
+  import { mountHomeSculpture } from './homeSculpture';
+  let dispose: (() => void) | undefined;
+  document.addEventListener('astro:page-load', () => {
+    dispose?.(); dispose = undefined;
+    const element = document.querySelector<HTMLElement>('[data-home-sculpture]');
+    if (element) dispose = mountHomeSculpture(element);
+  });
+  document.addEventListener('astro:before-swap', () => { dispose?.(); dispose = undefined; });
+</script>
