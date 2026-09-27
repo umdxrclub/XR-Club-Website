@@ -128,7 +128,7 @@ export function mountProjectStory(root: HTMLElement) {
       frozen = p > .0001;
       gallery.dispatchEvent(new CustomEvent('xr:carousel-freeze', { detail: frozen }));
       if (frozen) captureSource();
-      inert(gallery, frozen); inert(statement, frozen);
+      inert(gallery, frozen);
     }
     if (p < .999 && scene.hasAttribute('data-arrived')) {
       scene.querySelector('[data-project-cabinet]')?.dispatchEvent(new CustomEvent('xr:project-story-reset'));
@@ -162,7 +162,10 @@ export function mountProjectStory(root: HTMLElement) {
       style(scene, 'opacity', '1');
     }
     style(statement, 'visibility', background >= 1 ? 'hidden' : '');
-    style(scene, 'pointer-events', p > .4 ? 'auto' : 'none'); inert(scene, p <= .4);
+    inert(statement, background >= 1);
+    // Only the visible controls receive clicks; the full scene must not cover
+    // the funding link while the two scenes overlap.
+    style(scene, 'pointer-events', 'none'); inert(scene, p <= .4);
     style(landing, 'opacity', finished ? '1' : isReduced ? String(phase(.55, .9, p)) : '0');
     style(details, 'opacity', '1');
     style(intro, 'opacity', String(phase(.68, .92, p)));
@@ -197,7 +200,7 @@ export function mountProjectStory(root: HTMLElement) {
     }
     data('storyTravel', travel.toFixed(5));
     root.dispatchEvent(new CustomEvent('xr:story-position', { detail: { travel } }));
-    if (p >= .999 && pendingEntry) {
+    if (p >= .999 && (!skyJourney || root.dataset.skyPhase === 'projects') && pendingEntry) {
       const enter = pendingEntry; pendingEntry = null; enter();
     }
   }
@@ -236,7 +239,7 @@ export function mountProjectStory(root: HTMLElement) {
   const observer = new ResizeObserver(measure);
   observer.observe(stage); observer.observe(header);
   root.addEventListener('xr:project-story-enter', event => {
-    if (progress >= .999) return;
+    if (progress >= .999 && (!skyJourney || root.dataset.skyPhase === 'projects')) return;
     event.preventDefault();
     pendingEntry = (event as CustomEvent<{ enter: () => void }>).detail.enter;
     window.scrollTo({ top: start + distance, behavior: reduced.matches ? 'instant' : 'smooth' });

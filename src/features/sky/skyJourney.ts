@@ -239,7 +239,9 @@ export function mountSkyJourney(root: HTMLElement) {
       // shadows no longer need to be regenerated during the reading sequence.
       if (!settled || !flightSettled || flightWidth !== width || flightHeight !== height || flightReduced !== reduced) {
         // Remove the original only while its exact replacement is in flight.
-        if (!scene.inert) scene.inert = true; style(scene, 'pointer-events', 'none');
+        // Keep the project actions available until their scene is fully hidden.
+        if (scene.inert !== (liquid >= 1)) scene.inert = liquid >= 1;
+        style(scene, 'pointer-events', 'none');
         style(landing, 'visibility', reduced && p < .45 ? '' : 'hidden');
         if (reduced) style(landing, 'opacity', String(1 - phase(0, .45, p)));
         style(details, 'opacity', '1');
