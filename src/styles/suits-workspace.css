@@ -89,7 +89,15 @@
 .sc-type button { flex:1; background:none; border:0; border-radius:5px; padding:8px; color:var(--ink-2); font:inherit; font-size:12px; cursor:pointer; }.sc-type button[aria-pressed="true"] { background:var(--surface); color:var(--ink); }
 .sc-form-note { font-size:12px; color:var(--ink-2); margin:8px 0 0; }.sc-reminders { display:flex; flex-wrap:wrap; gap:14px; font-size:12px; }.sc-reminders label { display:flex; align-items:center; gap:5px; }
 .sc-details { display:grid; gap:17px; margin:20px 0; }.sc-details p { margin:0; }.sc-details small { display:block; color:var(--ink-2); margin-bottom:4px; }.sc-detail-actions { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 0; }
-.sc-deliveries { font-size:12px; color:var(--ink-2); border-top:1px solid var(--hair); padding-top:14px; }.sc-deliveries summary { cursor:pointer; }.sc-deliveries ul { padding-left:18px; margin-top:10px; }.sc-deliveries li { margin:5px 0; }
+.sc-details__zone { display:block; color:var(--ink-2); font-size:12px; margin-top:4px; }
+.sc-deliveries { font-size:12px; color:var(--ink-2); border-top:1px solid var(--hair); margin-top:24px; padding-top:16px; }
+.sc-deliveries summary { cursor:pointer; padding-block:4px; }
+.sc-deliveries__table { width:100%; border-collapse:collapse; table-layout:fixed; margin-top:14px; text-align:left; }
+.sc-deliveries__table th { font-weight:500; padding:0 8px 8px 0; }
+.sc-deliveries__table th:first-child { width:48%; }
+.sc-deliveries__table td { border-top:1px solid var(--hair); padding:10px 8px 10px 0; color:var(--ink); vertical-align:top; overflow-wrap:anywhere; }
+.sc-deliveries__status { text-transform:capitalize; }
+.sc-deliveries__table .sc-deliveries__error { border-top:0; padding-top:0; color:var(--danger); }
 .st[data-mode="workspace"] .st-modal__card { width:min(560px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); overflow:auto; border-radius:15px; padding:28px; }
 .st[data-mode="workspace"] .st-modal__title { font-family:var(--font-site); font-size:23px; letter-spacing:-.03em; }.st[data-mode="workspace"] .st-input, .st[data-mode="workspace"] .st-textarea { border-radius:6px; font-size:14px; }
 .sc-native { width:100%; padding:10px 12px; border:1px solid var(--hair); border-radius:6px; background:var(--surface); color:var(--ink); font:inherit; }

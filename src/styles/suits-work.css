@@ -101,17 +101,7 @@
 .sw-assign-list small { display:block; margin-top:3px; font-size:11px; color:var(--ink-2); overflow-wrap:anywhere; }
 .sw-sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
 .sw-prewrap { white-space:pre-wrap; overflow-wrap:anywhere; }
-.sw-gate-email { font-size:13px; overflow-wrap:anywhere; margin:0 0 20px; color:var(--ink-2); }
-.st-gate__card .sw-eyebrow { margin-bottom:16px; line-height:1.6; }
-.st .st-gate__title { font-family:var(--font-site); font-size:clamp(32px,4vw,52px); font-weight:600; letter-spacing:-.045em; line-height:1.12; }
-.st .st-gate__title::after { content:none; }
-.st .st-gate__text { line-height:1.65; max-width:440px; }
-.st[data-mode="workspace"] .st-gate { width:100%; }
-.st[data-mode="workspace"] .st-gate { min-height:100dvh; padding:24px; align-items:center; }
-.st[data-mode="workspace"] .st-gate__card { padding:32px; border-radius:16px; background:var(--surface); width:min(100%,540px); margin:auto; color:var(--ink); }
-.st[data-mode="workspace"] .st-gate__title { color:var(--ink); }
-.st[data-mode="workspace"] .st-gate__text { color:var(--ink-2); }
-.st[data-mode="login"] .st-gate__card .sw-eyebrow,.st[data-mode="login"] .sw-gate-email { color:#c0c8d5; }
+.sw-gate-email { font-size:13px; overflow-wrap:anywhere; margin:0 0 20px; color:#c0c8d5; }
 .st-gate__card .sw-actions .st-btn { flex:1; width:auto; min-width:120px; }
 @container workspace-panel (max-width:650px) {
  .sw-heading { align-items:flex-start; flex-wrap:wrap; gap:14px; }.sw-heading h2 { font-size:23px; }

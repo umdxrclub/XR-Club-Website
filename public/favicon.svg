@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>XR Labs</title>
   <circle cx="256" cy="256" r="256" fill="#111214"/>
-  <g transform="translate(9.05 125.65) scale(1.1)" fill="#FFFFFF">
-    <path d="M66 44H109L143 89L178 44H222L168 116L227 193H181L142 143L105 193H60L117 117Z"/>
-    <path fill-rule="evenodd" d="M242 44H321C361 44 382 63 382 94C382 118 368 134 346 141L389 193H342L301 144H282V193H242ZM282 78V111H317C333 111 342 106 342 94C342 82 333 78 317 78Z"/>
+  <g transform="translate(70 135) scale(1.06)" fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="butt" stroke-linejoin="round">
+    <path d="M20 27L153 212M153 27L20 212"/>
+    <path transform="translate(185 0)" d="M19 215V23H80C116 23 138 44 138 73C138 105 116 127 80 127H19M82 127L147 211"/>
   </g>
 </svg>

@@ -60,7 +60,11 @@ export async function bootPreview() {
   api.updateMeeting = async (id, patch) => { rows = rows.map(m => m.id === id ? { ...m, ...patch } : m); };
   api.deleteMeeting = async id => { rows = rows.filter(m => m.id !== id); };
   api.setRsvp = async (id, response) => { rsvps = [...rsvps.filter(r => r.meeting_id !== id), { meeting_id: id, user_id: state.me!.user_id, response }]; };
-  api.meetingDeliveries = async () => [];
+  api.meetingDeliveries = async () => new URLSearchParams(location.search).has('deliveries') ? [
+    {recipient_id:null,kind:'update',status:'sent',last_error:null},
+    {recipient_id:'preview-1',kind:'reminder',status:'pending',last_error:null},
+    {recipient_id:'preview-2',kind:'reminder',status:'failed',last_error:'Example delivery failure: this participant has direct messages disabled.'},
+  ] : [];
   api.discord = async <T>() => ({ configured: true, guildId: '123456789012345679', meetingChannelId: '123456789012345678', announcementChannelId: '123456789012345677', remindersChannelId: '123456789012345676', channels: [{ id: '123456789012345678', name: 'SUITS voice room', type: 2 }, { id: '123456789012345677', name: 'announcements', type: 0 }, { id: '123456789012345676', name: 'reminders', type: 0 }, { id: '123456789012345675', name: 'ai-ml', type: 0 }] } as T);
   // These fixtures exercise the real layouts without writing to the team backend.
   api.updateProfile = async () => {};
