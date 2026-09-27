@@ -65,6 +65,9 @@ const create = async events => (await db.query('SELECT * FROM public.suits_sched
 const [checkin] = await as(alice,()=>create([row]));
 assert.equal(checkin.created_by,alice);
 assert.equal((await db.query('SELECT * FROM public.suits_calendar_notifications WHERE meeting_id=$1',[checkin.id])).rows.length,7,'Server + two initial DMs + four reminders');
+await db.exec(await fs.readFile('supabase/migrations/20260927010000_suits_calendar_channels.sql','utf8'));
+assert.equal((await db.query('SELECT * FROM public.suits_calendar_notifications WHERE meeting_id=$1',[checkin.id])).rows.length,9,'Migration adds only two future channel reminders to the existing meeting');
+assert.equal((await db.query("SELECT count(*)::int n FROM public.suits_calendar_notifications WHERE meeting_id=$1 AND kind='created'",[checkin.id])).rows[0].n,3,'Migration never re-announces existing meetings');
 assert.equal((await as(bob,()=>db.query('SELECT id FROM public.suits_meetings'))).rows.length,1);
 assert.equal((await as(carol,()=>db.query('SELECT id FROM public.suits_meetings'))).rows.length,0,'Other members cannot see a check-in');
 assert.equal((await as(outsider,()=>db.query('SELECT id FROM public.suits_meetings'))).rows.length,0);
@@ -116,8 +119,20 @@ class Query {
 }
 const admin={from:table=>new Query(table),rpc:async(name,args)=>({data:(await db.query(`SELECT * FROM public.${name}($1)`,[args.batch_size])).rows,error:null})};
 const members=(await db.query('SELECT * FROM public.suits_team')).rows;
-const settings={guild_id:'123456789012345679',channel_id:'123456789012345677'};
+const settings={guild_id:'123456789012345679',channel_id:'123456789012345677',reminders_channel_id:'123456789012345676'};
+const subteamChannel='123456789012345675',voiceChannel='123456789012345678';
+await db.query("INSERT INTO public.suits_settings(key,value) VALUES('discord',$1)",[JSON.stringify(settings)]);
+for(const [id,type] of [[settings.channel_id,0],[settings.reminders_channel_id,0],[subteamChannel,0],[voiceChannel,2]]) await db.query('INSERT INTO public.suits_discord_channels(id,guild_id,name,type) VALUES($1,$2,$3,$4)',[id,settings.guild_id,id,type]);
+assert.equal(delivery.notificationChannel({...privateJob.snapshot,announcement_channel_id:settings.channel_id},settings),settings.reminders_channel_id);
+assert.equal(delivery.notificationChannel({...privateJob.snapshot,audience:'team',announcement_channel_id:subteamChannel},settings),settings.channel_id);
+assert.equal(delivery.notificationChannel({...privateJob.snapshot,audience:'subteam',discord_channel_id:subteamChannel,announcement_channel_id:settings.channel_id},settings),subteamChannel,'Old announcements overrides cannot send subteam updates to announcements');
+assert.throws(()=>delivery.notificationChannel(privateJob.snapshot,{...settings,reminders_channel_id:undefined}),/reminders channel/);
+assert.throws(()=>delivery.notificationChannel(privateJob.snapshot,{...settings,reminders_channel_id:settings.channel_id}),/separate/);
+assert.throws(()=>delivery.notificationChannel({...privateJob.snapshot,audience:'subteam',discord_channel_id:settings.channel_id},settings),/subteam/);
+assert.throws(()=>delivery.notificationChannel({...privateJob.snapshot,audience:'subteam'},settings),/subteam/);
+assert.deepEqual(delivery.checkInMentions({...row,created_by:alice},[...members,{user_id:carol,discord_id:'123456789012345674'},{user_id:bob,email:'e2e.test@umd.edu',discord_id:'123456789012345673'}]),['123456789012345671','123456789012345672'],'Only the organizer and invited real teammate can be tagged');
 const realFetch=globalThis.fetch; let sent=[],rateLimit=false,blockBob=false;
+let foreignChannel=false;
 globalThis.fetch=async(url,options={})=>{
   const path=new URL(url).pathname;
   if(path.endsWith('/users/@me/channels')) {const body=JSON.parse(options.body);return Response.json({id:`dm-${body.recipient_id}`});}
@@ -126,20 +141,28 @@ globalThis.fetch=async(url,options={})=>{
     if(blockBob&&path.includes('dm-123456789012345672'))return Response.json({},{status:403});
     sent.push({path,body:JSON.parse(options.body)});return Response.json({id:`message-${sent.length}`});
   }
-  return Response.json({guild_id:settings.guild_id,type:0});
+  return Response.json({guild_id:foreignChannel?'123456789012345670':settings.guild_id,type:path.endsWith(voiceChannel)?2:0});
 };
 try {
   const [jobMeeting]=await as(alice,()=>create([row]));
   let result=await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
   assert.equal(result.sent,3,'Initial server announcement and two DMs are delivered');
   assert.equal(sent.length,3); assert.equal(sent.filter(s=>s.path.includes('/dm-')).length,2);
+  const checkinPost=sent.find(s=>!s.path.includes('/dm-'));
+  assert.ok(checkinPost.path.includes(settings.reminders_channel_id),'1:1 creation goes only to reminders');
+  assert.deepEqual(checkinPost.body.allowed_mentions,{parse:[],roles:[],users:['123456789012345671','123456789012345672']});
+  assert.ok(checkinPost.body.content.includes('<@123456789012345672>'));
   await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
   assert.equal(sent.length,3,'A second run does not duplicate sent announcements');
   await as(bob,()=>db.query("INSERT INTO public.suits_meeting_rsvps(meeting_id,user_id,response) VALUES($1,$2,'no')",[jobMeeting.id,bob]));
   await db.query("UPDATE public.suits_calendar_notifications SET due_at=now() WHERE meeting_id=$1 AND kind='reminder'",[jobMeeting.id]);
   result=await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
   assert.equal(result.skipped,2,'Declined attendees do not get reminder DMs');
-  assert.equal(result.sent,2);
+  assert.equal(result.sent,4,'Two channel reminders and two organizer DMs');
+  const reminders=sent.filter(s=>s.body.content.includes('Meeting reminder')&&!s.path.includes('/dm-'));
+  assert.equal(reminders.length,2);
+  assert.ok(reminders.every(s=>s.path.includes(settings.reminders_channel_id)));
+  assert.ok(reminders.every(s=>!s.body.content.includes('123456789012345672')),'Declined participants are not tagged in channel reminders');
   sent=[]; rateLimit=true;
   const [retryMeeting]=await as(alice,()=>create([row]));
   result=await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
@@ -152,6 +175,38 @@ try {
   assert.equal(result.sent,2,'One failed DM does not prevent other recipients');
   const failures=(await db.query("SELECT last_error FROM public.suits_calendar_notifications WHERE meeting_id=$1 AND status='failed'",[retryMeeting.id])).rows;
   assert.match(failures[0].last_error,/privacy|permissions/);
+  blockBob=false; sent=[];
+  const [aiMeeting]=await as(alice,()=>create([{...row,audience:'subteam',subteam:'technical',attendee_ids:[],discord_channel_id:subteamChannel,announcement_channel_id:settings.channel_id}]));
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  let channelPosts=sent.filter(s=>!s.path.includes('/dm-'));
+  assert.equal(channelPosts.length,1); assert.ok(channelPosts[0].path.includes(subteamChannel));
+  assert.deepEqual(channelPosts[0].body.allowed_mentions,{parse:[],users:[],roles:[]});
+  await as(alice,()=>db.query('UPDATE public.suits_meetings SET title=$2 WHERE id=$1',[aiMeeting.id,'Changed @everyone <@123456789012345672>']));
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  await db.query("UPDATE public.suits_calendar_notifications SET due_at=now() WHERE meeting_id=$1 AND kind='reminder' AND status='pending'",[aiMeeting.id]);
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  await as(alice,()=>db.query('DELETE FROM public.suits_meetings WHERE id=$1',[aiMeeting.id]));
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  channelPosts=sent.filter(s=>!s.path.includes('/dm-'));
+  assert.equal(channelPosts.length,5,'Create, update, two reminders and cancellation each produce one subteam post');
+  assert.ok(channelPosts.every(s=>s.path.includes(subteamChannel)),'Every subteam event stays in the subteam channel');
+  assert.ok(channelPosts.every(s=>s.body.allowed_mentions.parse.length===0&&s.body.allowed_mentions.users.length===0),'Titles and notes cannot enable incidental mentions');
+  sent=[];
+  await as(alice,()=>create([{...row,audience:'subteam',subteam:'technical',attendee_ids:[],discord_channel_id:voiceChannel}]));
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  assert.ok(sent.find(s=>!s.path.includes('/dm-')).path.includes(voiceChannel),'Voice meeting updates stay in that voice channel’s text chat');
+  sent=[];
+  await as(alice,()=>create([{...row,audience:'team',attendee_ids:[],announcement_channel_id:subteamChannel}]));
+  await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  assert.ok(sent.find(s=>!s.path.includes('/dm-')).path.includes(settings.channel_id),'All-team posts use announcements, ignoring a legacy override');
+  sent=[];
+  await as(alice,()=>create([{...row,title:'Private review',agenda:'Private notes @everyone',announcement_channel_id:settings.channel_id}]));
+  result=await delivery.processCalendarQueue(admin,{...settings,reminders_channel_id:undefined},members,'fake-test-token');
+  assert.equal(result.failed,1); assert.equal(sent.filter(s=>!s.path.includes('/dm-')).length,0,'No configured reminders channel means no public fallback');
+  sent=[]; foreignChannel=true;
+  await as(alice,()=>create([row]));
+  result=await delivery.processCalendarQueue(admin,settings,members,'fake-test-token');
+  assert.equal(result.failed,1); assert.ok(sent.every(s=>s.path.includes('/dm-')),'A channel outside the configured server cannot receive meeting posts');
 } finally { globalThis.fetch=realFetch; }
 await db.close();
-console.log('Calendar passed: DST, layout, RLS, recurrence, channels, leases, rescheduling, cancellations, Discord DMs, duplicate prevention, declined invites, rate limits and blocked DMs. No external messages sent.');
+console.log('Calendar passed: DST, layout, RLS, recurrence, audience channel routing, participant-only mentions, reminder migration, leases, rescheduling, cancellations, Discord DMs, duplicate prevention, declined invites, rate limits and blocked DMs. No external messages sent.');

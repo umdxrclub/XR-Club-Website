@@ -2,7 +2,7 @@
 // roster, then hand off to the section views.
 import type { User } from '@supabase/supabase-js';
 import { googleCallbackError, prepareGoogleReturn } from '../../lib/oauthRedirect';
-import { db, api, state, isManager } from './api';
+import { db, api, state, isManager, canReviewApplications } from './api';
 import { toast } from './ui';
 import { navigate } from 'astro:transitions/client';
 import { setupWorkspace, enterWorkspace } from './workspace';
@@ -13,6 +13,7 @@ import * as tasks from './tasks';
 import * as meetings from './meetings';
 import * as documents from './documents';
 import * as team from './team';
+import * as applications from './applications';
 
 const TEAM_EMAIL = /@(terpmail\.)?umd\.edu$/i;
 const THEME_KEY = 'xr-suits-theme';
@@ -30,6 +31,7 @@ const VIEWS: Record<string, View> = {
   meetings: { render: h => meetings.render(h), leave: () => meetings.leave() },
   documents: { render: h => documents.render(h) },
   team: { render: h => team.render(h), leave: () => team.leave() },
+  applications: { render: h => applications.render(h), leave: () => applications.leave() },
 };
 
 let current = '';
@@ -40,7 +42,7 @@ let pageVersion = 0;
 document.addEventListener('astro:before-swap', () => {
   stopSky();
   pageVersion++; bootAbort?.abort(); authSubscription?.unsubscribe(); authSubscription=null;
-  reader.leave(); meetings.leave(); team.leave(); current=''; authorizing=false; state.me=null;
+  reader.leave(); meetings.leave(); team.leave(); applications.leave(); current=''; authorizing=false; state.me=null;
 });
 
 export async function boot() {
@@ -104,6 +106,7 @@ export async function boot() {
   });
   document.getElementById('st-signout')!.addEventListener('click', async () => {
     authSubscription?.unsubscribe();authSubscription=null;
+    applications.leave();
     await db.auth.signOut();
     await navigate(`${state.base}suits/team/`);
   });
@@ -124,7 +127,7 @@ export async function boot() {
 
   authSubscription = db.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session && !state.me) void authorize(session.user);
-    if (event === 'SIGNED_OUT') { state.me = null; meetings.leave(); showGate(); }
+    if (event === 'SIGNED_OUT') { state.me = null; applications.leave(); meetings.leave(); showGate(); }
   }).data.subscription;
 
   try {
@@ -247,6 +250,7 @@ async function authorize(user: User) {
 
 
     document.querySelectorAll<HTMLElement>('[data-managers]').forEach(el => { el.hidden = !isManager(); });
+    document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
 
     documents.warm();
     const initial = viewFromLocation();
@@ -266,6 +270,7 @@ function pathFor(view: string) {
 }
 
 function viewFromLocation() {
+  if (location.pathname.replace(/\/$/, '') === `${state.base}suits/dashboard`) return 'applications';
   const prefix = `${state.base}suits/${location.pathname.includes('/suits/workspace') ? 'workspace' : 'team'}`;
   let rest = location.pathname.startsWith(prefix) ? location.pathname.slice(prefix.length) : '';
   rest = rest.replace(/^\/+|\/+$/g, '');

@@ -2,7 +2,7 @@
 export interface CalendarMember { user_id: string; display_name: string; discord_id: string | null; proposal_role: string | null; email?: string }
 export interface CalendarMeeting { id: string; title: string; starts_at: string; ends_at: string; audience?: string; subteam?: string | null; attendee_ids?: string[]; created_by: string | null; agenda: string | null; location: string | null; discord_channel_id?: string | null; announcement_channel_id?: string | null; revision?: number; notify_discord?: boolean }
 export interface CalendarJob { id: string; meeting_id: string; revision: number; kind: string; recipient_id: string | null; minutes_before: number; snapshot: CalendarMeeting; attempts: number; lease_token: string; expires_at: string }
-export interface CalendarSettings { guild_id?: string; channel_id?: string; meeting_channel_id?: string }
+export interface CalendarSettings { guild_id?: string; channel_id?: string; meeting_channel_id?: string; reminders_channel_id?: string }
 type Database = any; // Supabase Edge Functions use the existing generated database client.
 const API = 'https://discord.com/api/v10';
 const NO_MENTIONS = { parse: [], users: [], roles: [] };
@@ -11,7 +11,30 @@ const clean = (s: string) => s.replace(/@/g, '@\u200b').replace(/([*_`~|>])/g, '
 export function isInvited(m: CalendarMeeting, member: CalendarMember) {
   return !m.audience || m.audience === 'team' || member.user_id === m.created_by || (m.attendee_ids || []).includes(member.user_id) || (m.audience === 'subteam' && member.proposal_role === m.subteam);
 }
-export function deliveryPayload(job: CalendarJob, settings: CalendarSettings, member?: CalendarMember) {
+/** Resolve by audience, never fall back to announcements for a smaller group. */
+export function notificationChannel(m: CalendarMeeting, settings: CalendarSettings) {
+  let channel: string | null | undefined;
+  if (m.audience === 'check_in') {
+    channel = settings.reminders_channel_id;
+    if (!channel || channel === settings.channel_id) throw new DiscordDeliveryError('Configure a separate reminders channel with /setup for 1:1 check-ins.', 400);
+  } else if (m.audience === 'subteam') {
+    // Old events may explicitly store the former announcements default.
+    const override = m.announcement_channel_id;
+    channel = override && override !== settings.channel_id && override !== settings.reminders_channel_id ? override : m.discord_channel_id;
+    if (!channel || channel === settings.channel_id || channel === settings.reminders_channel_id) throw new DiscordDeliveryError('Choose the subteam meeting channel or its own updates channel.', 400);
+  } else if (!m.audience || m.audience === 'team') {
+    channel = settings.channel_id;
+    if (!channel) throw new DiscordDeliveryError('No all-team announcements channel is configured.', 400);
+  } else throw new DiscordDeliveryError('Unknown meeting audience.', 400);
+  if (!/^\d{17,20}$/.test(channel)) throw new DiscordDeliveryError('The meeting notification channel is invalid.', 400);
+  return channel;
+}
+export function checkInMentions(m: CalendarMeeting, members: CalendarMember[], declined: string[] = []) {
+  if (m.audience !== 'check_in') return [];
+  const participants = new Set([m.created_by, ...(m.attendee_ids || [])]);
+  return [...new Set(members.filter(member => participants.has(member.user_id) && !declined.includes(member.user_id) && !/^e2e\./i.test(member.email || '') && /^\d{17,20}$/.test(member.discord_id || '')).map(member => member.discord_id!))];
+}
+export function deliveryPayload(job: CalendarJob, settings: CalendarSettings, member?: CalendarMember, mentions: string[] = []) {
   const m = job.snapshot;
   const checkIn = m.audience === 'check_in';
   const verb = job.kind === 'cancelled' ? 'Meeting cancelled' : job.kind === 'updated' ? 'Meeting updated' : job.kind === 'reminder' ? 'Meeting reminder' : checkIn ? 'Check-in scheduled' : 'Meeting scheduled';
@@ -22,7 +45,8 @@ export function deliveryPayload(job: CalendarJob, settings: CalendarSettings, me
   if (channel) lines.push(`[Join meeting channel](${channel})`);
   else if (m.location && (!checkIn || member)) lines.push(clean(m.location).slice(0, 500));
   if (m.agenda && (!checkIn || member) && job.kind !== 'cancelled') lines.push(clean(m.agenda).slice(0, 1500));
-  return { content: verb, allowed_mentions: NO_MENTIONS,
+  const users = checkIn && !member ? [...new Set(mentions.filter(id => /^\d{17,20}$/.test(id)))] : [];
+  return { content: [users.map(id => `<@${id}>`).join(' '), verb].filter(Boolean).join(' '), allowed_mentions: users.length ? { parse: [], users, roles: [] } : NO_MENTIONS,
     // Discord deduplicates retries using a stable message nonce.
     nonce: job.id.replace(/-/g, '').slice(0, 24), enforce_nonce: true,
     embeds: [{ title, description: lines.join('\n\n'), color: job.kind === 'cancelled' ? 0x9aa4b2 : 0x356fe6, footer: { text: 'SUITS · XR Labs' } }],
@@ -60,10 +84,13 @@ export async function processCalendarQueue(admin: Database, settings: CalendarSe
           await finish(job, { status: 'skipped', last_error: 'Meeting or invitation changed.', completed_at: new Date().toISOString() }); result.skipped++; continue;
         }
       }
-      if (job.kind === 'reminder' && job.recipient_id) {
-        const { data: reply } = await admin.from('suits_meeting_rsvps').select('response').eq('meeting_id', job.meeting_id).eq('user_id', job.recipient_id).maybeSingle();
-        if (reply?.response === 'no') { await finish(job, { status: 'skipped', last_error: 'Invitation declined.', completed_at: new Date().toISOString() }); result.skipped++; continue; }
+      let declined: string[] = [];
+      if (job.kind === 'reminder') {
         if (Date.parse(job.snapshot.starts_at) <= Date.now()) { await finish(job, { status: 'skipped', last_error: 'Meeting already started.', completed_at: new Date().toISOString() }); result.skipped++; continue; }
+        const { data: replies, error: replyError } = await admin.from('suits_meeting_rsvps').select('user_id,response').eq('meeting_id', job.meeting_id);
+        if (replyError) throw new DiscordDeliveryError('Could not check meeting responses; retrying.', 503);
+        declined = (replies || []).filter((r: { response: string }) => r.response === 'no').map((r: { user_id: string }) => r.user_id);
+        if (job.recipient_id && declined.includes(job.recipient_id)) { await finish(job, { status: 'skipped', last_error: 'Invitation declined.', completed_at: new Date().toISOString() }); result.skipped++; continue; }
       }
       let channel: string | undefined;
       if (job.recipient_id) {
@@ -72,12 +99,13 @@ export async function processCalendarQueue(admin: Database, settings: CalendarSe
         const dm = await calendarDiscord('/users/@me/channels', token, { method: 'POST', body: JSON.stringify({ recipient_id: member.discord_id }) });
         channel = dm.id;
       } else {
-        channel = job.snapshot.announcement_channel_id || settings.channel_id;
-        if (!channel) throw new DiscordDeliveryError('No announcement channel is configured.', 400);
+        channel = notificationChannel(job.snapshot, settings);
         const details = await calendarDiscord(`/channels/${channel}`, token);
-        if (details.guild_id !== settings.guild_id || ![0, 5].includes(details.type)) throw new DiscordDeliveryError('Announcement channel is outside the SUITS server.', 400);
+        const types = job.snapshot.audience === 'subteam' ? [0, 2, 5, 13] : [0, 5];
+        if (details.guild_id !== settings.guild_id || !types.includes(details.type)) throw new DiscordDeliveryError('Choose a supported notification channel in the SUITS server.', 400);
       }
-      const sent = await calendarDiscord(`/channels/${channel}/messages`, token, { method: 'POST', body: JSON.stringify(deliveryPayload(job, settings, member)) });
+      const mentions = !job.recipient_id ? checkInMentions(job.snapshot, members, declined) : [];
+      const sent = await calendarDiscord(`/channels/${channel}/messages`, token, { method: 'POST', body: JSON.stringify(deliveryPayload(job, settings, member, mentions)) });
       await finish(job, { status: 'sent', discord_message_id: sent.id, completed_at: new Date().toISOString(), last_error: null }); result.sent++;
     } catch (err) {
       const error = err instanceof DiscordDeliveryError ? err : new DiscordDeliveryError('Delivery interrupted; retrying.', 503);

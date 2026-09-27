@@ -70,7 +70,7 @@ For deployment, serve `dist/` with HTTPS and Brotli or gzip for HTML/CSS/JS/SVG.
 The former site's application routes are included in this project:
 
 - `/suits/team/`: Google sign-in for UMD accounts, overview, proposal PDFs with role highlights, tasks, meetings and RSVPs, documents, Drive sync, Discord integration, roster, and profile/role management. Section links such as `/suits/team/tasks/` remain valid.
-- `/suits/dashboard/`: the NASA SUITS application review dashboard, including applicant search and filters, interview availability, resumes, reviewer notes, status changes, and CSV export. It uses the existing reviewer password and deployed `suits-review` Edge Function. The `/suits-dashboard/` alias redirects here.
+- `/suits/workspace/applications/`: application reviews inside the SUITS workspace, including applicant search and filters, interview availability, resumes, private reviewer notes, status changes, and CSV export. Only the verified `kcyle@terpmail.umd.edu` account can access reviews or resumes. `/suits/dashboard/` and `/suits-dashboard/` remain compatible entry points through SUITS sign-in; there is no shared reviewer password.
 - `/login/`, `/signup/`, `/forgot-password/`, `/reset-password/`, `/verify-email/`, and `/dashboard/`: the existing account and club administration tools.
 - `/demoday/`, `/demoday/play/`, `/demoday/scan/`, `/demoday/finish/`, `/demoday/leaderboard/`, and `/demoday/vote/`: the existing event tools.
 - `/ideate/` retains the old site's Coming Soon page. The SUITS application form and former `/apply/` alias remain removed; existing database records remain in the original Supabase project.
@@ -92,3 +92,13 @@ If Google Drive is not configured in a fresh environment, enable the Drive and D
 Sign-in remains at `/suits/team/`; authenticated members enter the full-window `/suits/workspace/` with a separate astronaut background and no public website header. Calendar offers day, week, month, and schedule views; all-team and subteam events; private one-to-one check-ins; weekly scheduling; RSVP; Google Calendar export; and Discord channel selection. Managers create, edit, and cancel meetings.
 
 The additive calendar migration and existing Discord bot extension are in `supabase/`. Follow `supabase/CALENDAR-SETUP.md` to activate them in the existing project. The calendar migration and bot upgrade were activated in the existing project on September 26, 2026; the preserved 30-second scheduler returned a healthy calendar response. Development preview `/suits/preview/` uses labeled sample data only and is excluded from production. `npm test` includes isolated database permission and reminder-delivery tests that never send real messages.
+
+## Owner-only application review rollout
+
+The application integration and access restriction require a backend update; local tests do not change production permissions.
+
+1. Deploy the updated `suits-review` function, including `_shared/suits-review.ts`, to the existing project with `--no-verify-jwt`. The handler verifies every bearer token with Supabase Auth and checks the confirmed owner email before any read or write. It uses the caller's session and public key, never the service role. This step disables the old password endpoint.
+2. Apply only `supabase/migrations/20260927020000_suits_application_owner.sql`. It restricts application and resume reads, edits, and deletion to that verified account, including direct API requests. Existing board/admin roles do not grant access. It preserves application records and existing submission policies; unrelated storage buckets retain their permissions.
+3. Publish the updated frontend. Verify the owner sees Applications in the SUITS navigation and another member cannot open reviews, including by direct URL. The old `SUITS_DASHBOARD_PASSWORD` secret is no longer used and can be removed from the server.
+
+`npm test` checks the actual review handler and database policies against anonymous, board, forged-email, unconfirmed-email, and stale-email requests. Development preview `/suits/preview/?view=applications` uses only in-memory sample applications; add `&member=1` to check the denied member view. No test reads real applications or changes real applicant decisions.

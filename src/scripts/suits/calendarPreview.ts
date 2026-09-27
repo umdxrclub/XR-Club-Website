@@ -1,5 +1,6 @@
 // Explicit local design fixtures. Production never imports or routes this module.
-import { api, state, type Member, type Meeting, type Rsvp } from './api';
+import { api, state, canReviewApplications, type Member, type Meeting, type Rsvp } from './api';
+import type { SuitsApplication } from '../../lib/types';
 import { enterWorkspace } from './workspace';
 import { TEAM_ZONE, weekDays, zoneParts, wallTimeToIso } from '../../lib/suitsCalendar';
 export async function bootPreview() {
@@ -34,7 +35,7 @@ export async function bootPreview() {
   api.deleteMeeting = async id => { rows = rows.filter(m => m.id !== id); };
   api.setRsvp = async (id, response) => { rsvps = [...rsvps.filter(r => r.meeting_id !== id), { meeting_id: id, user_id: state.me!.user_id, response }]; };
   api.meetingDeliveries = async () => [];
-  api.discord = async <T>() => ({ configured: true, guildId: '123456789012345679', meetingChannelId: '123456789012345678', channels: [{ id: '123456789012345678', name: 'SUITS voice room', type: 2 }, { id: '123456789012345677', name: 'suits-announcements', type: 0 }] } as T);
+  api.discord = async <T>() => ({ configured: true, guildId: '123456789012345679', meetingChannelId: '123456789012345678', announcementChannelId: '123456789012345677', remindersChannelId: '123456789012345676', channels: [{ id: '123456789012345678', name: 'SUITS voice room', type: 2 }, { id: '123456789012345677', name: 'announcements', type: 0 }, { id: '123456789012345676', name: 'reminders', type: 0 }, { id: '123456789012345675', name: 'ai-ml', type: 0 }] } as T);
   // These fixtures exercise the real layouts without writing to the team backend.
   api.updateProfile = async () => {};
   api.manageMember = async (id,role,subteam) => {state.members=state.members.map(m=>m.user_id===id?{...m,role,proposal_role:subteam}:m);};
@@ -42,11 +43,31 @@ export async function bootPreview() {
   api.setProposalRole = async () => {};
   api.removeMember = async () => {};
   api.createTask = async () => { throw new Error('Tasks are read-only in this design preview.'); };
+  let applications: SuitsApplication[] = ['Morgan Brooks', 'Casey Nguyen'].map((full_name, i) => ({
+    id: `sample-application-${i}`, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    full_name, email: `applicant-${i}@example.invalid`, discord_username: `sample_applicant_${i}`, status: i ? 'interview' : 'new',
+    year: i ? 'Junior' : 'Sophomore', majors: 'Computer Science', minors: null, organizations: 'Example student project team',
+    resume_path: null, portfolio_url: null, bring_to_table: 'I enjoy building accessible interfaces and testing them with a team.',
+    why_join: 'I would like to contribute to astronaut tools and learn from the SUITS team.',
+    teamwork_story: 'We divided the work, reviewed prototypes together, and improved the design after feedback.',
+    team_environment: 'I share progress and ask for feedback early.', interest_areas: ['AI and Machine Learning', 'XR and Unity Development'],
+    interest_other: null, hours_per_week: '5 to 7 hours', availability_changes: 'No expected changes.', required_dates: 'Yes',
+    us_citizen_or_pr: 'Yes', interview_slots: ['2026-09-25 14:00'], anything_else: null, reviewer_notes: null,
+  }));
+  api.review = async <T>(action: string, params: Record<string, unknown> = {}): Promise<T> => {
+    if (!canReviewApplications()) throw new Error('Application reviews are available only to the SUITS owner account.');
+    if (action === 'list') return { applications: structuredClone(applications) } as T;
+    if (action === 'update') applications = applications.map(a => a.id === params.id ? { ...a, ...params } as SuitsApplication : a);
+    else if (action === 'delete') applications = applications.filter(a => a.id !== params.id);
+    else throw new Error('No real resumes are available in this design preview.');
+    return { ok: true } as T;
+  };
+  document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
   document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach(b => { b.disabled = b.dataset.nav === 'documents'; });
   const { go } = await import('./index');
   document.getElementById('st-nav')!.addEventListener('click', e => {
     const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-nav]');
     if (button && !button.disabled) void go(button.dataset.nav!, false);
   });
-  await enterWorkspace(() => go('meetings', false));
+  await enterWorkspace(() => go(new URLSearchParams(location.search).get('view') || 'meetings', false));
 }

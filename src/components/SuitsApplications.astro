@@ -1,0 +1,76 @@
+<template id="st-applications-template">
+<div class="sd" id="sd">
+    <header class="sd__top">
+      <div class="sd__top-left">
+        <h1 class="sd__title">Applications</h1>
+        <span class="sd__count" id="sd-count"></span>
+      </div>
+      <div class="sd__top-right">
+        <button type="button" class="sd__btn" id="sd-export">Export CSV</button>
+      </div>
+    </header>
+
+    <div class="sd__filters">
+      <div class="sd__segment" id="sd-status-filter" aria-label="Filter by application status">
+        <button type="button" class="sd__seg is-active" data-status="">All <span class="sd__seg-n" data-count="all"></span></button>
+        <button type="button" class="sd__seg" data-status="new">New <span class="sd__seg-n" data-count="new"></span></button>
+        <button type="button" class="sd__seg" data-status="interview">Interview <span class="sd__seg-n" data-count="interview"></span></button>
+        <button type="button" class="sd__seg" data-status="accepted">Accepted <span class="sd__seg-n" data-count="accepted"></span></button>
+        <button type="button" class="sd__seg" data-status="rejected">Rejected <span class="sd__seg-n" data-count="rejected"></span></button>
+      </div>
+
+      <div class="sd__tools">
+        <input class="sd__search" id="sd-search" aria-label="Search applications" type="search" placeholder="Search name, email, Discord, major" autocomplete="off" />
+        <select class="sd__select" id="sd-year" aria-label="Year">
+          <option value="">Any year</option>
+          <option>Freshman</option>
+          <option>Sophomore</option>
+          <option>Junior</option>
+          <option>Senior</option>
+          <option>5th Year or Above</option>
+          <option>Graduate Student</option>
+        </select>
+        <select class="sd__select" id="sd-interest" aria-label="Interest">
+          <option value="">Any interest</option>
+          <option>XR and Unity Development</option>
+          <option>UI and UX Design</option>
+          <option>Navigation and Mapping</option>
+          <option>AI and Machine Learning</option>
+          <option>Systems and Telemetry Integration</option>
+          <option>Voice Assistant</option>
+          <option>Human Factors and UX Research</option>
+          <option>Hardware and Peripherals</option>
+          <option>Project Management</option>
+          <option>Outreach and Industry Engagement</option>
+          <option>Graphic Design and Media</option>
+          <option>Documentation and Technical Writing</option>
+          <option>Other</option>
+        </select>
+        <select class="sd__select" id="sd-eligible" aria-label="Eligibility">
+          <option value="">Any eligibility</option>
+          <option value="ok">Eligible and available</option>
+          <option value="flag">Has a flag</option>
+        </select>
+        <select class="sd__select" id="sd-sort" aria-label="Sort applications">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="name">Name A to Z</option>
+          <option value="hours">Most hours per week</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sd__body">
+      <section class="sd__list" id="sd-list" aria-label="Applicants"></section>
+      <p class="sd__empty" id="sd-empty" hidden>No applications match these filters.</p>
+
+      <section class="sd__detail" id="sd-detail" aria-live="polite">
+        <div class="sd__detail-placeholder" id="sd-placeholder">
+          <p>Select an applicant to review.</p>
+          <p class="sd__hint">Arrow keys move through the list. Press <kbd>I</kbd> to mark for interview, <kbd>A</kbd> accept, <kbd>R</kbd> reject, <kbd>N</kbd> reset to new.</p>
+        </div>
+        <div id="sd-detail-content" hidden></div>
+      </section>
+    </div>
+  </div>
+</template>

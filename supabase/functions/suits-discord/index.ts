@@ -73,7 +73,7 @@ interface Member { user_id: string; email: string; display_name: string; role: s
 interface Task { id: string; title: string; details: string | null; section: string; assignee_id: string | null; due_date: string | null; status: string; link: string | null; ping: string[] | null; created_by: string | null }
 interface Meeting { audience?: string; subteam?: string | null; attendee_ids?: string[]; revision?: number; id: string; title: string; starts_at: string; ends_at: string; location: string | null; agenda: string | null; ping: string[] | null; created_by: string | null }
 interface Doc { id: string; title: string; kind: string; url: string | null; role: string; notes: string | null; drive_url: string | null; created_by: string | null; created_at: string }
-interface DiscordSettings { meeting_channel_id?: string; guild_id?: string; channel_id?: string; log_channel_id?: string; role_id?: string }
+interface DiscordSettings { meeting_channel_id?: string; guild_id?: string; channel_id?: string; reminders_channel_id?: string; log_channel_id?: string; role_id?: string }
 
 interface Ctx {
   admin: SupabaseClient;
@@ -708,8 +708,9 @@ const COMMANDS = [
   {
     name: 'setup', description: 'Choose where the bot posts', default_member_permissions: '32',
     options: [
-      { type: CHANNEL, name: 'announcements', description: 'Tasks, meetings, and reminders go here', required: true, channel_types: [0] },
+      { type: CHANNEL, name: 'announcements', description: 'All-team meeting notifications and task updates go here', required: true, channel_types: [0, 5] },
       { type: CHANNEL, name: 'log', description: 'Drive and document activity goes here', channel_types: [0] },
+      { type: CHANNEL, name: 'reminders', description: '1:1 check-ins and reminders tag the two participants here', channel_types: [0] },
     ],
   },
 ];
@@ -758,7 +759,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       '**You and the team**',
       '/link connects your Discord to the dashboard. /team shows everyone. /dashboard opens the site.',
       '',
-      'When a task or meeting is added on the dashboard, it shows up here. Everything that changes, on the site or in the Drive folder, is written to the activity channel with the date and time. The bot never pings anyone.',
+      'All-team meeting notifications go to announcements. Subteam meetings post in their selected channel. 1:1 check-ins use the reminders channel and tag only their participants; private titles and notes stay in DMs. Use /setup to choose the announcements and reminders channels.',
     ].join('\n'));
   }
 
@@ -776,14 +777,20 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
 
   if (name === 'setup') {
     const s: DiscordSettings = {
+      ...ctx.settings,
       guild_id: body.guild_id,
       channel_id: get('announcements') || ctx.settings.channel_id,
-      log_channel_id: get('log') || get('announcements') || ctx.settings.log_channel_id,
+      log_channel_id: get('log') || ctx.settings.log_channel_id || get('announcements'),
+      reminders_channel_id: get('reminders') || ctx.settings.reminders_channel_id,
     };
+    if (s.reminders_channel_id) {
+      if (s.reminders_channel_id === s.channel_id) return reply('Choose a separate reminders channel. Announcements are for all-team meetings.');
+      const reminders = await discord(`/channels/${s.reminders_channel_id}`);
+      if (reminders.guild_id !== s.guild_id || reminders.type !== 0) return reply('Choose a text reminders channel in this server.');
+    }
     await ctx.saveSettings(s);
     ctx.settings = s;
-    await post(s.channel_id!, { content: 'The SUITS dashboard is connected. Tasks, meetings, and reminders will show up here. Run /link with your UMD email once so the bot knows who you are.' }).catch(() => {});
-    return reply(`Set. Announcements go to <#${s.channel_id}>${s.log_channel_id && s.log_channel_id !== s.channel_id ? ` and activity goes to <#${s.log_channel_id}>` : ''}.`);
+    return reply(`Set. All-team meetings go to <#${s.channel_id}>. Subteam meetings use their own channel.${s.reminders_channel_id ? ` 1:1 check-ins go to <#${s.reminders_channel_id}> and tag their participants.` : ' Add a reminders channel with /setup for 1:1 check-ins.'}${s.log_channel_id && s.log_channel_id !== s.channel_id ? ` Activity goes to <#${s.log_channel_id}>.` : ''}`);
   }
 
   if (name === 'team') {
@@ -1075,15 +1082,15 @@ Deno.serve(async (req) => {
     }
     if (action === 'calendar-options') {
       const bot = Deno.env.get('DISCORD_BOT_TOKEN');
-      if (!bot || !ctx.settings.guild_id) return json({ configured: false, guildId: null, meetingChannelId: null, channels: [] });
-      if (!isManager(me)) return json({ configured: true, guildId: ctx.settings.guild_id, meetingChannelId: null, channels: [] });
+      if (!bot || !ctx.settings.guild_id) return json({ configured: false, guildId: null, meetingChannelId: null, announcementChannelId: null, remindersChannelId: null, channels: [] });
+      if (!isManager(me)) return json({ configured: true, guildId: ctx.settings.guild_id, meetingChannelId: null, announcementChannelId: null, remindersChannelId: null, channels: [] });
       const raw = await calendarDiscord(`/guilds/${ctx.settings.guild_id}/channels`, bot);
       const channels = raw.filter((c: { type: number }) => [0,2,5,13].includes(c.type)).map((c: { id: string; name: string; type: number }) => ({ id: c.id, name: c.name, type: c.type }));
       if (channels.length) {
         const { error } = await ctx.admin.from('suits_discord_channels').upsert(channels.map((c: { id: string; name: string; type: number }) => ({ ...c, guild_id: ctx.settings.guild_id, updated_at: new Date().toISOString() })));
         if (error) return json({ error: 'Calendar channel setup is not installed yet.' }, 503);
       }
-      return json({ configured: true, guildId: ctx.settings.guild_id, meetingChannelId: ctx.settings.meeting_channel_id || null, channels });
+      return json({ configured: true, guildId: ctx.settings.guild_id, meetingChannelId: ctx.settings.meeting_channel_id || null, announcementChannelId: ctx.settings.channel_id || null, remindersChannelId: ctx.settings.reminders_channel_id || null, channels });
     }
     if (action === 'status') {
       const configured = !!Deno.env.get('DISCORD_BOT_TOKEN') && !!Deno.env.get('DISCORD_PUBLIC_KEY') && !!Deno.env.get('DISCORD_APP_ID');

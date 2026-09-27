@@ -69,6 +69,7 @@ export interface Meeting extends CalendarEvent {
 
 export interface CalendarOptions {
   configured: boolean; guildId: string | null; meetingChannelId: string | null;
+  announcementChannelId?: string | null; remindersChannelId?: string | null;
   channels: { id: string; name: string; type: number }[];
 }
 export interface CalendarDelivery {
@@ -159,6 +160,11 @@ export function isLead() {
   return state.me?.role === 'lead' && state.me.email.toLowerCase() === 'kcyle@terpmail.umd.edu';
 }
 
+// Navigation only; the review service and database independently verify Auth identity.
+export function canReviewApplications() {
+  return state.me?.email.toLowerCase() === 'kcyle@terpmail.umd.edu';
+}
+
 export function memberName(id: string | null | undefined) {
   if (!id) return 'Unassigned';
   return state.members.find(m => m.user_id === id)?.display_name ?? 'Former member';
@@ -174,6 +180,9 @@ function unwrap<T>(res: { data: T | null; error: { message: string } | null }): 
 }
 
 export const api = {
+  async review<T>(action: string, params: Record<string, unknown> = {}): Promise<T> {
+    return callFunction<T>('suits-review', action, params);
+  },
   // Roster
   async join(): Promise<Member> {
     return unwrap(await db.rpc('suits_join'));

@@ -128,7 +128,7 @@ function showMeeting(host: HTMLElement, m: Meeting) {
   });
   if (isManager()) void api.meetingDeliveries(m.id).then(rows => {
     const area = modal.querySelector('[data-deliveries]');
-    if (area) area.innerHTML = rows.length ? `<ul>${rows.map(r => `<li>${esc(r.recipient_id ? memberName(r.recipient_id) : 'Server announcement')} · ${esc(r.kind === 'reminder' ? 'Reminder' : 'Update')} · ${esc(r.status)}${r.last_error ? ` — ${esc(r.last_error)}` : ''}</li>`).join('')}</ul>` : '<p>No notifications queued for this event.</p>';
+    if (area) area.innerHTML = rows.length ? `<ul>${rows.map(r => `<li>${esc(r.recipient_id ? memberName(r.recipient_id) : m.audience === 'check_in' ? 'Reminders channel' : m.audience === 'subteam' ? 'Subteam channel' : 'Announcements channel')} · ${esc(r.kind === 'reminder' ? 'Reminder' : 'Update')} · ${esc(r.status)}${r.last_error ? ` — ${esc(r.last_error)}` : ''}</li>`).join('')}</ul>` : '<p>No notifications queued for this event.</p>';
   }).catch(() => { const area = modal.querySelector('[data-deliveries]'); if (area) area.textContent = 'Delivery status isn’t available yet.'; });
 }
 
@@ -150,6 +150,9 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
     if (id && !channels.some(c => c.id === id)) channels.push({ id, type, name: 'Current saved channel' });
   }
   const options = (values: { value: string; label: string }[], current: string) => values.map(o => `<option value="${esc(o.value)}"${o.value === current ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+  const reservedChannels = [calendarOptions?.announcementChannelId, calendarOptions?.remindersChannelId];
+  const subteamChannels = channels.filter(c => [0, 5].includes(c.type) && !reservedChannels.includes(c.id));
+  const savedUpdatesChannel = audience === 'subteam' && subteamChannels.some(c => c.id === existing?.announcement_channel_id) ? existing!.announcement_channel_id! : '';
   const zones = [...new Set([TEAM_ZONE, existing?.timezone || TEAM_ZONE, Intl.DateTimeFormat().resolvedOptions().timeZone, 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'UTC'])];
   let desiredAudience = audience;
   void openModal({ title: existing ? 'Edit meeting' : 'Create a meeting', className:'sc-compose', submitLabel: existing ? 'Save changes' : 'Schedule meeting', body: `
@@ -166,10 +169,11 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
     <details class="sc-advanced"><summary>Repeat, reminders & more</summary>
     <div class="st-row">${field('timezone', 'Time zone', `<select class="sc-native" name="timezone" id="f-timezone">${options(zones.map(z => ({ value: z, label: z === TEAM_ZONE ? 'Eastern · New York' : z.replace(/_/g, ' ') })), existing?.timezone || TEAM_ZONE)}</select>`)}
     ${!existing ? field('repeat', 'Repeat', `<select class="sc-native" name="repeat" id="f-repeat">${options([{ value: '1', label: 'Does not repeat' }, { value: '4', label: 'Every week · 4 meetings' }, { value: '8', label: 'Every week · 8 meetings' }, { value: '12', label: 'Every week · 12 meetings' }], '1')}</select>`) : existing.series_id ? '<p class="sc-form-note">Changes apply to this meeting only.</p>' : ''}</div>
-    <label class="sc-filter"><input type="checkbox" name="notify"${existing?.notify_discord !== false ? ' checked' : ''} />Send Discord updates and reminder DMs</label>
+    <label class="sc-filter"><input type="checkbox" name="notify"${existing?.notify_discord !== false ? ' checked' : ''} />Send Discord updates and reminders</label>
     <div class="st-field" style="margin-top:14px"><span class="st-label">Remind invited people</span><div class="sc-reminders">${[1440, 60, 10].map(n => `<label><input type="checkbox" name="reminder" value="${n}"${(existing?.reminder_minutes || [60, 10]).includes(n) ? ' checked' : ''} />${n === 1440 ? '1 day' : n === 60 ? '1 hour' : '10 minutes'} before</label>`).join('')}</div></div>
-    ${field('announcement', 'Post announcement to', `<select class="sc-native" name="announcement" id="f-announcement"><option value="">Default SUITS announcements channel</option>${options(channels.filter(c => [0, 5].includes(c.type)).map(c => ({ value: c.id, label: `# ${c.name}` })), existing?.announcement_channel_id || '')}</select>`)}
-    <p class="sc-form-note">Linked teammates get a DM when scheduled and before the meeting. Check-in notes stay off the server announcement.</p>
+    <div data-updates-channel${audience !== 'subteam' ? ' hidden' : ''}>${field('announcement', 'Subteam updates channel', `<select class="sc-native" name="announcement" id="f-announcement"><option value="">Same as the meeting channel</option>${options(subteamChannels.map(c => ({ value: c.id, label: `# ${c.name}` })), savedUpdatesChannel)}</select>`)}</div>
+    <p class="sc-form-note" data-discord-routing aria-live="polite"></p>
+    <p class="sc-form-note">Linked teammates also get a DM when scheduled and before the meeting. Private check-in titles and notes stay in DMs.</p>
     </details>
     <p class="sc-form-note" data-conflict></p>
   `, onSubmit: async (form, close) => {
@@ -181,7 +185,13 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
     if (!Number.isFinite(duration) || duration < 5 || duration > 720) throw new Error('Choose a duration between 5 minutes and 12 hours.');
     const title = formValue(form, 'title') || (desiredAudience === 'check_in' ? `Check-in with ${memberName(attendee)}` : desiredAudience === 'subteam' ? `${SUBTEAMS.find(t => t.key === formValue(form, 'subteam'))?.name || 'Subteam'} meeting` : 'Team meeting');
     const notify = (form.elements.namedItem('notify') as HTMLInputElement).checked;
-    const payload = { title, starts_at: starts[0], ends_at: new Date(Date.parse(starts[0]) + duration * 60000).toISOString(), timezone: zone, audience: desiredAudience, subteam: desiredAudience === 'subteam' ? formValue(form, 'subteam') : null, attendee_ids: desiredAudience === 'check_in' ? [attendee] : [], discord_channel_id: formValue(form, 'channel') || null, announcement_channel_id: formValue(form, 'announcement') || null, location: formValue(form, 'location') || null, agenda: formValue(form, 'agenda') || null, notify_discord: notify, reminder_minutes: [...form.querySelectorAll<HTMLInputElement>('input[name="reminder"]:checked')].map(i => Number(i.value)) };
+    const updatesChannel = desiredAudience === 'subteam' ? formValue(form, 'announcement') || null : null;
+    if (notify && desiredAudience === 'check_in' && (!calendarOptions?.remindersChannelId || calendarOptions.remindersChannelId === calendarOptions.announcementChannelId)) throw new Error('Set a separate reminders channel with /setup in Discord, then reopen the calendar. Or turn off Discord updates for this meeting.');
+    if (notify && desiredAudience === 'subteam') {
+      const destination = updatesChannel || formValue(form, 'channel');
+      if (!destination || reservedChannels.includes(destination)) throw new Error('Choose this subteam’s meeting or updates channel. Subteam meetings cannot post to announcements or reminders.');
+    }
+    const payload = { title, starts_at: starts[0], ends_at: new Date(Date.parse(starts[0]) + duration * 60000).toISOString(), timezone: zone, audience: desiredAudience, subteam: desiredAudience === 'subteam' ? formValue(form, 'subteam') : null, attendee_ids: desiredAudience === 'check_in' ? [attendee] : [], discord_channel_id: formValue(form, 'channel') || null, announcement_channel_id: updatesChannel, location: formValue(form, 'location') || null, agenda: formValue(form, 'agenda') || null, notify_discord: notify, reminder_minutes: [...form.querySelectorAll<HTMLInputElement>('input[name="reminder"]:checked')].map(i => Number(i.value)) };
     if (existing) await api.updateMeeting(existing.id, payload);
     else await api.scheduleMeetings(starts.map(start => ({ ...payload, starts_at: start, ends_at: new Date(Date.parse(start) + duration * 60000).toISOString() })));
     cursor = zoneParts(starts[0]).day; close();
@@ -194,7 +204,14 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
   const update = () => {
     const person = state.members.find(m => m.user_id === formValue(form, 'person'));
     const note = modal.querySelector<HTMLElement>('[data-person-link]')!;
-    note.textContent = person ? person.discord_id ? 'Discord linked · reminder DMs enabled.' : 'This teammate needs to link Discord in Team to receive DMs.' : '';
+    note.textContent = person ? person.discord_id ? 'Discord linked · participant tags and reminder DMs enabled.' : 'This teammate needs to link Discord in Team to receive tags and DMs.' : '';
+    const channelLabel = (id: string | null | undefined, fallback: string) => channels.find(c => c.id === id)?.name ? `#${channels.find(c => c.id === id)!.name}` : fallback;
+    const routing = modal.querySelector<HTMLElement>('[data-discord-routing]')!;
+    modal.querySelector<HTMLElement>('[data-updates-channel]')!.hidden = desiredAudience !== 'subteam';
+    routing.textContent = desiredAudience === 'check_in'
+      ? calendarOptions?.remindersChannelId ? `1:1 updates and reminders go to ${channelLabel(calendarOptions.remindersChannelId, 'the reminders channel')} and tag the two participants. People who decline are not tagged in reminders.` : 'Set a separate reminders channel with /setup in Discord before enabling check-in notifications.'
+      : desiredAudience === 'subteam' ? `Updates and reminders go only to ${channelLabel(formValue(form, 'announcement') || formValue(form, 'channel'), 'the selected subteam channel')}.`
+      : `All-team updates and reminders go to ${channelLabel(calendarOptions?.announcementChannelId, 'the announcements channel')}.`;
     try {
       const starts = recurringStarts(formValue(form, 'date'), formValue(form, 'start'), 1, formValue(form, 'timezone'));
       const start = Date.parse(starts[0]), end = start + Number(formValue(form, 'duration')) * 60000;

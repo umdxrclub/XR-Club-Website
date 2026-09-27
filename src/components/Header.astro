@@ -20,7 +20,7 @@ const links = [
       {links.map(link => (
         <a href={link.href} data-home-target={link.section} data-home-section={link.section} aria-current={link.section === activeSection ? 'location' : undefined}>{link.label}</a>
       ))}
-      <a href={siteLinks.suits} class="site-header__suits" aria-current={activeSection === 'suits' ? 'page' : undefined}>SUITS</a>
+      <a href={siteLinks.suits} class="site-header__suits" aria-current={activeSection === 'suits' ? 'page' : undefined}>NASA SUITS</a>
     </nav>
   </div>
 </header>
@@ -106,42 +106,18 @@ const links = [
     .site-header__nav a { font-size: 16px; }
   }
   .site-header__nav a.site-header__suits {
-    --suits-accent: #8aafff;
-    position: relative;
-    min-width: 78px;
-    min-height: 48px;
-    padding: 0 3px 3px;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    color: #f5f6fa;
-    font-family: var(--font-title);
-    font-weight: 600;
-    letter-spacing: .045em;
+    white-space: nowrap;
   }
-  .site-header__nav a.site-header__suits::after {
-    content: '';
-    position: absolute;
-    bottom: 3px;
-    left: 50%;
-    width: 28px;
-    height: 3px;
-    background: var(--suits-accent);
-    transform: translateX(-50%);
-    transition: width 180ms ease, background 180ms ease;
-    pointer-events: none;
-  }
-  .site-header__nav a.site-header__suits:is(:hover, [aria-current='page']) { --suits-accent: #a8c3ff; color: #fff; }
-  .site-header__nav a.site-header__suits:is(:hover, [aria-current='page'])::after { width: 54px; }
-  .site-header__nav a.site-header__suits:focus-visible { outline: 2px solid #91a9ee; outline-offset: 5px; }
-  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a.site-header__suits { --suits-accent: #2359e8; color: #211b13; }
+  .site-header__nav a.site-header__suits:is(:hover, [aria-current='page']) { color: #fff; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a.site-header__suits { color: #50422e; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a.site-header__suits:is(:hover, [aria-current='page']) { color: #211b13; }
   :global(body:has([data-sky-header-tone='ink'])) .site-header::before,
   :global(body:has([data-sky-phase='descent'])) .site-header::before { background: none; }
   :global(body:has(#st)) .site-header::before,
   :global(body:has(#st)) .site-header__bar::before { content: none; }
   @media (max-width: 800px) { .site-header__nav a.site-header__suits { position: absolute; top: 0; right: 0; } }
   @media (prefers-reduced-motion: reduce) {
-    .site-header__nav a, .site-header__nav a.site-header__suits::after { transition: none; }
+    .site-header__nav a { transition: none; }
   }
 </style>
 <script>
