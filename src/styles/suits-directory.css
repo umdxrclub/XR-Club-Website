@@ -1,0 +1,42 @@
+/* Team sections stay in one reading order; people never drift under another heading. */
+.crew-directory .crew-head { margin-bottom:22px; }
+.crew-toolbar { display:grid; grid-template-columns:minmax(0,1fr) minmax(190px,260px); gap:12px; margin-bottom:26px; }
+.crew-directory .crew-search { margin:0; max-width:none; padding:0 13px; min-height:44px; border:1px solid var(--hair); background:var(--fill); }
+.crew-directory .crew-search svg { width:18px; height:18px; flex:none; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
+.crew-directory .crew-search input { min-height:42px; font-size:14px; }
+.crew-filter { min-width:0; }
+.crew-filter .st-dd__btn { min-height:44px; height:44px; font-size:14px; background:var(--fill)!important; }
+.crew-directory .crew-groups { display:flex; flex-direction:column; gap:30px; }
+.crew-directory .crew-group { margin:0; min-width:0; width:100%; }
+.crew-directory .crew-group>header { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 0 12px; margin:0 0 14px; border-bottom:1px solid var(--line); }
+.crew-group__title { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 12px; min-width:0; }
+.crew-directory .crew-group h2 { font-size:18px; font-weight:550; line-height:1.4; }
+.crew-group__mine { color:var(--accent); font-size:12px; white-space:nowrap; }
+.crew-directory .crew-group__count { font-size:13px; color:var(--ink-2); flex:none; white-space:nowrap; }
+.crew-directory .crew-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr)); gap:12px; padding:0; margin:0; list-style:none; }
+.crew-directory .crew-card { display:flex; flex-direction:column; align-items:flex-start; text-align:left; min-height:0; padding:16px; gap:12px; border:1px solid var(--hair); border-radius:12px; background:var(--fill); }
+.crew-directory .crew-card>.crew-avatar { width:48px; height:48px; }
+.crew-directory .crew-card__person { width:100%; min-width:0; flex:1; }
+.crew-directory .crew-card h3 { font-size:15px; line-height:1.4; margin:0; }
+.crew-directory .crew-card h3 small { display:inline-block; font-size:11px; font-weight:450; margin-left:4px; }
+.crew-directory .crew-card__person>a { font-size:12px; line-height:1.45; margin:5px 0 0; overflow-wrap:anywhere; }
+.crew-card__footer { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; min-width:0; padding-top:8px; }
+.crew-directory .crew-card__role { font-size:12px; line-height:1.4; margin:0; }
+.crew-directory .crew-manage { align-self:auto; flex:none; font-size:12px; min-height:30px; padding:5px 0 5px 8px; border-radius:0; background:none; }
+.crew-directory .crew-manage:is(:hover,:focus-visible) { text-decoration:underline; text-underline-offset:3px; }
+.crew-results { margin:-12px 0 22px; color:var(--ink-2); font-size:13px; }
+.crew-empty { margin:0; padding:28px 0; color:var(--ink-2); font-size:15px; }
+@container workspace-panel (max-width:580px) {
+ .crew-toolbar { grid-template-columns:minmax(0,1fr); gap:10px; }
+ .crew-directory .crew-group h2 { font-size:16px; }
+ .crew-directory .crew-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .crew-directory .crew-card { padding:12px; gap:10px; }
+ .crew-directory .crew-card__footer { align-items:flex-start; flex-wrap:wrap; gap:3px 8px; }
+ .crew-directory .crew-manage { min-height:28px; padding:3px 0; }
+ .crew-directory .crew-card__role { min-height:28px; display:flex; align-items:center; }
+ .crew-directory .crew-group>header { align-items:flex-start; gap:12px; }
+}
+@container workspace-panel (max-width:300px) {
+ .crew-directory .crew-cards { grid-template-columns:minmax(0,1fr); }
+ .crew-directory .crew-head { flex-wrap:wrap; }
+}

@@ -1,11 +1,22 @@
 import { clamp, mix, phase } from '../projects/projectStoryMotion';
+import { CAT_PULL_LOAD } from './catPullReference';
 
 // End when the white sheet has cleared the ocean render.
 export const CAT_TIMELINE_DISTANCE = 10.4;
 export const CAT_ENTRANCE_DISTANCE = CAT_TIMELINE_DISTANCE * .79;
 const pulse = (a: number, b: number, p: number) => Math.sin(Math.PI * phase(a, b, p));
 
-// Motion reference: animationmentor.com/blog/tutorial-animate-a-jump-and-land/
+// A smoothed loading envelope from CMU 81_07 supplies the effort/recovery rhythm.
+// Cubic interpolation keeps the sampled reference continuous while scrubbing.
+export function catPullLoad(progress: number) {
+  const x = clamp(progress) * (CAT_PULL_LOAD.length - 1);
+  const i = Math.floor(x), t = x - i;
+  const at = (n: number) => CAT_PULL_LOAD[Math.max(0, Math.min(CAT_PULL_LOAD.length - 1, n))];
+  const a = at(i-1), b = at(i), c = at(i+1), d = at(i+2);
+  return clamp(.5 * ((2*b) + (-a+c)*t + (2*a-5*b+4*c-d)*t*t + (-a+3*b-3*c+d)*t*t*t));
+}
+
+// Entrance reference: animationmentor.com/blog/tutorial-animate-a-jump-and-land/
 // Grip reference: animationmentor.com/blog/tutorial-animating-character-prop-interaction/
 /** Every pose is a pure function of scroll: scrubbing backwards restores contact. */
 export function equipmentCatPose(offset: number, reduced = false) {
@@ -29,8 +40,17 @@ export function equipmentCatPose(offset: number, reduced = false) {
   const crouch = reduced ? 0 : pulse(.465, .535, progress);
   const catchProgress = phase(.52, .605, progress);
   const hanging = phase(.52, .605, progress);
-  const grab = phase(.51, .59, progress);
-  // Finish at hand contact and hold this airborne pose for the remaining scroll.
+  const grab = phase(.50, .54, progress);
+  const hook = phase(.50, .54, progress);
+  const effort = reduced ? 0 : catPullLoad(phase(.592, .735, progress));
+  const swayTime = phase(.54, .79, progress);
+  const sway = reduced ? 0 : Math.sin(swayTime * Math.PI * 2) * Math.sin(Math.PI * swayTime) * (1 - swayTime);
+  const recoil = reduced ? 0 : pulse(.64, .76, progress);
+  const look = reduced ? 0 : phase(.425, .49, progress) * (1 - phase(.64, .76, progress));
+  const leftTuck = reduced ? 0 : phase(.525, .595, progress) * (1 - .78 * phase(.665, .76, progress));
+  const rightTuck = reduced ? 0 : phase(.545, .62, progress) * (1 - .65 * phase(.69, .785, progress));
+  // Contract against fixed wrists, then let the lower body follow the falling sheet.
+  const shoulderLift = 35 * hanging - 130 * effort;
 
   const actorY = -275 * catchProgress + crouch * 100;
   return {
@@ -40,20 +60,20 @@ export function equipmentCatPose(offset: number, reduced = false) {
     opening: reduced ? 0 : phase(.025, .16, entrance) * (1 - phase(.80, .94, entrance)),
     pressure: reduced ? 0 : phase(.34, .495, entrance) * (1 - phase(.80, .94, entrance)),
     riftOpacity: reduced ? 0 : phase(.005, .05, entrance) * (1 - phase(.93, .98, entrance)),
-    bodyX: x, bodyY: y, scale: mix(.78, 1, exit),
-    bodyAngle: -airborne * 12 + impact * 3,
-    squash: windup * .085 + impact * .10 - airborne * .035 + crouch * .085 - pulse(.53, .605, progress) * (reduced ? 0 : .035),
-    headX: x - lean * 96, headY: y - lean * 26, headAngle: -lean * 7 - airborne * 9 + impact * 4 - crouch * 5 + catchProgress * 4,
+    bodyX: x + sway * 34 - effort * 16, bodyY: y + (reduced ? 0 : shoulderLift), scale: mix(.78, 1, exit),
+    bodyAngle: -airborne * 12 + impact * 3 + sway * 5 - effort * 3,
+    squash: effort * .018 + windup * .085 + impact * .10 - airborne * .035 + crouch * .085 - pulse(.53, .605, progress) * (reduced ? 0 : .035),
+    headX: x - lean * 96 + sway * 20 - effort * 24, headY: y - lean * 26 + (reduced ? 0 : 28 * hanging - 92 * effort - 18 * look + 14 * recoil), headAngle: -lean * 7 - airborne * 9 + impact * 4 - crouch * 5 + catchProgress * 4 + effort * 5 - sway * 4 - look * 3,
     headWindow: reduced || entrance >= .83 ? 1 : entrance >= .50 ? .5 : 0,
     bodyWindow: reduced || entrance >= .83 ? 1 : entrance >= .50 ? .5 : 0,
     firstStep, secondStep,
-    tailAngle: reduced ? 0 : -firstStep * 12 + secondStep * 9 + hanging * 22,
-    shadow: .13 * phase(.08, .28, progress) * (1 - .78*airborne) * (1 - catchProgress),
+    tailAngle: reduced ? 0 : -firstStep * 12 + secondStep * 9 + hanging * 22 - effort * 24 - sway * 22 + recoil * 14,
+    shadow: .13 * phase(.08, .28, progress) * (1 - .78*airborne) * (1 - hook),
     paperCatch, paperPull,
     actorX: 0, actorY,
     actorOpacity: 1,
-    grab, fly: 0, hanging, cameraLift: 0,
-    state: progress >= .79 ? 'ocean' : progress >= .605 ? 'pulling-page' : progress >= .52 ? 'jumping' : progress >= .465 ? 'crouching' : progress >= .35 ? 'reaching-page' : entrance >= .97 ? 'settled' : entrance >= .80 ? 'landing' : entrance >= .50 ? 'leaping-through' : entrance >= .39 ? 'anticipating' : entrance >= .16 ? 'peeking' : 'slit',
+    grab, hook, effort, sway, look, leftTuck, rightTuck, fly: 0, hanging, cameraLift: 0,
+    state: progress >= .79 ? 'ocean' : progress >= .54 ? 'pulling-page' : progress >= .50 ? 'jumping' : progress >= .465 ? 'crouching' : progress >= .35 ? 'reaching-page' : entrance >= .97 ? 'settled' : entrance >= .80 ? 'landing' : entrance >= .50 ? 'leaping-through' : entrance >= .39 ? 'anticipating' : entrance >= .16 ? 'peeking' : 'slit',
   };
 }
 export type EquipmentCatPose = ReturnType<typeof equipmentCatPose>;

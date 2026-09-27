@@ -24,7 +24,7 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
   let origin = readOrigin();
   scene.add(waves.mesh);
   const listeners = new AbortController();
-  let frame = 0, disposed = false, ready = false, active = true, storyAnimating = false;
+  let frame = 0, disposed = false, ready = false, active = true, storyAnimating = false, sceneCaptured = false;
   let covered = root.dataset.skyCovered === 'true';
   let width = 1, height = 1, time = 0, lastTime = 0;
   let fill = 0;
@@ -81,7 +81,7 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
     wake();
   }
   function wake() {
-    if (disposed || !ready || !active || covered || document.hidden || storyAnimating || frame) return;
+    if (disposed || !ready || !active || covered || document.hidden || storyAnimating || sceneCaptured || frame) return;
     lastTime = performance.now(); frame = requestAnimationFrame(tick);
   }
   function advanceTime(now: number) {
@@ -95,7 +95,7 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
   }
   function tick(now: number) {
     frame = 0;
-    if (disposed || !active || covered || document.hidden || storyAnimating) return;
+    if (disposed || !active || covered || document.hidden || storyAnimating || sceneCaptured) return;
     advanceTime(now);
     draw();
     if (!reduced.matches) frame = requestAnimationFrame(tick);
@@ -139,6 +139,11 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
     observer.observe(stage); visibility.observe(root);
     window.addEventListener('resize', resize, { passive: true, signal: listeners.signal });
     document.addEventListener('visibilitychange', wake, { signal: listeners.signal });
+    document.addEventListener('xr:scene-captured', event => {
+      sceneCaptured = Boolean((event as CustomEvent<boolean>).detail);
+      if (sceneCaptured) { cancelAnimationFrame(frame); frame = 0; }
+      else wake();
+    }, { signal: listeners.signal });
     covered = root.dataset.skyCovered === 'true';
     root.addEventListener('xr:sky-coverage', event => {
       covered = (event as CustomEvent<{ opaque: boolean }>).detail.opaque;

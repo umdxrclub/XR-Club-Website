@@ -1,0 +1,72 @@
+/* XR Labs mission workspace. Application behavior stays in the original controllers. */
+.st, .st-bg { --page: #f5f2eb; --surface: #fffdf8; --ink: #202329; --ink-2: #666871; --ink-3: #71737a; --line: #d1d0c9; --hair: #dedbd3; --fill: #ece9e1; --fill-hover: #e2e6ef; --accent: #2359e8; --red: #2359e8; }
+.st.is-dark, .st-bg.is-dark { --page: #1b1e23; --surface: #23262c; --ink: #f5f2eb; --ink-2: #b0b4bf; --ink-3: #999faa; --line: #41454e; --hair: #363a43; --fill: #2c3039; --fill-hover: #353c4d; --accent: #8aaaff; --red: #2359e8; }
+.st-bg, .st-bg.is-dark { background: #080b10; overflow: hidden; }
+.st-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.st-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #06090de6, #06090d73 34%, transparent 65%); }
+body:has(.st-app:not([hidden])) .st-bg::after { background: #06090d80; }
+.st { font-family: var(--font-site); font-size: 16px; }
+.st-gate { display: flex; justify-content: flex-start; align-items: center; width: min(1280px, 84%); margin: 0 auto; min-height: 100svh; padding: 150px 0 64px; }
+.st-gate__card { position: relative; width: min(100%, 390px); max-width: none; min-width: 0; padding: 0; text-align: left; color: #f5f6f8; background: none; border: 0; border-radius: 0; box-shadow: none; clip-path: none; }
+
+.st-gate__title { font-family: var(--font-title); color: #f5f6f8; font-size: clamp(36px, 3.6vw, 52px); line-height: 1.1; font-weight: 600; }
+.st-gate__text { color: #c0c8d5; font-size: 16px; line-height: 1.55; margin: 18px 0 30px; }
+.st-gate__card .st-btn { width: 100%; gap: 12px; background: #f2f4f8; color: #161a22; min-height: 54px; border: 0; border-radius: 4px; }
+.st-gate__card .st-btn:hover { background: #dce7fb; color: #101722; }
+.st-gate__note { font-size: 12px; line-height: 1.6; color: #a8b2c1; margin-top: 16px; }
+
+
+.st-gate__error { color: #ffc2c2; background: #541b264d; border: 0; }
+.st-app { max-width: 1320px; padding: 152px 40px 64px; }
+.st-top { align-items: center; margin-bottom: 36px; gap: 24px; }
+.st-top__title { font-family: var(--font-title); font-weight: 600; font-size: clamp(36px, 4.2vw, 60px); color: #f5f2eb; }
+.st-top__sub { color: #a9aeb9; font-size: 14px; margin-top: 16px; }
+.st-top__actions .st-btn { background: #202329; color: #dddfe5; border: 1px solid #373b43; }
+.st-workspace { padding: 22px 32px 36px; border-radius: 22px; background: var(--page); min-height: 55vh; }
+.st-nav { gap: 4px; border-bottom: 1px solid var(--hair); padding: 0 0 20px; margin-bottom: 28px; }
+.st-nav__btn { border-radius: 10px 10px 4px 4px; min-height: 44px; font-weight: 500; font-size: 14px; padding: 0 18px; }
+.st-nav__btn.is-active { background: #2359e8; color: #fff; }
+.st-nav__count { background: #dce6ff; color: #2348aa; }
+.st-btn { min-height: 44px; border-radius: 10px; font-size: 14px; font-weight: 500; }
+.st-btn--primary { background: #2359e8; color: #fff; border-color: #2359e8; }
+.st-btn--primary:hover { background: #194cd3; }
+.st-btn--small { min-height: 36px; font-size: 13px; }
+.st-input, .st-textarea, .st-select, .st-dd__btn { border-radius: 10px; border-color: var(--hair); }
+.st-h1 { font-family: var(--font-title); font-weight: 600; font-size: 34px; }
+.st-h2, .st-group__title { font-size: 18px; font-weight: 500; }
+.st-card, .st-member { border-color: var(--hair); border-radius: 14px; }
+.st-overview { gap: 32px; }
+.st-overview > section { background: var(--surface); border-radius: 14px; padding: 24px; min-width: 0; }
+.st-group__empty { font-size: 15px; padding: 28px 0; }
+.st-doccard { border-radius: 12px; border-color: var(--hair); box-shadow: none; }
+.st-doccard:hover { border-color: var(--accent); }
+.st-doccard__cover { background: var(--fill); }
+.st-member__pill { background: var(--fill); }
+.st-modal { z-index: 1200; }
+.st-modal__card { border: 0; border-radius: 18px; background: var(--page); box-shadow: 0 22px 80px #0005; }
+.st-modal__title { font-family: var(--font-title); font-weight: 600; }
+.st-viewer { z-index: 1300; font-family: var(--font-site); }
+@media (max-width: 900px) {
+  .st-gate { width: 90%; }
+  .st-gate__card { width: min(100%, 360px); }
+  .st-app { padding-inline: 24px; }
+  .st-workspace { padding-inline: 22px; }
+  .st-nav__btn { padding-inline: 14px; }
+}
+@media (max-width: 700px) {
+  .st-bg img { height: max(66svh, 420px); object-position: 63% top; }
+  .st-bg::after { background: linear-gradient(180deg, #080b1014 20%, #080b10 65%); }
+  .st-gate { justify-content: center; align-items: flex-end; width: calc(100% - 48px); padding-top: max(310px, 44svh); padding-bottom: 36px; }
+  .st-gate__card { padding: 0; }
+
+  .st-app { padding: 166px 16px 32px; }
+  .st-top { padding-inline: 8px; margin-bottom: 26px; }
+  .st-top__actions { width: 100%; }
+  .st-workspace { padding: 18px 18px 28px; border-radius: 16px; }
+  .st-nav { margin-inline: -6px; }
+  .st-overview { gap: 20px; }
+  .st-overview > section { padding: 18px; }
+  .st-h1 { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { .st-view { animation: none; } }.st-menu, .st-dd__list, .st-datepick__pop { z-index: 1250; }
+.st-gate__card .st-btn { border: 0; }

@@ -3,7 +3,7 @@ import { phase } from '../projects/projectStoryMotion';
 /** The parent story supplies the viewport and scroll coordinate to every layer. */
 export function mountSkyWorld(element: HTMLElement) {
   const track = element.querySelector<HTMLElement>('[data-sky-track]');
-  const layers = Array.from(element.querySelectorAll<HTMLElement>('[data-sky-parallax]')).map(node => ({ node, depth: Number(node.dataset.skyParallax) || 0 }));
+  const layers = Array.from(element.querySelectorAll<HTMLElement>('[data-sky-parallax]')).map(node => ({ node, depth: Number(node.dataset.skyParallax) || 0, top: 0, height: 0, shown: true }));
   const birds = Array.from(element.querySelectorAll<HTMLElement>('[data-sky-bird]')).map(node => ({
     node,
     start: Number(node.dataset.flightStart) || 0,
@@ -17,6 +17,16 @@ export function mountSkyWorld(element: HTMLElement) {
   }));
   let width = 1, height = 1, progress = 0, active = false, reduced = false, folded = false, intro = 0, folderProgress = 0, disposed = false;
   let warming: Promise<void> | undefined;
+  let layersMeasured = false;
+  let scrollTimer = 0;
+  const events = new AbortController();
+  const finishScroll = () => { delete element.dataset.skyScrolling; };
+  window.addEventListener('scroll', () => {
+    if (!active || width > 900) return;
+    element.dataset.skyScrolling = 'true';
+    clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(finishScroll, 140);
+  }, { passive: true, signal: events.signal });
   function warm(): Promise<void> {
     if (disposed) return Promise.resolve();
     if (warming) return warming;
@@ -64,7 +74,17 @@ export function mountSkyWorld(element: HTMLElement) {
   function draw() {
     if (!track || disposed) return;
     track.style.transform = `translate3d(0,${(-progress * 75).toFixed(5)}%,0)`;
-    for (const { node, depth } of layers) node.style.transform = `translate3d(0,${reduced ? 0 : (progress * height * depth).toFixed(2)}px,0)`;
+    for (const layer of layers) {
+      const offset = reduced ? 0 : progress * height * layer.depth;
+      const top = layer.top + offset - progress * height * 3;
+      const shown = !layersMeasured || (top < height + 120 && top + layer.height > -120);
+      if (layer.shown !== shown) {
+        layer.shown = shown;
+        layer.node.style.visibility = shown ? '' : 'hidden';
+        layer.node.dataset.skyLayerVisible = String(shown);
+      }
+      if (shown) layer.node.style.transform = `translate3d(0,${offset.toFixed(2)}px,0)`;
+    }
     const layout = poses(progress, width, height, reduced);
     birds.forEach((bird, index) => {
       const pose = layout[index];
@@ -88,7 +108,7 @@ export function mountSkyWorld(element: HTMLElement) {
   }
   function resizeTo(w: number, h: number) {
     if (w <= 0 || h <= 0 || (w === width && h === height)) return false;
-    width = w; height = h;
+    width = w; height = h; layersMeasured = false;
     element.style.setProperty('--sky-height', `${height}px`);
     return true;
   }
@@ -111,6 +131,11 @@ export function mountSkyWorld(element: HTMLElement) {
       if (active !== isActive) { active = isActive; element.dataset.skyActive = String(active); }
       if (folded !== isFolded) { folded = isFolded; element.dataset.skyFolded = String(folded); }
       const resized = viewport ? resizeTo(viewport.width, viewport.height) : false;
+      // Cache layout once; skip offscreen cloud layers without per-frame DOM reads.
+      if (active && !layersMeasured) {
+        for (const layer of layers) { layer.top = layer.node.offsetTop; layer.height = layer.node.offsetHeight; }
+        layersMeasured = layers.some(layer => layer.height > 0);
+      }
       const reducedChanged = reduced !== reduceMotion;
       if (reducedChanged) { reduced = reduceMotion; element.dataset.skyReduced = String(reduced); }
       const next = Math.max(0, Math.min(1, Number.isFinite(descent) ? descent : 0));
@@ -123,12 +148,12 @@ export function mountSkyWorld(element: HTMLElement) {
       }
     },
     dispose() {
-      disposed = true; resize.disconnect();
+      disposed = true; resize.disconnect(); events.abort(); clearTimeout(scrollTimer); finishScroll();
       element.dataset.skyActive = 'false';
       delete element.dataset.skyReduced; delete element.dataset.skyFolded; delete element.dataset.skyReading;
       track?.style.removeProperty('transform');
       element.style.removeProperty('--sky-height');
-      for (const { node } of layers) node.style.removeProperty('transform');
+      for (const { node } of layers) { node.style.removeProperty('transform'); node.style.removeProperty('visibility'); delete node.dataset.skyLayerVisible; }
       for (const bird of birds) {
         bird.node.style.removeProperty('transform'); bird.node.style.removeProperty('left');
         bird.node.style.top = `${bird.y * 100}%`;

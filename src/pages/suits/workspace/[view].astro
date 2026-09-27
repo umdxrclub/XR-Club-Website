@@ -1,0 +1,7 @@
+---
+import SuitsTeam from '../../../components/SuitsTeam.astro';
+export function getStaticPaths() {
+  return ['overview', 'proposal', 'tasks', 'meetings', 'documents', 'team'].map(view => ({ params: { view } }));
+}
+---
+<SuitsTeam workspace />

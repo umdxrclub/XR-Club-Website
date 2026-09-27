@@ -1,0 +1,14 @@
+---
+import pageTransition from '../scripts/suitsPageTransition.js?raw';
+---
+<script is:inline set:html={pageTransition}></script>
+<style is:global>
+  @view-transition { navigation: auto; }
+  html[data-suits-navigation]::view-transition { pointer-events:none; }
+  html[data-suits-navigation]::view-transition-group(*) { animation:none; }
+  html[data-suits-navigation]::view-transition-old(*),
+  html[data-suits-navigation]::view-transition-new(*) { animation:none; mix-blend-mode:normal; }
+  html[data-suits-navigation]::view-transition-old(root) { opacity:1; }
+  html[data-suits-navigation]::view-transition-new(root) { clip-path:circle(0); }
+  @media(prefers-reduced-motion:reduce) { @view-transition { navigation:none; } }
+</style>

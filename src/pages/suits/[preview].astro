@@ -1,0 +1,6 @@
+---
+import SuitsTeam from '../../components/SuitsTeam.astro';
+// Design fixtures only exist in Astro's development server, never the build.
+export function getStaticPaths() { return import.meta.env.DEV ? [{ params: { preview: 'preview' } }] : []; }
+---
+<SuitsTeam workspace preview />

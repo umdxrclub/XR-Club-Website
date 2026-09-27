@@ -1,0 +1,173 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { STATIONS } from '../../lib/demoday';
+import '../../styles/demoday.css';
+const sortedStations = [...STATIONS].sort((a, b) => a.name.localeCompare(b.name));
+---
+
+<AppLayout title="Demo Day" hideHeader={true} hideChatBot={true} noindex={true}>
+  <main class="dd-page">
+    <div class="dd-shell dd-stagger">
+      <p class="dd-eyebrow">Demo Day</p>
+      <h1 class="dd-title">Pick your top three.</h1>
+      <p class="dd-sub">Tap your favorite first, then second, then third. Tap again to remove.</p>
+
+      <ul class="dd-vote-list" id="dd-vote-list">
+        {sortedStations.map((s) => (
+          <li class="dd-vote-item" data-slug={s.slug} role="button" tabindex="0">
+            <span class="dd-vote-name">{s.name}</span>
+            <span class="dd-vote-rank" aria-hidden="true"></span>
+          </li>
+        ))}
+      </ul>
+
+      <button class="dd-btn" id="dd-vote-submit" disabled style="margin-top:32px;">Submit</button>
+      <p class="dd-msg" id="dd-vote-msg"></p>
+
+      <div class="dd-section-rule"></div>
+      <a class="dd-link" href="/demoday/play">Back to the hunt</a>
+    </div>
+  </main>
+
+  <style>
+    .dd-vote-list {
+      list-style: none;
+      padding: 0;
+      margin: 36px 0 0;
+    }
+    .dd-vote-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 14px 16px;
+      border: 1px solid var(--dd-line);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 220ms ease, background 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      user-select: none;
+    }
+    .dd-vote-item:hover { border-color: var(--dd-line-strong); }
+    .dd-vote-item:focus-visible { outline: 1px solid var(--dd-fg); outline-offset: 2px; }
+    .dd-vote-item.is-ranked {
+      border-color: var(--dd-fg);
+      background: rgba(245, 239, 213, 0.04);
+    }
+    .dd-vote-name {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .dd-vote-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--dd-bg);
+      background: var(--dd-fg);
+      transform: scale(0);
+      transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .dd-vote-item.is-ranked .dd-vote-rank { transform: scale(1); }
+  </style>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+    const sb = supabase as any;
+
+    document.addEventListener('astro:page-load', () => {
+      const list = document.getElementById('dd-vote-list') as HTMLUListElement;
+      const submitBtn = document.getElementById('dd-vote-submit') as HTMLButtonElement;
+      const msg = document.getElementById('dd-vote-msg') as HTMLParagraphElement;
+      if (!list) return;
+
+      const playerId = localStorage.getItem('dd_player_id');
+      if (!playerId) {
+        window.location.href = '/demoday/';
+        return;
+      }
+
+      const ranks: string[] = [];
+
+      function render(): void {
+        list.querySelectorAll('.dd-vote-item').forEach((el) => {
+          const slug = (el as HTMLElement).dataset.slug || '';
+          const idx = ranks.indexOf(slug);
+          const rankEl = el.querySelector('.dd-vote-rank') as HTMLElement;
+          if (idx >= 0) {
+            el.classList.add('is-ranked');
+            rankEl.textContent = String(idx + 1);
+          } else {
+            el.classList.remove('is-ranked');
+            rankEl.textContent = '';
+          }
+        });
+        submitBtn.disabled = ranks.length !== 3;
+      }
+
+      list.querySelectorAll('.dd-vote-item').forEach((el) => {
+        const slug = (el as HTMLElement).dataset.slug || '';
+        const handler = () => {
+          const idx = ranks.indexOf(slug);
+          if (idx >= 0) {
+            ranks.splice(idx, 1);
+          } else if (ranks.length < 3) {
+            ranks.push(slug);
+          }
+          render();
+        };
+        el.addEventListener('click', handler);
+        el.addEventListener('keydown', (e) => {
+          const ke = e as KeyboardEvent;
+          if (ke.key === 'Enter' || ke.key === ' ') { e.preventDefault(); handler(); }
+        });
+      });
+
+      void (async () => {
+        const resp = await sb
+          .from('demoday_votes')
+          .select('station_slug, rank')
+          .eq('player_id', playerId)
+          .order('rank', { ascending: true });
+        const rows = (resp.data ?? []) as { station_slug: string; rank: number }[];
+        rows.forEach((r) => { ranks[r.rank - 1] = r.station_slug; });
+        render();
+      })();
+
+      submitBtn.addEventListener('click', async () => {
+        if (ranks.length !== 3) return;
+        submitBtn.disabled = true;
+        msg.textContent = 'Saving.';
+        msg.className = 'dd-msg';
+
+        const { data, error } = await sb.rpc('demoday_save_vote', {
+          p_player_id: playerId,
+          p_first:  ranks[0],
+          p_second: ranks[1],
+          p_third:  ranks[2],
+        });
+
+        if (error) {
+          msg.textContent = error.message || 'Could not save.';
+          msg.className = 'dd-msg dd-msg--err';
+          submitBtn.disabled = false;
+          return;
+        }
+        const result = data as { ok: boolean; reason?: string } | null;
+        if (!result?.ok) {
+          msg.textContent = result?.reason ? `Could not save: ${result.reason}` : 'Could not save.';
+          msg.className = 'dd-msg dd-msg--err';
+          submitBtn.disabled = false;
+          return;
+        }
+        msg.textContent = 'Thanks. Your votes are in.';
+        msg.className = 'dd-msg dd-msg--ok';
+      });
+    });
+  </script>
+</AppLayout>

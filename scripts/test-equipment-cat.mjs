@@ -44,3 +44,30 @@ assert.equal((art.match(/data-cat-head-pose/g)||[]).length,1);
 assert.equal((art.match(/data-cat-body-pose/g)||[]).length,1);
 assert(!art.includes('<use'),'No duplicated SVG character instances');
 console.log('PASS: eye-peek hold; leap apex; settled landing; one solid character instance.');
+
+const {catPullRig,catPageContact}=load(fileURLToPath(new URL('../src/features/equipment/equipmentCatRig.ts',import.meta.url)));
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+for (const reduced of [false,true]) for(let i=540;i<=790;i++) {
+ const p=pose(D*i/1000,reduced), rig=catPullRig(p);
+ for(const [shoulder,elbow,hand] of [[rig.shoulderLeft,rig.elbowLeft,rig.left],[rig.shoulderRight,rig.elbowRight,rig.right]]) {
+  assert(Math.abs(distance(shoulder,elbow)-445)<1e-7,'Upper arm length at '+i);
+  assert(Math.abs(distance(elbow,hand)-425)<1e-7,'Forearm length at '+i);
+ }
+ for(const [w,h] of [[1280,800],[390,844],[1920,1080],[844,390]]) {
+  const sceneHeight=Math.min(h*1.30,(w-24)*(w<=640?1.55:1)*2900/2200);
+  const scale=sceneHeight/2900, top=h*(w<=640?.83:.90)-2520*scale;
+  const contact=catPageContact(p,h,scale,top);
+  for(const wrist of [rig.left,rig.right]) {
+   const wristY=top+(contact.actorY+wrist.y+1100)*scale;
+   assert(Math.abs(wristY-contact.edgeY)<1e-7,'Paw/page contact at '+i+' in '+w+'x'+h);
+  }
+  // Reveal retains its original trajectory and reaches the bottom in both directions.
+  const originalY=p.actorY+p.paperPull*(h/scale+900);
+  const originalEdge=Math.max(0,top+(originalY+1220)*scale)*p.paperCatch;
+  assert.equal(contact.edgeY,originalEdge);
+ }
+ assert.deepEqual(catPullRig(pose(D*i/1000,reduced)),rig,'Reverse scrubbing is deterministic');
+}
+assert.notEqual(pose(D*.625).bodyY,pose(D*.67).bodyY,'The torso works against the grip');
+assert(pose(D*.575).leftTuck>pose(D*.575).rightTuck,'Hind legs follow in sequence');
+console.log('PASS: constant arm lengths; exact paw/page contact at four screen sizes; unchanged reveal trajectory; reversible effort and staggered feet.');

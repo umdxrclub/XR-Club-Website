@@ -1,4 +1,5 @@
 import source from '../../../public/scenes/cat/source.json';
+import { catPullRig, catPageContact } from './equipmentCatRig';
 import { catOutsidePath, catPaperLipPath, catRiftPath, type EquipmentCatPose } from './equipmentCatMotion';
 
 const set = (element: Element, name: string, value: string | number) => {
@@ -28,7 +29,7 @@ export function mountEquipmentCat(layer: HTMLElement) {
   const hands = part('hands');
   const grip = part('grip'), armLeft = part('arm-left'), armRight = part('arm-right');
   const handLeft = part('hand-left'), handRight = part('hand-right');
-  let interacting = false;
+  let interacting = false, actionLook = 0;
   const listeners = new AbortController();
   // Original camera settings and relative layer depth; pupils travel farther than the head.
   const depth = (id: string) => Math.abs(Number(source.layers.find(layer => layer.id === id)!.parallaxDepth.split(' ')[0]));
@@ -44,8 +45,8 @@ export function mountEquipmentCat(layer: HTMLElement) {
   function drawPointer() {
     const x = currentX * source.projection.width * influence;
     const y = currentY * source.projection.height * influence;
-    set(aim, 'transform', `translate(${x * headDepth} ${y * headDepth}) rotate(${currentX * 2.2} 490 730)`);
-    set(pupils, 'transform', `translate(${x * pupilDepth} ${y * pupilDepth})`);
+    set(aim, 'transform', `translate(${x * headDepth} ${y * headDepth - actionLook * 10}) rotate(${currentX * 2.2} 490 730)`);
+    set(pupils, 'transform', `translate(${x * pupilDepth} ${y * pupilDepth - actionLook * 26})`);
   }
   function animate(now: number) {
     frame = 0;
@@ -118,7 +119,8 @@ export function mountEquipmentCat(layer: HTMLElement) {
       set(crease, 'd', 'M950 135V1370');
       set(crease, 'opacity', 1 - pose.opening);
       set(rift, 'opacity', pose.riftOpacity); set(lip, 'opacity', pose.riftOpacity * .35);
-      interacting = pose.progress > .46;
+      interacting = pose.progress > .425;
+      actionLook = pose.look;
       if (interacting) { currentX = currentY = targetX = targetY = 0; drawPointer(); }
       // Use original video bytes; load before the reveal and play only while visible.
       if (pose.progress > .10 && !video.getAttribute('src')) { video.preload = 'auto'; video.src = video.dataset.src!; video.load(); }
@@ -127,13 +129,10 @@ export function mountEquipmentCat(layer: HTMLElement) {
         videoStarted = true; video.play().catch(() => { videoStarted = false; });
       } else if (render.hidden || reduced || document.hidden) pauseVideo();
       const sceneScale = parseFloat(layer.style.getPropertyValue('--cat-height')) / 2900;
-      const pullTravel = h / sceneScale + 900;
-      const actorY = pose.actorY + pose.paperPull * pullTravel;
+      const { actorY, edgeY } = catPageContact(pose, h, sceneScale, cameraTop);
       set(actor, 'transform', 'translate(' + pose.actorX + ' ' + actorY + ')');
       set(actor, 'opacity', pose.actorOpacity);
       set(paper, 'viewBox', '0 0 ' + w + ' ' + h);
-      const handLevel = cameraTop + (actorY + 120 + 1100) * sceneScale;
-      const edgeY = Math.max(0, handLevel) * pose.paperCatch;
       const leftHand = w / 2 + (180 - 500) * sceneScale;
       const rightHand = w / 2 + (820 - 500) * sceneScale;
       const outerY = Math.max(0, edgeY - 90 * pose.paperCatch * (1-pose.paperPull));
@@ -141,23 +140,22 @@ export function mountEquipmentCat(layer: HTMLElement) {
       set(sheet, 'd', edge + 'V' + (h+1500) + 'H0Z');
       set(sheetEdge, 'd', edge);
       const reach = pose.grab;
-      const handY = 1220 - 1100 * reach;
-      const leftGrip = 320 - 140 * reach, rightGrip = 650 + 170 * reach;
+      const rig = catPullRig(pose);
       // Solid limbs, drawn once behind the head: no opacity crossfade or ghost poses.
       set(grip, 'visibility', reach > .001 ? 'visible' : 'hidden');
       set(hands, 'visibility', reach > .001 ? 'visible' : 'hidden');
-      set(armLeft, 'd', 'M335 870Q' + (335-375*reach) + ' ' + (1000-650*reach) + ' ' + leftGrip + ' ' + handY);
-      set(armRight, 'd', 'M605 870Q' + (605+415*reach) + ' ' + (1000-650*reach) + ' ' + rightGrip + ' ' + handY);
-      set(handLeft, 'transform', 'translate(' + leftGrip + ' ' + handY + ') rotate(-8)');
-      set(handRight, 'transform', 'translate(' + rightGrip + ' ' + handY + ') rotate(8)');
+      set(armLeft, 'd', rig.leftPath);
+      set(armRight, 'd', rig.rightPath);
+      set(handLeft, 'transform', 'translate(' + rig.left.x + ' ' + rig.left.y + ') rotate(' + -rig.handAngle + ') scale(1 ' + rig.handScale + ')');
+      set(handRight, 'transform', 'translate(' + rig.right.x + ' ' + rig.right.y + ') rotate(' + rig.handAngle + ') scale(1 ' + rig.handScale + ')');
       set(body, 'transform', `translate(${pose.bodyX} ${pose.bodyY}) scale(${pose.scale}) rotate(${pose.bodyAngle} 480 1300) translate(0 ${1420 * pose.squash}) scale(${1 + pose.squash} ${1 - pose.squash})`);
       set(head, 'transform', `translate(${pose.headX} ${pose.headY + pose.squash * 600}) scale(${pose.scale}) rotate(${pose.headAngle} 490 760)`);
       set(part('head-front'), 'clip-path', pose.headWindow >= 1 || reduced ? 'none' : 'url(#cat-head-outside)');
       set(part('body-front'), 'clip-path', pose.bodyWindow >= 1 || reduced ? 'none' : 'url(#cat-body-outside)');
       set(headWindow, 'd', catOutsidePath(pose.opening, pose.headWindow, pose.pressure));
       set(bodyWindow, 'd', catOutsidePath(pose.opening, pose.bodyWindow, pose.pressure));
-      set(firstPaw, 'transform', `translate(${-pose.firstStep * 38} ${-pose.firstStep * 95}) rotate(${-pose.firstStep * 9} 340 1120)`);
-      set(secondPaw, 'transform', `translate(${pose.secondStep * 26} ${-pose.secondStep * 86}) rotate(${pose.secondStep * 7} 550 1120)`);
+      set(firstPaw, 'transform', `translate(${-pose.firstStep * 38 - pose.leftTuck * 28} ${-pose.firstStep * 95 - pose.leftTuck * 80}) rotate(${-pose.firstStep * 9 + pose.leftTuck * 30 + pose.sway * 6} 340 1120)`);
+      set(secondPaw, 'transform', `translate(${pose.secondStep * 26 + pose.rightTuck * 18} ${-pose.secondStep * 86 - pose.rightTuck * 52}) rotate(${pose.secondStep * 7 - pose.rightTuck * 22 + pose.sway * 5} 550 1120)`);
       set(tail, 'transform', `rotate(${pose.tailAngle} 300 1200)`);
       set(floor, 'opacity', pose.shadow); set(floor, 'cx', pose.bodyX + 480 * pose.scale); set(floor, 'rx', 330 * pose.scale);
       pointerX = pose.actorX + pose.headX + 490 * pose.scale + 600;

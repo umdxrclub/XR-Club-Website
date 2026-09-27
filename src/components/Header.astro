@@ -1,7 +1,7 @@
 ---
 import { siteLinks } from '../config/site';
 const base = import.meta.env.BASE_URL;
-const activeSection = Astro.params.section ?? 'home';
+const activeSection = Astro.url.pathname.startsWith(base + 'suits') ? 'suits' : Astro.params.section ?? 'home';
 const links = [
   { label: 'Home', href: siteLinks.home, section: 'home' },
   { label: 'About', href: siteLinks.about, section: 'about' },
@@ -20,6 +20,7 @@ const links = [
       {links.map(link => (
         <a href={link.href} data-home-target={link.section} data-home-section={link.section} aria-current={link.section === activeSection ? 'location' : undefined}>{link.label}</a>
       ))}
+      <a href={siteLinks.suits} class="site-header__suits" aria-current={activeSection === 'suits' ? 'page' : undefined}>SUITS</a>
     </nav>
   </div>
 </header>
@@ -79,10 +80,8 @@ const links = [
   }
   .site-header__nav a:hover, .site-header__nav a[aria-current='location'] { color: #fff; }
   :global(body:has([data-sky-header-tone='ink'])) .site-header__brand img { filter: invert(1); }
-  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a { color: #50422e; }
-  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a:is(:hover,[aria-current='location']) { color: #211b13; }
-  :global(body:has([data-sky-header-tone='ink'])) .site-header::before { background: none; }
-  :global(body:has([data-sky-phase='descent'])) .site-header::before { background: none; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a:not(.site-header__suits) { color: #50422e; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a:not(.site-header__suits):is(:hover,[aria-current='location']) { color: #211b13; }
   .site-header a:focus-visible { outline: 2px solid #e6e6e6; outline-offset: 5px; border-radius: 4px; }
   @media (max-width: 900px) {
     .site-header { padding: 24px 32px 18px; }
@@ -91,7 +90,7 @@ const links = [
     .site-header__nav { gap: 28px; }
     .site-header__nav a { font-size: 18px; }
   }
-  @media (max-width: 640px) {
+  @media (max-width: 800px) {
     .site-header { padding: 20px 24px 12px; }
     .site-header__bar { display: grid; grid-template-columns: 1fr; row-gap: 8px; }
     .site-header__bar::before { inset: -8px -12px; border-radius: 16px; }
@@ -106,8 +105,43 @@ const links = [
     .site-header__nav { gap: 12px; }
     .site-header__nav a { font-size: 16px; }
   }
+  .site-header__nav a.site-header__suits {
+    --suits-accent: #8aafff;
+    position: relative;
+    min-width: 78px;
+    min-height: 48px;
+    padding: 0 3px 3px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: #f5f6fa;
+    font-family: var(--font-title);
+    font-weight: 600;
+    letter-spacing: .045em;
+  }
+  .site-header__nav a.site-header__suits::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    width: 28px;
+    height: 3px;
+    background: var(--suits-accent);
+    transform: translateX(-50%);
+    transition: width 180ms ease, background 180ms ease;
+    pointer-events: none;
+  }
+  .site-header__nav a.site-header__suits:is(:hover, [aria-current='page']) { --suits-accent: #a8c3ff; color: #fff; }
+  .site-header__nav a.site-header__suits:is(:hover, [aria-current='page'])::after { width: 54px; }
+  .site-header__nav a.site-header__suits:focus-visible { outline: 2px solid #91a9ee; outline-offset: 5px; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a.site-header__suits { --suits-accent: #2359e8; color: #211b13; }
+  :global(body:has([data-sky-header-tone='ink'])) .site-header::before,
+  :global(body:has([data-sky-phase='descent'])) .site-header::before { background: none; }
+  :global(body:has(#st)) .site-header::before,
+  :global(body:has(#st)) .site-header__bar::before { content: none; }
+  @media (max-width: 800px) { .site-header__nav a.site-header__suits { position: absolute; top: 0; right: 0; } }
   @media (prefers-reduced-motion: reduce) {
-    .site-header__nav a { transition: none; }
+    .site-header__nav a, .site-header__nav a.site-header__suits::after { transition: none; }
   }
 </style>
 <script>

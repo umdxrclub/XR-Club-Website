@@ -6,7 +6,7 @@ import haptics from '../../assets/home/haptic-glove.jpeg';
 import people from '../../assets/home/lab-conversation.jpeg';
 import demo from '../../assets/home/vr-demo.jpeg';
 import projection from '../../assets/home/immersive-projection.jpeg';
-import hololens from '../../assets/sky/hololens-demo.jpg';
+import { firstHomePhoto as hololens, firstHomePhotoSizes, homePhotoWidths } from './homePhotoSettings';
 import fieldDemo from '../../assets/home/nasa-field-demo.jpg';
 import presentation from '../../assets/home/nasa-presentation.jpg';
 import treadmill from '../../assets/home/vr-treadmill.jpeg';
@@ -26,15 +26,11 @@ const photos = await Promise.all([
 ---
 
 <section class="home-gallery" aria-label="Photos from XR Labs" aria-roledescription="carousel" data-home-gallery>
-  <script is:inline>
-    // Set before the photo is parsed, so a cold load cannot paint its fallback size.
-    document.currentScript.closest('[data-home-gallery]')?.setAttribute('data-layout-pending', '');
-  </script>
   <div class="home-gallery__flight" data-project-flight>
   <div class="home-gallery__carousel" data-home-carousel aria-describedby="home-photo-instructions" style={`--photo-mask: ${photoMask}; --photo-ratio: ${photos[0].image.width / photos[0].image.height}`}>
     {photos.map((photo, index) => (
       <a class="home-gallery__slide" href={photo.full.src} data-gallery-photo data-photo-ratio={photo.image.width / photo.image.height} hidden={index !== 0} tabindex={index === 0 ? 0 : -1} aria-label={`View ${photo.name.toLowerCase()} photo, ${index + 1} of ${photos.length}`}>
-        <Image src={photo.image} alt={photo.alt} width={1600} widths={[320, 640, 960, 1280, 1600]} sizes="(max-width: 900px) calc(100vw - 48px), 58vw" format="webp" quality={86} loading={index === 0 ? "eager" : "lazy"} fetchpriority={index === 0 ? "high" : "auto"} decoding="async" />
+        <Image src={photo.image} alt={photo.alt} width={1600} widths={homePhotoWidths} sizes={index === 0 ? firstHomePhotoSizes : '(max-width: 900px) calc(100vw - 48px), 58vw'} format="webp" quality={86} loading={index === 0 ? "eager" : "lazy"} fetchpriority={index === 0 ? "high" : "auto"} decoding="async" />
       </a>
     ))}
     <svg class="home-gallery__contour" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
@@ -54,7 +50,6 @@ const photos = await Promise.all([
 
 <style>
   .home-gallery { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-  .home-gallery[data-layout-pending] .home-gallery__carousel { visibility: hidden; }
   .home-gallery__flight { display: contents; }
   .home-gallery__reverse { display: none; }
   .home-gallery[data-flight] { z-index: 4; perspective: 1600px; }
@@ -65,7 +60,7 @@ const photos = await Promise.all([
     position: absolute;
     left: var(--photo-left, max(clamp(24px, 5vw, 76px), calc((100% - 1280px) / 2)));
     top: var(--photo-top, 122px);
-    width: var(--photo-width, min(58vw, 760px));
+    width: var(--photo-width, min(32vw, calc((100svh - 176px) * var(--photo-ratio)), 440px));
     aspect-ratio: var(--photo-ratio);
     overflow: hidden;
     mask-image: var(--photo-mask);
@@ -85,7 +80,7 @@ const photos = await Promise.all([
   .home-gallery__carousel:has(.home-gallery__slide:focus-visible) .home-gallery__contour { stroke: #fff; stroke-width: 4px; }
   .home-gallery__slide:focus-visible { outline: none; }
   @media (max-width: 900px) { .home-gallery__carousel { left: var(--photo-left, 32px); } }
-  @media (max-width: 640px) { .home-gallery__carousel { left: var(--photo-left, 24px); width: var(--photo-width, 52vw); top: var(--photo-top, 154px); } }
+  @media (max-width: 640px) { .home-gallery__carousel { left: var(--photo-left, 24px); width: var(--photo-width, min(64vw, max(100px, calc((100svh - 500px) * var(--photo-ratio))))); top: var(--photo-top, 154px); } }
   @media (max-width: 360px) { .home-gallery__carousel { left: var(--photo-left, 20px); } }
   .photo-viewer { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 64px 28px 28px; border: 0; color: #eee; background: #111114f5; pointer-events: auto; }
   .photo-viewer[open] { display: grid; place-items: center; }

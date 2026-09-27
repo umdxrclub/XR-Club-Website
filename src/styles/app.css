@@ -1,0 +1,50 @@
+/* Shared XR Labs typography and surfaces, confined to the restored applications. */
+html.xr-app-document { font-size: 16px; background: #111316; }
+.xr-app-page { --app-paper: #f5f2eb; --app-blue: #2359e8; background: #111316; font-family: var(--font-site); }
+.xr-app-page [hidden] { display: none !important; }
+.xr-app-page :is(button, input, textarea, select) { font-family: var(--font-site); }
+.xr-app-page :is(button, a, input, textarea, select):focus-visible { outline: 3px solid #7ea4ff; outline-offset: 4px; }
+.xr-app-page .auth-page { background: #111316; padding-top: 160px; }
+.xr-app-page .auth-card { background: var(--app-paper); color: #202329; border: 0; border-radius: 20px; padding: 44px; box-shadow: none; max-width: 490px; }
+.xr-app-page .auth-card__logo { width: 120px; height: auto; margin: 0 auto 32px; filter: invert(1); }
+.xr-app-page .auth-card__title { font-family: var(--font-title); color: #202329; font-size: 40px; font-weight: 600; }
+.xr-app-page :is(.auth-card__subtitle, .auth-card__hint, .auth-card__footer, .auth-label) { color: #61636b; }
+.xr-app-page :is(.auth-input, .auth-select, .auth-textarea) { background: #eae7df; color: #202329; border: 1px solid #d6d4cd; border-radius: 10px; }
+.xr-app-page :is(.auth-btn, .google-btn) { border-radius: 12px; background: var(--app-blue); color: white; border: 0; min-height: 50px; }
+.xr-app-page .auth-card a { color: #2359e8; }
+.xr-app-page .dash { font-family: var(--font-site); }
+.xr-app-page .dash__sidebar { background: #17191d; border-right-color: #303238; }
+.xr-app-page .dash__main { background: #111316; }
+.xr-app-page .dash__title { font-family: var(--font-title); font-weight: 600; }
+.xr-app-page :is(.sd, .sd-gate) { font-family: var(--font-site); }
+.xr-app-page .sd__title, .xr-app-page .sd-gate__title { font-family: var(--font-title); font-weight: 600; }
+.xr-app-page .sd-gate { background: #111316; color: #f5f2eb; }
+.xr-app-page .sd-gate__form { padding: 38px; border-radius: 20px; background: #f5f2eb; color: #202329; }
+.xr-app-page .sd__btn { border-radius: 10px; }
+.xr-app-page .sd__btn--primary { background: #2359e8; border-color: #2359e8; color: white; }
+@media (max-width: 640px) {
+  .xr-app-page .auth-card { padding: 30px 24px; }
+  .xr-app-page .auth-page { padding-top: 172px; }
+}
+/* SUITS applications share the mission workspace's paper and blue palette. */
+.xr-app-page .sa, .xr-app-page .sa-bg { --page: #f5f2eb; --surface: #fffdf8; --ink: #202329; --ink-2: #62656e; --ink-3: #70747d; --line: #202329; --hair: #d4d1c9; --fill: #eae7df; --fill-hover: #e0e4ed; --accent: #2359e8; }
+.xr-app-page .sa.is-dark { --page: #1b1e23; --surface: #23262c; --ink: #f5f2eb; --ink-2: #b0b4bf; --ink-3: #999faa; --line: #b0b4bf; --hair: #41454e; --fill: #2c3039; --fill-hover: #353c4d; --accent: #8aaaff; }
+.xr-app-page .sa-bg, .xr-app-page .sa-bg.is-dark { background: #111316; }
+.xr-app-page .sa { max-width: 960px; width: calc(100% - 64px); margin: 148px auto 64px; padding: 38px 48px 44px; border-radius: 22px; background: var(--page); }
+.xr-app-page .sa__hero-img { max-height: 280px; object-fit: cover; border-radius: 14px; }
+.xr-app-page .sa__title { font-family: var(--font-title); font-size: clamp(32px, 4vw, 48px); font-weight: 600; color: var(--accent); background: none; -webkit-text-fill-color: currentColor; animation: none; }
+.xr-app-page .sa__section-title { font-family: var(--font-title); font-weight: 600; }
+.xr-app-page .sa__intro p { font-size: 17px; line-height: 1.7; }
+.xr-app-page .sa__btn--primary { background: #2359e8; border-color: #2359e8; color: white; }
+.xr-app-page .sa__btn--primary:hover { background: #194cd3; }
+.xr-app-page .sa__workspace-link { display: inline-flex; color: var(--accent); font-size: 14px; margin-bottom: 24px; }
+.xr-app-page .sd-gate__form { --sd-text: #202329; --sd-muted: #62656e; --sd-field: #eae7df; --sd-field-line: #d4d1c9; border: 0; max-width: 460px; }
+.xr-app-page .sd-gate__title { font-size: 32px; color: #202329; }
+.xr-app-page .sd, .xr-app-page .sd-gate { --sd-accent: #7d9fff; --sd-grad: linear-gradient(90deg, #2359e8, #7d9fff); --sd-ring: #7d9fff40; }
+@media (max-width: 640px) {
+  .xr-app-page .sa { width: calc(100% - 32px); margin-top: 164px; padding: 22px 20px 32px; border-radius: 16px; }
+  .xr-app-page .sd-gate__form { padding: 30px 24px; }
+}
+
+/* Preserve the original application header; SUITS keeps its photo unobscured. */
+.xr-app-page:not(:has(#st)) .site-header::before { background: linear-gradient(180deg, #111316 0%, #111316f5 80%, #11131600 100%); }

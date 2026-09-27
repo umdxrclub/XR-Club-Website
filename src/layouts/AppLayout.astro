@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+import PageTransitions from '../components/PageTransitions.astro';
+import { ClientRouter } from 'astro:transitions';
+import '../styles/auth.css';
+import '../styles/app.css';
+import outfit from '../assets/fonts/Outfit-Variable.woff2?url';
+import titleFont from '../assets/fonts/LabsDisplay-Wordmark.woff2?url';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+interface Props { clientNavigation?: boolean; title: string; description?: string; hideHeader?: boolean; hideChatBot?: boolean; noindex?: boolean; footer?: boolean; }
+const { title, description = 'The XR Labs workspace at the University of Maryland.', hideHeader = false, noindex = true } = Astro.props;
+const showFooter = Astro.props.footer ?? (!hideHeader && !noindex);
+const base = import.meta.env.BASE_URL;
+---
+<!doctype html>
+<html lang="en" class="xr-app-document">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/png" sizes="96x96" href={`${base}favicon-96.png`} />
+    <link rel="icon" type="image/svg+xml" sizes="any" href={`${base}favicon.svg`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${base}apple-touch-icon.png`} />
+    <link rel="preload" href={outfit} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={titleFont} as="font" type="font/woff2" crossorigin />
+    <title>{title}</title>
+    {Astro.props.clientNavigation && <ClientRouter />}
+    <PageTransitions />
+    <slot name="head" />
+  </head>
+  <body class:list={['xr-app-page', { 'has-site-footer': showFooter }]}>
+    {!hideHeader && <Header />}
+    <slot />
+    {showFooter && <Footer />}
+    <!-- These tools use full page navigation. Initialize their existing controllers once. -->
+    {!Astro.props.clientNavigation && <script is:inline>
+      document.addEventListener('DOMContentLoaded', () => document.dispatchEvent(new Event('astro:page-load')), { once: true });
+    </script>}
+  </body>
+</html>

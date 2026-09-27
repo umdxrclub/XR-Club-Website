@@ -11,14 +11,18 @@
     "check": "astro check",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node scripts/test-story.mjs && node scripts/test-equipment-cat.mjs"
+    "test": "node scripts/test-story.mjs && node scripts/test-equipment-cat.mjs && node scripts/test-oauth.mjs && node scripts/test-suits-transition.mjs && node scripts/test-calendar.mjs && node scripts/test-suits-profiles.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.96.0",
     "astro": "7.3.5",
+    "jsqr": "1.4.0",
+    "pdfjs-dist": "6.3.289",
     "three": "0.184.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@electric-sql/pglite": "^0.5.8",
     "@types/three": "0.184.0",
     "sharp": "0.35.4",
     "typescript": "5.9.3"

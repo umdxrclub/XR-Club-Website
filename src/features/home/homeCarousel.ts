@@ -19,7 +19,9 @@ export function mountHomeCarousel(gallery: HTMLElement) {
     return Number(slide.dataset.photoRatio) || Number(image.getAttribute('width')) / Number(image.getAttribute('height'));
   });
   let current = 0, photoWidth = 0, timer = 0, layoutFrame = 0;
-  let fontsReady = document.fonts.status === 'loaded', layoutReady = false;
+  let layoutReady = false;
+  const firstImage = slides[0].querySelector('img')!;
+  let firstImageReady = firstImage.complete && firstImage.naturalWidth > 0;
   let changing = false, disposed = false, hovered = false, focused = false, visible = true, suspended = gallery.inert;
   let chatOpen = Boolean(document.querySelector('.chat__panel--open'));
   let previousOverflow: string | undefined;
@@ -55,10 +57,7 @@ export function mountHomeCarousel(gallery: HTMLElement) {
     carousel.style.setProperty('--photo-top', `${top}px`);
     carousel.style.setProperty('--photo-width', `${photoWidth}px`);
     carousel.style.height = `${photoWidth / ratio}px`;
-    if (fontsReady) {
-      layoutReady = true;
-      gallery.removeAttribute('data-layout-pending');
-    }
+    layoutReady = true;
     if (notify) gallery.dispatchEvent(new CustomEvent('xr:carousel-layout'));
   }
   const observer = new ResizeObserver(() => { if (!changing && !layoutFrame) layoutFrame = requestAnimationFrame(() => layout()); });
@@ -75,7 +74,7 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   function schedule() {
     window.clearTimeout(timer);
     tilt.setEnabled(layoutReady && !disposed && !suspended && !changing && !chatOpen && visible && !viewer.open);
-    if (layoutReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
+    if (layoutReady && firstImageReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
       // Prepare only the next slide; later slides stay lazy until their turn.
       warmSlide(current + 1);
       timer = window.setTimeout(() => void show(current + 1), 1600);
@@ -196,8 +195,13 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   reduced.addEventListener('change', () => { if (reduced.matches) animations.forEach(animation => animation.finish()); schedule(); }, options);
   document.fonts.ready.then(() => {
     if (disposed) return;
-    fontsReady = true;
     layout(); schedule();
+  });
+  // Start the slideshow clock after the opening image is decoded, so a slow
+  // connection cannot skip it or make the next slide compete with its request.
+  void firstImage.decode().catch(() => undefined).then(() => {
+    if (disposed) return;
+    firstImageReady = true; schedule();
   });
   layout(); observer.observe(gallery); observer.observe(header); observer.observe(statement); visibility.observe(carousel); schedule();
   return () => {

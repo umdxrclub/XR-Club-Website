@@ -1,13 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getImage } from 'astro:assets';
+import { firstHomePhoto, firstHomePhotoSizes, homePhotoWidths } from '../features/home/homePhotoSettings';
 import Header from './Header.astro';
 import HomeWaves from '../features/home/HomeWaves.astro';
 import HomeGallery from '../features/home/HomeGallery.astro';
 import HomeStatement from '../features/home/HomeStatement.astro';
 import HomeProjectStory from '../features/projects/HomeProjectStory.astro';
+const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: homePhotoWidths, format: 'webp', quality: 86 });
 ---
 
 <BaseLayout title="XR Club">
+  <link slot="head" rel="preload" as="image" href={openingPhoto.src} imagesrcset={openingPhoto.srcSet.attribute} imagesizes={firstHomePhotoSizes} fetchpriority="high" />
   <Header />
   <main id="home">
     <h1 class="visually-hidden">XR Club at the University of Maryland</h1>

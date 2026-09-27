@@ -29,8 +29,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check website
+        run: npm run check
+
+      - name: Test website and backend permissions
+        run: npm test
+
       - name: Build Astro
-        run: npm run build
+        run: |
+          for name in PUBLIC_SUPABASE_URL PUBLIC_SUPABASE_ANON_KEY PUBLIC_GOOGLE_CLIENT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing existing public build setting: $name"
+              exit 1
+            fi
+          done
+          npm run build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PUBLIC_GOOGLE_CLIENT_ID }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

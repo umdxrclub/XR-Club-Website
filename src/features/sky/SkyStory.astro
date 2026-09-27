@@ -99,7 +99,10 @@ const wordLines = (lines: readonly string[]) => lines.map(line => line.split(' '
     .sky-story__title { font-size: 7.7vw; }
   }
   @media (max-width: 640px) {
-    .sky-story__intro { top: var(--story-intro-copy-top, 56%); width: calc(100% - var(--story-gutter) * 2); translate: none; }
+    /* Move the copy on its own layer instead of relaying out the intro on scroll. */
+    .sky-story__intro { top: 0; width: calc(100% - var(--story-gutter) * 2); translate: none; transform: translate3d(0, var(--story-intro-copy-top, 56svh), 0); }
+    /* The animated aperture stays crisp without two viewport-sized blur passes. */
+    .sky-story__veil [data-story-paper] { filter: none; }
     .sky-story__intro .sky-story__title { font-size: clamp(38px, 12.5vw, 66px); text-wrap: balance; }
     .sky-story__intro-lead { margin-top: 16px; font-size: 16px; line-height: 1.4; }
     .sky-story__intro .sky-story__line { display: inline; }

@@ -1,6 +1,7 @@
 html[data-scene-navigation] [data-home-waves-stage] { view-transition-name: home-scene; }
 html[data-scene-navigation] [data-header] { view-transition-name: home-navigation; }
 html[data-scene-navigation] .site-footer { view-transition-name: home-footer; }
+html[data-scene-navigation] [data-home-waves-stage] * { animation-play-state: paused !important; }
 html[data-scene-navigation]::view-transition { pointer-events: none; }
 html[data-scene-navigation]::view-transition-group(*) { animation: none; }
 html[data-scene-navigation]::view-transition-old(*),

@@ -1,0 +1,62 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<AppLayout title="Signing in — XR Labs" noindex hideHeader clientNavigation>
+  <meta slot="head" name="referrer" content="no-referrer" />
+  <img class="callback-backdrop st-bg__astronaut" src={`${base}scenes/suits-sky/astronaut-source.jpg`} alt="" width="3840" height="2160" fetchpriority="high" />
+  <main class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+      <h1 class="auth-card__title" id="callback-title">Opening workspace…</h1>
+      <p class="auth-card__subtitle" id="callback-status" role="status">One moment while we open your workspace.</p>
+      <div class="auth-card__error" id="callback-error" role="alert" hidden></div>
+      <a class="auth-card__link" id="callback-return" href={`${base}suits/team/`} hidden>Return to sign in</a>
+      <noscript><p>Enable JavaScript to finish signing in.</p></noscript>
+    </div>
+  </main>
+
+  <style>
+    .callback-backdrop { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+    .auth-page { position:relative; z-index:1; background:none; min-height:100dvh; }
+    .auth-card { background:#1420399c; backdrop-filter:blur(18px); border:1px solid #ffffff24; box-shadow:none; border-radius:14px; }
+    .auth-card__title { color:#f3f7ff; }.auth-card__subtitle,.auth-card__link { color:#ccd8ef; }
+
+    .auth-card__error { color: #973329; background: #f8e6e0; border-color: #ebc6bc; }
+  </style>
+
+  <script>
+    import { navigate } from 'astro:transitions/client';
+    import { consumeGoogleReturn, finishGoogleReturn, googleCallbackError } from '../../lib/oauthRedirect';
+
+    const providerError = googleCallbackError(location.search, location.hash);
+    const base = import.meta.env.BASE_URL;
+    let returnStorage: Storage | null = null;
+    try { returnStorage = window.sessionStorage; } catch { /* Use the team overview. */ }
+    const destination = consumeGoogleReturn(location.origin, base, returnStorage);
+    const returnLink = document.getElementById('callback-return') as HTMLAnchorElement;
+    returnLink.href = destination;
+
+    void finishGoogleReturn({
+      providerError,
+      restoreSession: async () => {
+        // The original client validates and persists the session before navigation.
+        const { supabase } = await import('../../lib/supabase');
+        const initialized = await supabase.auth.initialize();
+        if (initialized.error) return { hasSession: false, error: initialized.error };
+        const { data: { session }, error } = await supabase.auth.getSession();
+        return { hasSession: !!session, error };
+      },
+      clearAddress: () => history.replaceState(history.state, '', location.pathname),
+      navigate: () => { void navigate(destination, { history: 'replace' }); },
+    }).then(failure => {
+      if (!failure) return;
+      document.getElementById('callback-title')!.textContent = 'Sign-in incomplete';
+      document.getElementById('callback-status')!.hidden = true;
+      const error = document.getElementById('callback-error')!;
+      error.textContent = failure;
+      error.hidden = false;
+      returnLink.hidden = false;
+    });
+  </script>
+</AppLayout>

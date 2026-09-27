@@ -104,6 +104,8 @@ const placement = (x: number, y: number, width: number) => `left:${x / 38.4}%;to
   .sky-world__bird { position: absolute; left: var(--bird-x); width: calc(var(--bird-size) * var(--bird-scale, 1)); height: calc(var(--bird-size) * var(--bird-scale, 1)); will-change: transform; }
   .sky-world__bird-frame { display: block; width: 100%; height: 100%; background-repeat: no-repeat; background-size: calc(var(--bird-size) * var(--bird-scale, 1) * 16) calc(var(--bird-size) * var(--bird-scale, 1)); transform: scaleX(var(--bird-facing)); animation: sky-bird-flap .72s steps(16) infinite; animation-delay: var(--bird-delay); }
   .sky-world[data-sky-active='false'] *, .sky-world[data-sky-reduced='true'] * { animation-play-state: paused !important; }
+  .sky-world[data-sky-scrolling] *,
+  .sky-world [data-sky-layer-visible='false'] img { animation-play-state: paused !important; }
   .sky-world[data-sky-folded='true'] .sky-world__bank img,
   .sky-world[data-sky-folded='true'] .sky-world__wisp img,
   .sky-world[data-sky-folded='true'] .sky-world__horizon * { animation-play-state: paused !important; }
@@ -117,6 +119,8 @@ const placement = (x: number, y: number, width: number) => `left:${x / 38.4}%;to
   .sky-world[data-sky-reading='true'] .sky-world__bird-frame { animation-play-state: paused; }
   @keyframes sky-bird-flap { to { background-position-x: calc(var(--bird-size) * var(--bird-scale, 1) * -16); } }
   @media (max-width: 640px) {
+    .sky-world__bank, .sky-world__wisp { will-change: auto; }
+    .sky-world__sunlight { mix-blend-mode: normal; }
     .sky-world__bank--entry { top: 9%; width: 235%; left: -52%; }
     .sky-world__bank--entry-left { top: 10.2%; width: 75%; left: -15%; }
     .sky-world__bank--left { top: 29%; width: 225%; left: -119%; }
