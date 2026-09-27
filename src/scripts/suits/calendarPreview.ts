@@ -1,5 +1,5 @@
 // Explicit local design fixtures. Production never imports or routes this module.
-import { api, state, canReviewApplications, type Member, type Meeting, type Rsvp } from './api';
+import { api, state, canReviewApplications, isLead, type Member, type Meeting, type Rsvp, type Task, type WorkingRole, type WorkingRoleAssignment, type MembershipRequest } from './api';
 import type { SuitsApplication } from '../../lib/types';
 import { enterWorkspace } from './workspace';
 import { TEAM_ZONE, weekDays, zoneParts, wallTimeToIso } from '../../lib/suitsCalendar';
@@ -29,7 +29,33 @@ export async function bootPreview() {
   api.meetings = async () => rows;
   api.rsvps = async () => rsvps;
   api.members = async () => state.members;
-  api.tasks = async () => [];
+  const stamp = new Date().toISOString();
+  let tasks: Task[] = [
+    { id:'work-1', title:'Draft the abstract', section:'team', assignee_id:'preview-0', status:'todo', due_date:days[5] },
+    { id:'work-2', title:'Connect the telemetry feed', section:'technical', assignee_id:'preview-1', status:'doing', due_date:days[4], responsibility_id:'role-1' },
+    { id:'work-3', title:'Validate the alert priority rules', section:'technical', assignee_id:'preview-4', status:'todo', due_date:days[2], responsibility_id:'role-2' },
+    { id:'work-4', title:'Document the integration checklist', section:'technical', assignee_id:'preview-5', status:'done', due_date:days[1], responsibility_id:'role-1' },
+    { id:'work-5', title:'Prototype the mission timeline', section:'uiux', assignee_id:'preview-2', status:'doing', due_date:days[6], responsibility_id:'role-3' },
+    { id:'work-6', title:'Compare intent model accuracy', section:'aiml', assignee_id:'preview-3', status:'todo', due_date:days[5] },
+  ].map(t => ({ details:'Define the acceptance criteria, share a first pass with the subteam, and incorporate feedback.',link:null,ping:[],created_by:'preview-0',created_at:stamp,updated_at:stamp,...t })) as Task[];
+  let workingRoles: WorkingRole[] = [
+    { id:'role-1',subteam:'technical',name:'Systems integration',description:'Connect telemetry, services, and the astronaut interface into a dependable workflow.',created_by:'preview-1' },
+    { id:'role-2',subteam:'technical',name:'Testing & reliability',description:'Own integration checks, investigate failures, and keep the demo ready to run.',created_by:'preview-1' },
+    { id:'role-3',subteam:'uiux',name:'Interface design',description:'Turn astronaut needs into clear, usable interactions.',created_by:'preview-2' },
+  ];
+  let assignments: WorkingRoleAssignment[] = [{role_id:'role-1',user_id:'preview-1'},{role_id:'role-1',user_id:'preview-5'},{role_id:'role-2',user_id:'preview-4'},{role_id:'role-3',user_id:'preview-2'}];
+  api.tasks = async () => structuredClone(tasks);
+  api.createTask = async payload => { const task={...payload,id:crypto.randomUUID(),status:'todo',ping:[],created_by:state.me!.user_id,created_at:stamp,updated_at:stamp} as Task; tasks.push(task); return task; };
+  api.updateTask = async (id,patch) => { tasks=tasks.map(t=>t.id===id?{...t,...patch}:t); };
+  api.deleteTask = async id => { tasks=tasks.filter(t=>t.id!==id); };
+  api.workingRoles = async () => structuredClone(workingRoles);
+  api.workingRoleAssignments = async () => structuredClone(assignments);
+  api.saveWorkingRole = async (id,role) => { const saved={...role,id:id || crypto.randomUUID(),created_by:state.me!.user_id}; workingRoles=[...workingRoles.filter(r=>r.id!==id),saved]; };
+  api.assignWorkingRole = async (roleId,people) => { assignments=[...assignments.filter(a=>a.role_id!==roleId),...people.map(user_id=>({role_id:roleId,user_id}))]; };
+  api.deleteWorkingRole = async id => { workingRoles=workingRoles.filter(r=>r.id!==id); assignments=assignments.filter(a=>a.role_id!==id); tasks=tasks.map(t=>t.responsibility_id===id?{...t,responsibility_id:null}:t); };
+  let requests: MembershipRequest[] = [...state.members.map(m=>({user_id:m.user_id,email:m.email,display_name:m.display_name,status:'approved' as const,requested_at:stamp,reviewed_at:stamp})),{user_id:'request-1',email:'new.member@example.invalid',display_name:'Morgan Ellis',status:'pending',requested_at:stamp,reviewed_at:null},{user_id:'request-2',email:'casey@example.invalid',display_name:'Casey Moore',status:'rejected',requested_at:stamp,reviewed_at:stamp}];
+  api.membershipRequests = async () => structuredClone(requests);
+  api.reviewMembership = async (id,status) => { requests=requests.map(r=>r.user_id===id?{...r,status,reviewed_at:new Date().toISOString()}:r); };
   api.scheduleMeetings = async events => { const next = events.map(e => ({ ...e, id: crypto.randomUUID(), ping: [], created_by: state.me!.user_id, created_at: new Date().toISOString() } as Meeting)); rows = [...rows, ...next]; return next; };
   api.updateMeeting = async (id, patch) => { rows = rows.map(m => m.id === id ? { ...m, ...patch } : m); };
   api.deleteMeeting = async id => { rows = rows.filter(m => m.id !== id); };
@@ -42,7 +68,6 @@ export async function bootPreview() {
   api.setRole = async () => {};
   api.setProposalRole = async () => {};
   api.removeMember = async () => {};
-  api.createTask = async () => { throw new Error('Tasks are read-only in this design preview.'); };
   let applications: SuitsApplication[] = ['Morgan Brooks', 'Casey Nguyen'].map((full_name, i) => ({
     id: `sample-application-${i}`, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     full_name, email: `applicant-${i}@example.invalid`, discord_username: `sample_applicant_${i}`, status: i ? 'interview' : 'new',
@@ -63,8 +88,14 @@ export async function bootPreview() {
     return { ok: true } as T;
   };
   document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
+  document.querySelector<HTMLElement>('[data-nav="access"]')!.hidden = !isLead();
   document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach(b => { b.disabled = b.dataset.nav === 'documents'; });
-  const { go } = await import('./index');
+  const { go, showMembershipGate } = await import('./index');
+  const accessStatus = new URLSearchParams(location.search).get('access');
+  if (accessStatus === 'pending' || accessStatus === 'rejected') {
+    showMembershipGate({user_id:'preview-new',display_name:'Sample member',email:'sample@umd.edu',status:accessStatus,requested_at:stamp,reviewed_at:null},async()=>{},async()=>{location.assign('/suits/team/');});
+    return;
+  }
   document.getElementById('st-nav')!.addEventListener('click', e => {
     const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-nav]');
     if (button && !button.disabled) void go(button.dataset.nav!, false);

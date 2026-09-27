@@ -769,7 +769,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
     const email = String(get('email') || '');
     if (!TEAM_EMAIL.test(email)) return reply('Use your umd.edu or terpmail.umd.edu address.');
     const m = byEmail(ctx, email);
-    if (!m) return reply('That address is not on the roster. Sign in to the dashboard once, then run /link again.');
+    if (!m) return reply('Sign in to the dashboard with your UMD account and wait for the team owner to approve your access, then run /link again.');
     if (m.discord_id && m.discord_id !== discordUser.id) return reply('That dashboard account is already linked to a different Discord account.');
     await ctx.admin.from('suits_team').update({ discord_id: discordUser.id, discord_username: discordUser.username }).eq('user_id', m.user_id);
     return reply(`Linked. You are ${m.display_name} on the dashboard.`);
@@ -949,6 +949,8 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
 }
 
 async function handleAutocomplete(ctx: Ctx, body: Record<string, any>) {
+  const discordUser = body.member?.user || body.user;
+  if (!discordUser || !byDiscord(ctx, discordUser.id)) return { type: 8, data: { choices: [] } };
   const { sub, focused } = optionsOf(body.data);
   const typed = String(focused?.value || '').toLowerCase();
   let choices: Array<{ name: string; value: string }> = [];
@@ -1009,9 +1011,12 @@ Deno.serve(async (req) => {
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const loadCtx = async (): Promise<Ctx> => {
+    const { data: approvals, error: approvalError } = await admin.from('suits_membership_requests').select('user_id').eq('status', 'approved');
+    if (approvalError) throw new Error('Could not verify team approvals');
+    const approvedIds = (approvals || []).map((r: { user_id: string }) => r.user_id);
     const [{ data: setting }, { data: members }] = await Promise.all([
       admin.from('suits_settings').select('value').eq('key', 'discord').maybeSingle(),
-      admin.from('suits_team').select('user_id, email, display_name, role, proposal_role, discord_id, discord_username'),
+      admin.from('suits_team').select('user_id, email, display_name, role, proposal_role, discord_id, discord_username').in('user_id', approvedIds),
     ]);
     return {
       admin,

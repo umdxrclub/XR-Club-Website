@@ -391,6 +391,8 @@ Deno.serve(async (req) => {
     user = { id: authed.id, email: authed.email };
   }
 
+  const { data: approval, error: approvalError } = await admin.from('suits_membership_requests').select('status').eq('user_id', user.id).maybeSingle();
+  if (approvalError || approval?.status !== 'approved') return json({ error: 'Team owner approval is required.' }, 403);
   const { data: member } = await admin.from('suits_team').select('display_name, role').eq('user_id', user.id).single();
   if (!member) return json({ error: 'You are not on the team roster yet. Open the dashboard once to join.' }, 403);
   const isManager = member.role === 'product_manager' || member.role === 'lead';
@@ -404,9 +406,9 @@ Deno.serve(async (req) => {
   }
 
   // Settings
-  const { data: settingRows } = await admin.from('suits_settings').select('key, value').in('key', ['drive_folder', 'drive_proposal']);
-  const settings: Record<string, Record<string, string>> = {};
-  for (const r of settingRows || []) settings[r.key] = r.value;
+  const { data: settingRows } = await admin.from('suits_settings').select('key, value').in('key', ['drive_folder', 'drive_proposal', 'drive_folders']);
+  const settings: { drive_folder?: Record<string,string>; drive_proposal?: Record<string,string>; drive_folders?: Record<string,{id:string;url:string}> } = {};
+  for (const r of settingRows || []) if (r.key === 'drive_folder' || r.key === 'drive_proposal' || r.key === 'drive_folders') settings[r.key as keyof typeof settings] = r.value;
   const folder = settings.drive_folder?.id ? settings.drive_folder : null;
   const proposal = settings.drive_proposal?.id ? settings.drive_proposal : null;
   const saveSetting = async (key: string, value: unknown) => {
@@ -468,7 +470,9 @@ Deno.serve(async (req) => {
         } else {
           throw new Error('Nothing to send to Drive');
         }
-        const { data: roster } = await admin.from('suits_team').select('email');
+        const { data: approved, error: approvalsError } = await admin.from('suits_membership_requests').select('user_id').eq('status', 'approved');
+        if (approvalsError) throw new Error('Could not verify team approvals');
+        const { data: roster } = await admin.from('suits_team').select('email').in('user_id', (approved || []).map(r => r.user_id));
         const added = await shareFolderWithTeam(token, folder.id, (roster || []).map((r: { email: string }) => r.email));
         await mark({ drive_file_id: file.id, drive_url: file.url, drive_status: 'synced', drive_error: null });
         return json({ drive_status: 'synced', drive_url: file.url, shared_with: added });
@@ -639,7 +643,7 @@ Deno.serve(async (req) => {
       const value = { id: f.id, name: f.name, url: f.url };
       await saveSetting('drive_folder', value);
       let access: string | null = null;
-      try { access = await ensureAccess(token, f.id, user.email!); } catch { access = null; }
+      try { access = await ensureAccess(token, String(f.id), user.email!); } catch { access = null; }
       return json({ folder: value, access });
     }
 

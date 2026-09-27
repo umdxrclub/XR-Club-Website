@@ -62,7 +62,7 @@ async function manage(m:Member,host:HTMLElement){
   close();toast('Team member updated.');await render(host);
  }});
  document.querySelector('[data-remove-member]')?.addEventListener('click',async()=>{
-  if(!await confirmModal('Remove from the team?',`${m.display_name} will lose team access until they sign in again. Their task assignments and answers will be cleared.`,'Remove'))return;
+  if(!await confirmModal('Revoke team access?',`${m.display_name} will lose dashboard access until you approve them again in Team access. Their past work will be kept.`,'Revoke access'))return;
   try{await api.removeMember(m.user_id);document.querySelector<HTMLButtonElement>('.st-modal [data-modal-cancel]')?.click();await render(host);toast('Member removed.');}catch(e){toast((e as Error).message,'danger');}
  });
  await done;

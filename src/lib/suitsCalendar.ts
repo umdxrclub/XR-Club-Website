@@ -7,6 +7,9 @@ export const SUBTEAMS = [
   { key: 'pm', name: 'Project Management' },
   { key: 'engagement', name: 'Community & Industry' },
 ] as const;
+export function defaultSubteam(proposalRole: string | null | undefined) {
+  return SUBTEAMS.some(team => team.key === proposalRole) ? proposalRole! : '';
+}
 export type Audience = 'team' | 'subteam' | 'check_in';
 export interface CalendarEvent {
   id: string; title: string; starts_at: string; ends_at: string;

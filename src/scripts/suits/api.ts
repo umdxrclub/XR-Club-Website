@@ -84,6 +84,7 @@ export interface Rsvp {
 }
 
 export interface Task {
+  responsibility_id?: string | null;
   id: string;
   title: string;
   details: string | null;
@@ -152,6 +153,18 @@ export const state = {
   base: '/',
 };
 
+export interface MembershipRequest {
+  user_id: string; email: string; display_name: string;
+  status: 'pending' | 'approved' | 'rejected'; requested_at: string; reviewed_at: string | null;
+}
+export interface WorkingRole {
+  id: string; subteam: string; name: string; description: string; created_by: string | null;
+}
+export interface WorkingRoleAssignment { role_id: string; user_id: string; }
+export function canManageSubteam(subteam: string) {
+  return !!state.me && (isManager() || (subteam !== 'team' && subteam === state.me.proposal_role));
+}
+
 export function isManager() {
   return state.me?.role === 'product_manager' || state.me?.role === 'lead';
 }
@@ -184,8 +197,36 @@ export const api = {
     return callFunction<T>('suits-review', action, params);
   },
   // Roster
-  async join(): Promise<Member> {
+  async join(): Promise<Member | null> {
     return unwrap(await db.rpc('suits_join'));
+  },
+  async membership(): Promise<MembershipRequest | null> {
+    const { data: { user }, error } = await db.auth.getUser();
+    if (error) throw new Error(error.message);
+    if (!user) return null;
+    return unwrap(await db.from('suits_membership_requests').select('*').eq('user_id', user.id).maybeSingle());
+  },
+  async membershipRequests(): Promise<MembershipRequest[]> {
+    return unwrap(await db.from('suits_membership_requests').select('*').order('requested_at', { ascending: false }));
+  },
+  async reviewMembership(userId: string, decision: 'approved' | 'rejected', subteam: string | null = null) {
+    unwrap(await db.rpc('suits_review_membership', { target: userId, decision, subteam }));
+  },
+  async workingRoles(): Promise<WorkingRole[]> {
+    return unwrap(await db.from('suits_subteam_roles').select('*').order('name'));
+  },
+  async workingRoleAssignments(): Promise<WorkingRoleAssignment[]> {
+    return unwrap(await db.from('suits_subteam_role_members').select('role_id,user_id'));
+  },
+  async saveWorkingRole(id: string | null, role: Pick<WorkingRole, 'name' | 'subteam' | 'description'>) {
+    if (id) unwrap(await db.from('suits_subteam_roles').update(role).eq('id', id).select('id').single());
+    else unwrap(await db.from('suits_subteam_roles').insert({ ...role, created_by: state.me!.user_id }).select('id').single());
+  },
+  async assignWorkingRole(roleId: string, people: string[]) {
+    unwrap(await db.rpc('suits_assign_working_role', { target_role: roleId, people }));
+  },
+  async deleteWorkingRole(id: string) {
+    unwrap(await db.from('suits_subteam_roles').delete().eq('id', id).select('id').single());
   },
   async members(): Promise<Member[]> {
     return unwrap(await db.from('suits_team').select('*').order('created_at'));
@@ -207,7 +248,7 @@ export const api = {
     unwrap(await db.from('suits_team').update({ proposal_role: proposalRole }).eq('user_id', userId));
   },
   async removeMember(userId: string) {
-    unwrap(await db.from('suits_team').delete().eq('user_id', userId));
+    await api.reviewMembership(userId, 'rejected');
   },
 
   // Roles
@@ -273,7 +314,7 @@ export const api = {
   async tasks(): Promise<Task[]> {
     return unwrap(await db.from('suits_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at'));
   },
-  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'>): Promise<Task> {
+  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'> & Pick<Partial<Task>, 'responsibility_id'>): Promise<Task> {
     const row = unwrap<Task>(await db.from('suits_tasks').insert({ ...t, created_by: state.me!.user_id }).select().single());
     notify('task', row.id, 'created');
     return row;

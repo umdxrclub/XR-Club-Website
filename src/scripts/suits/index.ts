@@ -2,8 +2,8 @@
 // roster, then hand off to the section views.
 import type { User } from '@supabase/supabase-js';
 import { googleCallbackError, prepareGoogleReturn } from '../../lib/oauthRedirect';
-import { db, api, state, isManager, canReviewApplications } from './api';
-import { toast } from './ui';
+import { db, api, state, isManager, isLead, canReviewApplications, type MembershipRequest } from './api';
+import { toast, esc } from './ui';
 import { navigate } from 'astro:transitions/client';
 import { setupWorkspace, enterWorkspace } from './workspace';
 import { stopSky } from './sky';
@@ -14,6 +14,7 @@ import * as meetings from './meetings';
 import * as documents from './documents';
 import * as team from './team';
 import * as applications from './applications';
+import * as access from './access';
 
 const TEAM_EMAIL = /@(terpmail\.)?umd\.edu$/i;
 const THEME_KEY = 'xr-suits-theme';
@@ -27,11 +28,12 @@ interface View {
 const VIEWS: Record<string, View> = {
   overview: { render: h => overview.render(h) },
   proposal: { render: h => reader.render(h), leave: () => reader.leave() },
-  tasks: { render: h => tasks.render(h) },
+  tasks: { render: h => tasks.render(h), leave: () => tasks.leave() },
   meetings: { render: h => meetings.render(h), leave: () => meetings.leave() },
   documents: { render: h => documents.render(h) },
   team: { render: h => team.render(h), leave: () => team.leave() },
   applications: { render: h => applications.render(h), leave: () => applications.leave() },
+  access: { render: h => access.render(h), leave: () => access.leave() },
 };
 
 let current = '';
@@ -39,10 +41,20 @@ let authorizing = false;
 let bootAbort: AbortController | null = null;
 let authSubscription: { unsubscribe(): void } | null = null;
 let pageVersion = 0;
+let accessTimer = 0;
+function clearWorkspace() {
+  stopSky();
+  window.clearInterval(accessTimer);
+  reader.leave(); meetings.leave(); team.leave(); applications.leave(); tasks.leave(); access.leave();
+  current = ''; state.me = null; state.members = [];
+  document.getElementById('st-app')?.setAttribute('hidden', '');
+  document.querySelectorAll('.st-view > div').forEach(el => { el.replaceChildren(); });
+  document.getElementById('st-modal-host')?.replaceChildren();
+}
 document.addEventListener('astro:before-swap', () => {
   stopSky();
   pageVersion++; bootAbort?.abort(); authSubscription?.unsubscribe(); authSubscription=null;
-  reader.leave(); meetings.leave(); team.leave(); applications.leave(); current=''; authorizing=false; state.me=null;
+  clearWorkspace(); authorizing=false;
 });
 
 export async function boot() {
@@ -106,7 +118,7 @@ export async function boot() {
   });
   document.getElementById('st-signout')!.addEventListener('click', async () => {
     authSubscription?.unsubscribe();authSubscription=null;
-    applications.leave();
+    clearWorkspace();
     await db.auth.signOut();
     await navigate(`${state.base}suits/team/`);
   });
@@ -127,7 +139,7 @@ export async function boot() {
 
   authSubscription = db.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session && !state.me) void authorize(session.user);
-    if (event === 'SIGNED_OUT') { state.me = null; applications.leave(); meetings.leave(); showGate(); }
+    if (event === 'SIGNED_OUT') { clearWorkspace(); authorizing = false; showGate(); }
   }).data.subscription;
 
   try {
@@ -184,7 +196,7 @@ async function setupGoogleButton() {
     });
     google.accounts.id.renderButton(host, { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.min(360, host.parentElement!.clientWidth - 8) });
     googleButtonReady = true;
-    setSignInVisible(!document.getElementById('st-gate')!.hidden && !authorizing);
+    setSignInVisible(!document.getElementById('st-gate')!.hidden && !authorizing && document.getElementById('st-access-status')!.hidden);
   } catch {
     // Fallback button stays
   }
@@ -207,8 +219,36 @@ function showGate(message?: string) {
   }
   document.getElementById('st-app')!.hidden = true;
   document.getElementById('st-gate')!.hidden = false;
+  document.getElementById('st-access-status')!.hidden = true;
+  document.getElementById('st-gate-note')!.hidden = false;
   setSignInVisible(true);
   if (message) showGateError(message);
+}
+
+/** Signed-in accounts wait here without loading any workspace data. */
+export function showMembershipGate(request: MembershipRequest | null, retry: () => Promise<void>, signOut?: () => Promise<void>) {
+  clearWorkspace();
+  document.getElementById('st-gate')!.hidden = false;
+  setSignInVisible(false);
+  document.getElementById('st-gate-error')!.hidden = true;
+  document.getElementById('st-gate-note')!.hidden = true;
+  const declined = request?.status === 'rejected';
+  document.getElementById('st-welcome')!.textContent = declined ? 'Access not approved' : 'Awaiting approval';
+  document.getElementById('st-gate-text')!.textContent = declined ? 'The team owner has declined your request. Contact them if you think this was a mistake.' : 'Your request is with the team owner. Once approved, you can enter the NASA SUITS workspace.';
+  const host = document.getElementById('st-access-status')!;
+  host.hidden = false;
+  host.innerHTML = `<p class="sw-gate-email">${esc(request?.email || '')}</p><div class="sw-actions"><button type="button" class="st-btn st-btn--primary" data-check-access>Check status</button><button type="button" class="st-btn" data-gate-signout>Sign out</button></div><p class="sw-footnote" role="status" data-access-message></p>`;
+  host.querySelector<HTMLButtonElement>('[data-check-access]')!.addEventListener('click', async e => {
+    const button = e.currentTarget as HTMLButtonElement;
+    button.disabled = true; button.textContent = 'Checking…';
+    try { await retry(); }
+    catch (err) { showGateError((err as Error).message); }
+    finally { button.disabled = false; button.textContent = 'Check status'; }
+  });
+  host.querySelector('[data-gate-signout]')!.addEventListener('click', async () => {
+    if (signOut) { await signOut(); return; }
+    await db.auth.signOut(); await navigate(`${state.base}suits/team/`);
+  });
 }
 
 function showGateError(message: string) {
@@ -237,6 +277,13 @@ async function authorize(user: User) {
 
     const joined=await api.join();
     if(version!==pageVersion)return;
+    if (!joined?.user_id) {
+      const request = await api.membership();
+      if (version !== pageVersion) return;
+      authorizing = false;
+      showMembershipGate(request, () => authorize(user));
+      return;
+    }
     state.me = joined;
     if (document.getElementById('st')?.dataset.mode !== 'workspace') {
       const initial = viewFromLocation();
@@ -251,11 +298,21 @@ async function authorize(user: User) {
 
     document.querySelectorAll<HTMLElement>('[data-managers]').forEach(el => { el.hidden = !isManager(); });
     document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
+    document.querySelector<HTMLElement>('[data-nav="access"]')!.hidden = !isLead();
 
     documents.warm();
     const initial = viewFromLocation();
     if (location.hash) history.replaceState(null, '', pathFor(initial));
     await enterWorkspace(() => go(initial, false));
+    authorizing = false;
+    window.clearInterval(accessTimer);
+    accessTimer = window.setInterval(async () => {
+      try {
+        const request = await api.membership();
+        if (version !== pageVersion || !state.me) return;
+        if (request?.status !== 'approved') showMembershipGate(request, () => authorize(user));
+      } catch { /* Database policies continue to enforce access during a connection interruption. */ }
+    }, 30000);
   } catch (err) {
     if(version!==pageVersion)return;
     state.me = null;
@@ -280,6 +337,7 @@ function viewFromLocation() {
 }
 
 export async function go(view: string, push = true) {
+  if (!state.me) return;
   if (!VIEWS[view]) view = 'meetings';
   if (current && VIEWS[current].leave) VIEWS[current].leave!();
   current = view;
@@ -303,6 +361,7 @@ export async function refreshBadges() {
     const upcoming = allMeetings.filter(m => new Date(m.ends_at).getTime() > Date.now()).length;
     setBadge('tasks', mine);
     setBadge('meetings', upcoming);
+    if (isLead()) setBadge('access', (await api.membershipRequests()).filter(r => r.status === 'pending').length);
   } catch { /* badges are decoration */ }
 }
 

@@ -2,11 +2,13 @@ import { api, state, isManager, memberName, type Meeting, type Rsvp, type Calend
 import { esc, toast, openModal, confirmModal, field, input, formValue } from './ui';
 import { refreshBadges } from './index';
 import { datePicker, timePicker, bindPickers } from './pickers';
+import { defaultSubteam } from '../../lib/suitsCalendar';
 import { TEAM_ZONE, SUBTEAMS, zoneParts, weekDays, monthDays, shiftDay, calendarDayWindow, CALENDAR_START_MINUTE, eventsOnDay, audienceLabel, recurringStarts, calendarGoogleUrl, discordChannelUrl, type Audience } from '../../lib/suitsCalendar';
 
 let cursor = zoneParts(new Date()).day;
 let mode: 'week' | 'day' | 'month' | 'schedule' = typeof window !== 'undefined' && window.innerWidth < 760 ? 'day' : 'week';
 let selectedSubteam = '';
+let calendarMemberKey = '';
 const visible = new Set<Audience>(['team', 'subteam', 'check_in']);
 let meetings: Meeting[] = [], answers: Rsvp[] = [];
 let calendarOptions: CalendarOptions | null = null;
@@ -22,6 +24,12 @@ const errorText = (err: unknown) => err instanceof Error ? err.message : 'Please
 const icon = (direction: 'prev' | 'next') => direction === 'prev' ? '‹' : '›';
 
 export async function render(host: HTMLElement) {
+  const memberKey = `${state.me?.user_id}:${state.me?.proposal_role}`;
+  if (calendarMemberKey !== memberKey) {
+    calendarMemberKey = memberKey;
+    selectedSubteam = defaultSubteam(state.me?.proposal_role);
+    visible.clear(); ['team', 'subteam', 'check_in'].forEach(a => visible.add(a as Audience));
+  }
   activeHost = host;
   const request = ++requestVersion;
   host.innerHTML = '<div class="sc-empty" role="status">Opening your calendar…</div>';
@@ -143,7 +151,7 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
   }
   const p = existing ? zoneParts(existing.starts_at, existing.timezone || TEAM_ZONE) : zoneParts(new Date(Date.now() + 3600000));
   const minutes = existing ? Math.round((Date.parse(existing.ends_at) - Date.parse(existing.starts_at)) / 60000) : 30;
-  const audience = existing?.audience || 'team';
+  const audience = existing?.audience || (selectedSubteam ? 'subteam' : 'team');
   const channels = [...(calendarOptions?.channels || [])];
   // A temporary Discord outage must not clear an existing channel on save.
   for (const [id, type] of [[existing?.discord_channel_id, 2], [existing?.announcement_channel_id, 0]] as const) {
