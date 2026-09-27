@@ -2,12 +2,13 @@ import { api, state, isLead, isAdvisor, type Member, type Role } from './api';
 import { esc, toast, confirmModal, roleLabel, openModal, select, field, input, formValue, enhanceSelects } from './ui';
 import { crewAvatar, editAvatar, updateIdentity } from './avatar';
 import { READER_ROLES } from './reader-content';
+import { openAdvisorAvailability } from './advisorAvailability';
 
 export async function render(host:HTMLElement) {
  host.innerHTML='<p class="st-muted">Loading team…</p>';
  state.members=await api.members();
- const groups=[...READER_ROLES.map(r=>({key:r.key,name:r.name})),{key:'unassigned',name:'No subteam yet'}];
- const groupFor=(m:Member)=>groups.find(g=>g.key===m.proposal_role)||groups[groups.length-1];
+ const groups=[{key:'advisor',name:'Advisor'},...READER_ROLES.map(r=>({key:r.key,name:r.name})),{key:'unassigned',name:'No subteam yet'}];
+ const groupFor=(m:Member)=>isAdvisor(m)?groups[0]:groups.find(g=>g.key===m.proposal_role)||groups[groups.length-1];
  const countLabel=(n:number)=>`${n} member${n===1?'':'s'}`;
  let query='',subteam='all';
  const availableGroups=groups.filter(g=>state.members.some(m=>groupFor(m).key===g.key));
@@ -29,12 +30,13 @@ export async function render(host:HTMLElement) {
   host.querySelector('[data-crew-groups]')!.innerHTML=groups.map(g=>{
    const people=matches.filter(m=>groupFor(m).key===g.key).sort((a,b)=>a.display_name.localeCompare(b.display_name));
    if(!people.length)return '';
-   const isMine=state.me?.proposal_role===g.key;
+   const isMine=!isAdvisor()&&state.me?.proposal_role===g.key;
    return `<section class="crew-group" aria-labelledby="crew-subteam-${g.key}">
     <header><div class="crew-group__title"><h2 id="crew-subteam-${g.key}">${esc(g.name)}</h2>${isMine?'<span class="crew-group__mine">Your subteam</span>':''}</div><span class="crew-group__count">${countLabel(people.length)}</span></header>
     <ul class="crew-cards">${people.map(m=>`<li class="crew-card">
      ${crewAvatar(m)}<div class="crew-card__person"><h3>${esc(m.display_name)}${m.user_id===state.me?.user_id?' <small>You</small>':''}</h3><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></div>
      <div class="crew-card__footer"><span class="crew-card__role">${isAdvisor(m)?(m.role==='lead'?'Advisor with lead access':'Advisor'):esc(roleLabel(m.role))}</span>${isLead()?`<button type="button" class="crew-manage" data-manage="${m.user_id}" aria-label="Manage ${esc(m.display_name)}">Manage</button>`:''}</div>
+     ${isAdvisor(m)?`<button type="button" class="st-btn st-btn--small crew-availability" data-advisor-availability="${esc(m.user_id)}">${m.user_id===state.me?.user_id?'Edit availability':'View availability'}</button>`:''}
     </li>`).join('')}</ul>
    </section>`;
   }).join('') || '<p class="crew-empty">No teammates found. Try another name or subteam.</p>';
@@ -44,6 +46,7 @@ export async function render(host:HTMLElement) {
  host.querySelector('select[name="crew_subteam"]')!.addEventListener('change',e=>{subteam=(e.target as HTMLSelectElement).value;draw();});
  host.querySelector('[data-profile]')!.addEventListener('click',()=>void editProfile(host));
  host.querySelector('[data-crew-groups]')!.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLElement>('[data-manage]');const m=state.members.find(m=>m.user_id===b?.dataset.manage);if(m&&isLead())void manage(m,host);});
+ host.querySelector('[data-crew-groups]')!.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLElement>('[data-advisor-availability]');const m=state.members.find(m=>m.user_id===b?.dataset.advisorAvailability);if(m)void openAdvisorAvailability(m);});
  const refresh=()=>{if(host.isConnected&&!host.closest('[hidden]'))draw();};
  document.addEventListener('suits:profile-updated',refresh,{signal:profileListener(host)});
 }

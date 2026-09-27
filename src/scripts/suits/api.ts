@@ -58,6 +58,10 @@ export interface Availability {
   updated_at: string;
 }
 
+export interface AdvisorAvailability {
+  id: string; advisor_id: string; starts_at: string; ends_at: string; created_at: string;
+}
+
 export interface Meeting extends CalendarEvent {
   announcement_channel_id?: string | null;
   id: string;
@@ -271,6 +275,15 @@ export const api = {
   },
 
   // Availability
+  async advisorAvailability(): Promise<AdvisorAvailability[]> {
+    return unwrap(await db.from('suits_advisor_availability').select('*').gte('ends_at', new Date().toISOString()).order('starts_at'));
+  },
+  async saveAdvisorAvailability(id: string | null, starts: string, ends: string): Promise<AdvisorAvailability> {
+    return unwrap(await db.rpc('suits_save_advisor_availability', { target: id, starts, ends }));
+  },
+  async deleteAdvisorAvailability(id: string) {
+    unwrap(await db.from('suits_advisor_availability').delete().eq('id', id).select('id').single());
+  },
   async polls(): Promise<Poll[]> {
     return unwrap(await db.from('suits_polls').select('*').order('created_at', { ascending: false }));
   },
@@ -402,7 +415,7 @@ export const api = {
 const cachedMethods=new WeakSet<Function>();
 /** Also wraps the explicitly local fixtures so previews use the same loading behavior. */
 export function cacheWorkspaceApi(){
- const reads=['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','documents','membershipRequests'] as const;
+ const reads=['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','documents','membershipRequests','advisorAvailability'] as const;
  for(const name of reads){
   const original=api[name];if(cachedMethods.has(original))continue;
   const cached=()=>workspaceData.read<unknown>(state.me?.user_id||null,name,original);
@@ -422,6 +435,7 @@ export function cacheWorkspaceApi(){
   cachedMethods.add(cached);api.review=cached;
  }
  const changes={
+  saveAdvisorAvailability:['advisorAvailability'],deleteAdvisorAvailability:['advisorAvailability'],
   reviewMembership:['membershipRequests','members','tasks','workingRoles','workingRoleAssignments'],
   manageMember:['members','tasks','workingRoleAssignments'],setRole:['members'],setProposalRole:['members','workingRoleAssignments'],
   saveAvatar:['members'],saveLayout:['members'],updateProfile:['members'],removeMember:['members','membershipRequests'],

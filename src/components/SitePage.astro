@@ -11,6 +11,25 @@ const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: 
 ---
 
 <BaseLayout title="XR Club">
+  <script slot="head" is:inline data-astro-rerun>
+    (() => {
+      document.documentElement.setAttribute('data-home-loading', '');
+      const finish = () => {
+        document.documentElement.removeAttribute('data-home-loading');
+        clearTimeout(fallback);
+        document.removeEventListener('xr:home-ready', finish);
+        document.removeEventListener('astro:before-swap', finish);
+        document.dispatchEvent(new CustomEvent('xr:home-visible'));
+      };
+      // Keep the server-rendered page usable if a script or image request fails.
+      const fallback = setTimeout(finish, 10000);
+      document.addEventListener('xr:home-ready', finish);
+      document.addEventListener('astro:before-swap', finish);
+    })();
+  </script>
+  <style slot="head" is:global>
+    html[data-home-loading] body { opacity: 0; pointer-events: none; }
+  </style>
   <link slot="head" rel="preload" as="image" href={openingPhoto.src} imagesrcset={openingPhoto.srcSet.attribute} imagesizes={firstHomePhotoSizes} fetchpriority="high" />
   <Header />
   <main id="home">

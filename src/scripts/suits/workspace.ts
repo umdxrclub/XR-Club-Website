@@ -2,12 +2,14 @@ import { state, isAdvisor } from './api';
 import { editAvatar, updateIdentity } from './avatar';
 import { applyMemberLayout, editLayout } from './layout';
 import { startSky } from './sky';
+import { openAdvisorAvailability } from './advisorAvailability';
 
 export function setupWorkspace(){
  const root=document.getElementById('st')!;
  root.dataset.layout='scenic';
  document.getElementById('st-layout')?.addEventListener('click',()=>void editLayout());
  document.getElementById('st-edit-avatar')?.addEventListener('click',()=>void editAvatar());
+ document.getElementById('st-availability')?.addEventListener('click',()=>void openAdvisorAvailability());
  document.getElementById('st-mobile-avatar')?.addEventListener('click',()=>void editAvatar());
 }
 export async function enterWorkspace(render:()=>Promise<void>){
@@ -18,6 +20,7 @@ export async function enterWorkspace(render:()=>Promise<void>){
  const commit=async()=>{
   applyMemberLayout(root);
   const advisor=isAdvisor();
+  document.getElementById('st-availability')!.hidden=!advisor;
   document.querySelector<HTMLElement>('[data-nav="meetings"]')!.hidden=advisor;
   const order=advisor?['documents','proposal','team','tasks','overview']:['meetings','overview','tasks','proposal','documents','team','applications','access'];
   const nav=document.getElementById('st-nav')!;

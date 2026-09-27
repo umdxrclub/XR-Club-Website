@@ -1,6 +1,7 @@
 import { mountPointerTilt, pointerTiltTransform } from '../../lib/pointerTilt';
 import { waveAccent, waveLayers } from './waveSettings';
 import { folderContour, folderMask, portraitPhotoContour, portraitPhotoMask } from '../../lib/folderShape';
+import { markHomeReady } from './homeReady';
 
 export function mountHomeCarousel(gallery: HTMLElement) {
   const carousel = gallery.querySelector<HTMLElement>('[data-home-carousel]')!;
@@ -20,8 +21,7 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   });
   let current = 0, photoWidth = 0, timer = 0, layoutFrame = 0;
   let layoutReady = false;
-  const firstImage = slides[0].querySelector('img')!;
-  let firstImageReady = firstImage.complete && firstImage.naturalWidth > 0;
+  let imagesReady = false;
   let changing = false, disposed = false, hovered = false, focused = false, visible = true, suspended = gallery.inert;
   let chatOpen = Boolean(document.querySelector('.chat__panel--open'));
   let previousOverflow: string | undefined;
@@ -62,21 +62,11 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   }
   const observer = new ResizeObserver(() => { if (!changing && !layoutFrame) layoutFrame = requestAnimationFrame(() => layout()); });
   const visibility = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; schedule(); });
-  const warmedSlides = new WeakSet<HTMLImageElement>();
-  function warmSlide(index: number) {
-    const image = slides[(index + slides.length) % slides.length].querySelector('img')!;
-    if (warmedSlides.has(image)) return;
-    warmedSlides.add(image);
-    // Hidden lazy images need promotion before decode can start their request.
-    image.loading = 'eager';
-    void image.decode().catch(() => undefined);
-  }
   function schedule() {
     window.clearTimeout(timer);
-    tilt.setEnabled(layoutReady && !disposed && !suspended && !changing && !chatOpen && visible && !viewer.open);
-    if (layoutReady && firstImageReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
-      // Prepare only the next slide; later slides stay lazy until their turn.
-      warmSlide(current + 1);
+    const revealed = !document.documentElement.hasAttribute('data-home-loading');
+    tilt.setEnabled(revealed && layoutReady && !disposed && !suspended && !changing && !chatOpen && visible && !viewer.open);
+    if (revealed && layoutReady && imagesReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
       timer = window.setTimeout(() => void show(current + 1), 1600);
     }
   }
@@ -192,16 +182,16 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   viewer.addEventListener('click', event => { if (event.target === viewer) viewer.close(); }, options);
   viewer.addEventListener('close', restoreScroll, options);
   document.addEventListener('visibilitychange', schedule, options);
+  document.addEventListener('xr:home-visible', schedule, options);
   reduced.addEventListener('change', () => { if (reduced.matches) animations.forEach(animation => animation.finish()); schedule(); }, options);
-  document.fonts.ready.then(() => {
+  // Fonts affect the title width and therefore the photo's safe area. Decode
+  // every carousel image before revealing that final, measured opening frame.
+  const images = [...slides.map(slide => slide.querySelector('img')!), ...header.querySelectorAll('img')];
+  void Promise.all([document.fonts.ready, ...images.map(image => image.decode().catch(() => undefined))]).then(() => {
     if (disposed) return;
-    layout(); schedule();
-  });
-  // Start the slideshow clock after the opening image is decoded, so a slow
-  // connection cannot skip it or make the next slide compete with its request.
-  void firstImage.decode().catch(() => undefined).then(() => {
-    if (disposed) return;
-    firstImageReady = true; schedule();
+    imagesReady = true; layout();
+    markHomeReady(gallery.closest<HTMLElement>('[data-home-waves]')!, 'carousel');
+    schedule();
   });
   layout(); observer.observe(gallery); observer.observe(header); observer.observe(statement); visibility.observe(carousel); schedule();
   return () => {

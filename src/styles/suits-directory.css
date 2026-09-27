@@ -25,6 +25,7 @@
 .crew-directory .crew-manage { align-self:auto; flex:none; font-size:12px; min-height:30px; padding:5px 0 5px 8px; border-radius:0; background:none; }
 .crew-directory .crew-manage:is(:hover,:focus-visible) { text-decoration:underline; text-underline-offset:3px; }
 .crew-results { margin:-12px 0 22px; color:var(--ink-2); font-size:13px; }
+.crew-directory .crew-availability { width:100%; margin-top:2px; }
 .crew-empty { margin:0; padding:28px 0; color:var(--ink-2); font-size:15px; }
 @container workspace-panel (max-width:580px) {
  .crew-toolbar { grid-template-columns:minmax(0,1fr); gap:10px; }

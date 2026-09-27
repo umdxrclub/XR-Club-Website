@@ -24,13 +24,13 @@ assert.deepEqual(await cache.read('owner','tasks',async()=>[]),[],'Failed preloa
 
 for(const role of ['owner','advisor','member']){
  const requests=[],state={me:{user_id:role},members:[]};let release,finished=false;
- const api=Object.fromEntries(['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','membershipRequests'].map(name=>[name,async()=>{requests.push(name);return[];}]));
+ const api=Object.fromEntries(['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','membershipRequests','advisorAvailability'].map(name=>[name,async()=>{requests.push(name);return[];}]));
  api.review=async()=>{requests.push('applications');return{};};
  const {preloadWorkspace}=await load('src/scripts/suits/preload.ts',{require:()=>({api,state,isAdvisor:()=>role==='advisor',isLead:()=>role==='owner',canReviewApplications:()=>role==='owner'})});
  const ready=preloadWorkspace([new Promise(r=>{release=r;})]).then(()=>{finished=true;});
  await new Promise(r=>setImmediate(r));assert.equal(finished,false,'The loading screen waits for the accessible tab data');
  release();await ready;
- for(const name of ['members','tasks','workingRoles','workingRoleAssignments'])assert.ok(requests.includes(name));
+ for(const name of ['members','tasks','workingRoles','workingRoleAssignments','advisorAvailability'])assert.ok(requests.includes(name));
  assert.equal(requests.includes('applications'),role==='owner');assert.equal(requests.includes('membershipRequests'),role==='owner');
  assert.equal(requests.includes('meetings'),role!=='advisor');assert.equal(requests.includes('rsvps'),role!=='advisor');
 }

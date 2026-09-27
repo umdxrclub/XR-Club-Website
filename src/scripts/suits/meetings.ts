@@ -1,4 +1,6 @@
-import { api, state, isManager, memberName, type Meeting, type Rsvp, type CalendarOptions } from './api';
+import { api, state, isManager, memberName, type Meeting, type Rsvp, type CalendarOptions, type AdvisorAvailability } from './api';
+import { availabilityDate, availabilityTime } from './advisorAvailability';
+import { workspaceData } from '../../lib/workspaceCache';
 import { esc, toast, openModal, confirmModal, field, input, formValue } from './ui';
 import { refreshBadges } from './index';
 import { datePicker, timePicker, bindPickers } from './pickers';
@@ -11,6 +13,12 @@ let selectedSubteam = '';
 let calendarMemberKey = '';
 const visible = new Set<Audience>(['team', 'subteam', 'check_in']);
 let meetings: Meeting[] = [], answers: Rsvp[] = [];
+let availability: AdvisorAvailability[] = [], showAvailability = true;
+type AvailabilityEvent = AdvisorAvailability & { title: string };
+type CalendarItem = Meeting | AvailabilityEvent;
+const isAvailability = (item: CalendarItem): item is AvailabilityEvent => 'advisor_id' in item;
+const itemLabel = (item: CalendarItem) => isAvailability(item) ? `${memberName(item.advisor_id)} availability` : audienceLabel(item);
+const eventAttribute = (item: CalendarItem) => `${isAvailability(item) ? 'data-availability' : 'data-event'}="${esc(item.id)}"`;
 let calendarOptions: CalendarOptions | null = null;
 let optionsError = '';
 let openingMeeting = false;
@@ -29,16 +37,17 @@ export async function render(host: HTMLElement) {
     calendarMemberKey = memberKey;
     selectedSubteam = defaultSubteam(state.me?.proposal_role);
     visible.clear(); ['team', 'subteam', 'check_in'].forEach(a => visible.add(a as Audience));
+    showAvailability = true;
   }
   activeHost = host;
   const request = ++requestVersion;
   host.innerHTML = '<div class="sc-empty" role="status">Opening your calendar…</div>';
   try {
-    [meetings, answers] = await Promise.all([api.meetings(), api.rsvps()]);
+    [meetings, answers, availability] = await Promise.all([api.meetings(), api.rsvps(), api.advisorAvailability()]);
     if (request !== requestVersion || activeHost !== host) return;
     draw(host);
     if (timer) clearInterval(timer);
-    timer = setInterval(() => { void refresh(host, false); }, 60000);
+    timer = setInterval(() => { workspaceData.invalidate('advisorAvailability'); void refresh(host, false); }, 60000);
     void api.discord<CalendarOptions>('calendar-options').then(options => { calendarOptions = options; optionsError = ''; }).catch(err => { optionsError = errorText(err); });
   } catch (err) {
     if (activeHost !== host) return;
@@ -49,12 +58,17 @@ export async function render(host: HTMLElement) {
 export function leave() { activeHost = null; requestVersion++; if (timer) clearInterval(timer); timer = undefined; }
 async function refresh(host: HTMLElement, report = true) {
   try {
-    const [items, rsvps] = await Promise.all([api.meetings(), api.rsvps()]);
+    const [items, rsvps, slots] = await Promise.all([api.meetings(), api.rsvps(), api.advisorAvailability()]);
     if (activeHost !== host) return;
-    meetings = items; answers = rsvps; draw(host, true);
+    meetings = items; answers = rsvps; availability = slots; draw(host, true);
   } catch (err) { if (report) toast(errorText(err), 'danger'); }
 }
-function filtered() { return meetings.filter(m => visible.has(m.audience || 'team') && (!selectedSubteam || m.audience !== 'subteam' || m.subteam === selectedSubteam)); }
+document.addEventListener('suits:availability-updated', () => { if (activeHost) void refresh(activeHost, false); });
+function filtered(): CalendarItem[] {
+  const items: CalendarItem[] = meetings.filter(m => visible.has(m.audience || 'team') && (!selectedSubteam || m.audience !== 'subteam' || m.subteam === selectedSubteam));
+  if (showAvailability) items.push(...availability.map(slot => ({ ...slot, title: 'Advisor available' })));
+  return items.sort((a,b) => Date.parse(a.starts_at)-Date.parse(b.starts_at));
+}
 function rangeLabel() {
   if (mode === 'month') return formatDay(cursor, { month: 'long', year: 'numeric' });
   if (mode === 'day') return formatDay(cursor, { month: 'long', day: 'numeric', year: 'numeric' });
@@ -73,6 +87,7 @@ function draw(host: HTMLElement, preserveScroll = false) {
       ${isManager() ? '<button type="button" class="sc-create" data-create><span aria-hidden="true">+</span> Create</button>' : ''}
     </div>
     <div class="sc-filters">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<label class="sc-filter sc-filter--${a}"><input type="checkbox" data-filter="${a}"${visible.has(a) ? ' checked' : ''} />${a === 'team' ? 'All team' : a === 'subteam' ? 'Subteams' : 'Check-ins'}</label>`).join('')}
+      <label class="sc-filter sc-filter--availability"><input type="checkbox" data-availability-filter${showAvailability ? ' checked' : ''} />Advisor availability</label>
       <select class="sc-subteam" aria-label="Filter subteam"><option value="">All subteams</option>${SUBTEAMS.map(t => `<option value="${t.key}"${selectedSubteam === t.key ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="sc-zone">Eastern time</span>
     </div>
     ${mode === 'month' ? monthHtml(items) : mode === 'schedule' ? scheduleHtml(items) : weekHtml(items)}
@@ -88,30 +103,37 @@ function draw(host: HTMLElement, preserveScroll = false) {
   host.querySelector<HTMLSelectElement>('.sc-mode')?.addEventListener('change', e => { mode = (e.target as HTMLSelectElement).value as typeof mode; draw(host); });
   host.querySelector<HTMLSelectElement>('.sc-subteam')?.addEventListener('change', e => { selectedSubteam = (e.target as HTMLSelectElement).value; draw(host, true); });
   host.querySelectorAll<HTMLInputElement>('[data-filter]').forEach(b => b.addEventListener('change', () => { const a = b.dataset.filter as Audience; if (b.checked) visible.add(a); else visible.delete(a); draw(host, true); }));
+  host.querySelector<HTMLInputElement>('[data-availability-filter]')?.addEventListener('change', e => { showAvailability = (e.target as HTMLInputElement).checked; draw(host, true); });
   host.querySelector('[data-create]')?.addEventListener('click', () => void editMeeting(host));
   host.querySelectorAll<HTMLElement>('[data-create-day]').forEach(b => b.addEventListener('click', () => { if (isManager()) void editMeeting(host, undefined, b.dataset.createDay, b.dataset.time); else { cursor = b.dataset.createDay!; mode = 'day'; draw(host); } }));
   host.querySelectorAll<HTMLElement>('[data-event]').forEach(b => b.addEventListener('click', () => { const m = meetings.find(m => m.id === b.dataset.event); if (m) showMeeting(host, m); }));
+  host.querySelectorAll<HTMLElement>('[data-availability]').forEach(b => b.addEventListener('click', () => {
+    const slot = availability.find(s => s.id === b.dataset.availability); if (!slot) return;
+    const person = state.members.find(m => m.user_id === slot.advisor_id);
+    void openModal({ title: 'Advisor available', cancelLabel: 'Done', body: `<div class="sc-details"><p><strong>${esc(memberName(slot.advisor_id))}</strong></p><p>${esc(availabilityDate(slot.starts_at))}<br>${esc(availabilityTime(slot.starts_at))} to ${esc(availabilityTime(slot.ends_at))}<span class="sc-details__zone">Eastern time</span></p><p class="st-muted">Contact your advisor to arrange a meeting during this time.</p>${person ? `<a class="st-btn" href="mailto:${esc(person.email)}">Email advisor</a>` : ''}</div>` });
+  }));
   const scroller = host.querySelector('.sc-week__scroll');
   if (scroller) scroller.scrollTop = scroll ?? 0;
 }
-function eventHtml(m: Meeting, style = '', compact = false) {
-  return `<button type="button" class="sc-event" data-event="${esc(m.id)}" data-audience="${m.audience || 'team'}" ${style ? `style="${style}"` : ''} aria-label="${esc(`${m.title}, ${time(m.starts_at)}, ${audienceLabel(m)}`)}"><strong>${esc(m.title)}</strong>${compact ? '' : `<small>${esc(time(m.starts_at))} – ${esc(time(m.ends_at))}</small>${m.location ? `<small>${esc(m.location)}</small>` : ''}`}</button>`;
+function eventHtml(m: CalendarItem, style = '', compact = false) {
+  const available = isAvailability(m);
+  return `<button type="button" class="sc-event" ${eventAttribute(m)} data-audience="${available ? 'availability' : m.audience || 'team'}" ${style ? `style="${style}"` : ''} aria-label="${esc(`${m.title}, ${time(m.starts_at)}, ${itemLabel(m)}`)}"><strong>${esc(m.title)}</strong>${compact ? '' : `<small>${esc(time(m.starts_at))} – ${esc(time(m.ends_at))}</small>${available ? `<small>${esc(memberName(m.advisor_id))}</small>` : m.location ? `<small>${esc(m.location)}</small>` : ''}`}</button>`;
 }
-function weekHtml(items: Meeting[]) {
+function weekHtml(items: CalendarItem[]) {
   const days = mode === 'day' ? [cursor] : weekDays(cursor), today = zoneParts(new Date());
   const early=items.filter(m=>days.includes(zoneParts(m.starts_at).day)&&zoneParts(m.starts_at).minutes<CALENDAR_START_MINUTE).length;
-  return `${early?`<button type="button" class="sc-early" data-early>${early} meeting${early===1?'':'s'} before 9 AM. View in Schedule</button>`:''}<div class="sc-week" style="--days:${days.length}"><div class="sc-week__head"><span></span>${days.map(d => `<div class="sc-week__day${today.day === d ? ' is-today' : ''}"><span>${formatDay(d, { weekday: 'short' })}</span><strong>${Number(d.slice(8))}</strong></div>`).join('')}</div>
+  return `${early?`<button type="button" class="sc-early" data-early>${early} calendar item${early===1?'':'s'} before 9 AM. View in Schedule</button>`:''}<div class="sc-week" style="--days:${days.length}"><div class="sc-week__head"><span></span>${days.map(d => `<div class="sc-week__day${today.day === d ? ' is-today' : ''}"><span>${formatDay(d, { weekday: 'short' })}</span><strong>${Number(d.slice(8))}</strong></div>`).join('')}</div>
   <div class="sc-week__scroll"><div class="sc-week__body"><div class="sc-hours">${Array.from({ length: 15 }, (_, i) => `<span style="top:${i * 60 + 12}px">${(i + 9) % 12 || 12} ${i + 9 < 12 ? 'AM' : 'PM'}</span>`).join('')}</div>
   ${days.map(d => `<div class="sc-day">${isManager() ? Array.from({ length: 30 }, (_, i) => `<button type="button" class="sc-slot" style="top:${i * 30 + 12}px" data-create-day="${d}" data-time="${String((Math.floor(i / 2) + 9)).padStart(2, '0')}:${i % 2 ? '30' : '00'}" aria-label="Schedule ${formatDay(d, { month: 'long', day: 'numeric' })} at ${(Math.floor(i / 2) + 9)}:${i % 2 ? '30' : '00'} Eastern"></button>`).join('') : ''}
   ${calendarDayWindow(items, d).map(e => eventHtml(e.event, `top:${e.start + 12}px;height:${Math.max(22, e.end - e.start - 2)}px;left:calc(${e.column / e.columns * 100}% + 2px);width:calc(${100 / e.columns}% - 5px)`, e.end - e.start <= 30)).join('')}${today.day === d && today.minutes >= CALENDAR_START_MINUTE ? `<div class="sc-now" style="top:${today.minutes - CALENDAR_START_MINUTE + 12}px"></div>` : ''}</div>`).join('')}</div></div></div>`;
 }
-function monthHtml(items: Meeting[]) {
+function monthHtml(items: CalendarItem[]) {
   const today = zoneParts(new Date()).day;
   return `<div class="sc-month">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<div class="sc-month__label">${d}</div>`).join('')}${monthDays(cursor).map(d => `<div class="sc-month__cell${d.slice(0, 7) !== cursor.slice(0, 7) ? ' is-outside' : ''}${today === d ? ' is-today' : ''}"><button type="button" class="sc-month__date" data-create-day="${d}" aria-label="${formatDay(d, { month: 'long', day: 'numeric' })}">${Number(d.slice(8))}</button>${eventsOnDay(items, d).map(m => eventHtml(m, '', true)).join('')}</div>`).join('')}</div>`;
 }
-function scheduleHtml(items: Meeting[]) {
+function scheduleHtml(items: CalendarItem[]) {
   const end = shiftDay(cursor, 35), days = [...new Set(items.filter(m => zoneParts(m.starts_at).day >= cursor && zoneParts(m.starts_at).day < end).map(m => zoneParts(m.starts_at).day))];
-  return `<div class="sc-agenda">${days.length ? days.map(d => `<section class="sc-agenda__day"><div class="sc-agenda__date">${formatDay(d, { weekday: 'short', month: 'short' })}<strong>${Number(d.slice(8))}</strong></div><div>${eventsOnDay(items, d).map(m => `<button type="button" class="sc-agenda__event" data-event="${m.id}"><small>${esc(time(m.starts_at))}</small><strong>${esc(m.title)}</strong><small>${esc(audienceLabel(m))}</small></button>`).join('')}</div></section>`).join('') : '<p class="sc-empty"><strong>No meetings scheduled.</strong>No meetings in the next five weeks.</p>'}</div>`;
+  return `<div class="sc-agenda">${days.length ? days.map(d => `<section class="sc-agenda__day"><div class="sc-agenda__date">${formatDay(d, { weekday: 'short', month: 'short' })}<strong>${Number(d.slice(8))}</strong></div><div>${eventsOnDay(items, d).map(m => `<button type="button" class="sc-agenda__event" ${eventAttribute(m)}${isAvailability(m)?' data-audience="availability"':''}><small>${esc(time(m.starts_at))}</small><strong>${esc(m.title)}</strong><small>${esc(itemLabel(m))}</small></button>`).join('')}</div></section>`).join('') : '<p class="sc-empty"><strong>No calendar items.</strong>No meetings or availability in the next five weeks.</p>'}</div>`;
 }
 
 function showMeeting(host: HTMLElement, m: Meeting) {

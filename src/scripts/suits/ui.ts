@@ -210,7 +210,8 @@ export function enhanceSelects(root: ParentNode) {
       const top = Math.max(8,Math.min(window.innerHeight-h-8,proposed));
       list.style.top = `${top}px`;
       list.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.left))}px`;
-      const close = () => { list.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
+      const close = () => { list.remove(); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey); window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', close); };
+      const onScroll = (e: Event) => { if (!list.contains(e.target as Node)) close(); };
       const onDoc = (e: Event) => { if (!list.contains(e.target as Node) && e.target !== btn) close(); };
       const onKey = (e: KeyboardEvent) => {
         const items = Array.from(list.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
@@ -219,8 +220,10 @@ export function enhanceSelects(root: ParentNode) {
         if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0])?.focus(); }
         if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1])?.focus(); }
       };
-      setTimeout(() => { document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey); window.addEventListener('scroll', close, true); window.addEventListener('resize', close); }, 0);
-      (list.querySelector<HTMLButtonElement>('.is-selected') || list.querySelector<HTMLButtonElement>('button'))?.focus({ preventScroll: true });
+      setTimeout(() => { document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey); window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', close); }, 0);
+      const selected = list.querySelector<HTMLButtonElement>('.is-selected') || list.querySelector<HTMLButtonElement>('button');
+      selected?.focus({ preventScroll: true });
+      if (selected) list.scrollTop = selected.offsetTop - (list.clientHeight - selected.offsetHeight) / 2;
       list.addEventListener('click', e => {
         const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-value]');
         if (!opt) return;

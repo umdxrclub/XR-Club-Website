@@ -1,5 +1,5 @@
 // Explicit local design fixtures. Production never imports or routes this module.
-import { api, state, canReviewApplications, isLead, isAdvisor, cacheWorkspaceApi, type Member, type Meeting, type Rsvp, type Task, type WorkingRole, type WorkingRoleAssignment, type MembershipRequest, type TeamDocument } from './api';
+import { api, state, canReviewApplications, isLead, isAdvisor, cacheWorkspaceApi, type Member, type Meeting, type Rsvp, type Task, type WorkingRole, type WorkingRoleAssignment, type MembershipRequest, type TeamDocument, type AdvisorAvailability } from './api';
 import { preloadWorkspace } from './preload';
 import type { SuitsApplication } from '../../lib/types';
 import { enterWorkspace } from './workspace';
@@ -18,10 +18,9 @@ export async function bootPreview() {
   state.members[0].email='kcyle@terpmail.umd.edu';
   state.members.forEach((m,i)=>{m.avatar_seed=`suits-${i}`;m.avatar_color=['blue','orange','violet','mint'][i];m.avatar_set_at=new Date().toISOString();m.workspace_layout='scenic';});
   state.me = state.members[new URLSearchParams(location.search).has('member')?1:0];
-  if(new URLSearchParams(location.search).has('advisor')) {
-    state.me={...state.members[0],user_id:'preview-advisor',email:'zwicker@umd.edu',display_name:'Zwicker',designation:'advisor',proposal_role:null,avatar_seed:'suits-advisor'};
-    state.members.push(state.me);
-  }
+  const advisorFixture:Member={...state.members[0],user_id:'preview-advisor',email:'zwicker@umd.edu',display_name:'Zwicker',designation:'advisor',proposal_role:null,avatar_seed:'suits-advisor'};
+  state.members.push(advisorFixture);
+  if(new URLSearchParams(location.search).has('advisor')) state.me=advisorFixture;
   if(new URLSearchParams(location.search).has('first')){state.me.avatar_set_at=null;state.me.workspace_layout=null;}
   if(new URLSearchParams(location.search).has('layout-first'))state.me.workspace_layout=null;
   api.saveAvatar=async(seed,color)=>({...state.me!,avatar_seed:seed,avatar_color:color,avatar_set_at:new Date().toISOString()});
@@ -33,6 +32,15 @@ export async function bootPreview() {
   };
   let rows = [sample('sample-1','Weekly team sync',1,'10:00',60,'team'),sample('sample-2','Systems working session',2,'13:00',90,'subteam','technical'),sample('sample-3','Design review',3,'11:00',60,'subteam','uiux'),sample('sample-4','Check-in with Sam',4,'14:00',30,'check_in'),sample('sample-5','Mission planning',5,'10:30',60,'team'),sample('sample-6','AI / ML standup',5,'14:00',45,'subteam','aiml'),sample('sample-7','Saturday check-in',6,'12:00',30,'check_in')];
   let rsvps: Rsvp[] = [];
+  let advisorSlots:AdvisorAvailability[]=[{id:'sample-availability',advisor_id:advisorFixture.user_id,starts_at:wallTimeToIso(days[2],'14:00'),ends_at:wallTimeToIso(days[2],'16:00'),created_at:new Date().toISOString()}];
+  api.advisorAvailability=async()=>structuredClone(advisorSlots);
+  api.saveAdvisorAvailability=async(id,starts_at,ends_at)=>{
+    if(!isAdvisor())throw new Error('Only an advisor can set availability.');
+    if(advisorSlots.some(s=>s.id!==id&&s.advisor_id===state.me!.user_id&&s.starts_at<ends_at&&s.ends_at>starts_at))throw new Error('That time overlaps your saved availability.');
+    const slot={id:id||crypto.randomUUID(),advisor_id:state.me!.user_id,starts_at,ends_at,created_at:new Date().toISOString()};
+    advisorSlots=[...advisorSlots.filter(s=>s.id!==id),slot].sort((a,b)=>a.starts_at.localeCompare(b.starts_at));return slot;
+  };
+  api.deleteAdvisorAvailability=async id=>{advisorSlots=advisorSlots.filter(s=>s.id!==id);};
   api.meetings = async () => rows;
   api.rsvps = async () => rsvps;
   api.members = async () => state.members;

@@ -81,7 +81,7 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
     wake();
   }
   function wake() {
-    if (disposed || !ready || !active || covered || document.hidden || storyAnimating || sceneCaptured || frame) return;
+    if (disposed || !ready || !active || covered || document.hidden || document.documentElement.hasAttribute('data-home-loading') || storyAnimating || sceneCaptured || frame) return;
     lastTime = performance.now(); frame = requestAnimationFrame(tick);
   }
   function advanceTime(now: number) {
@@ -139,6 +139,7 @@ export async function mountHomeWaves(root: HTMLElement, isCurrent: () => boolean
     observer.observe(stage); visibility.observe(root);
     window.addEventListener('resize', resize, { passive: true, signal: listeners.signal });
     document.addEventListener('visibilitychange', wake, { signal: listeners.signal });
+    document.addEventListener('xr:home-visible', wake, { signal: listeners.signal });
     document.addEventListener('xr:scene-captured', event => {
       sceneCaptured = Boolean((event as CustomEvent<boolean>).detail);
       if (sceneCaptured) { cancelAnimationFrame(frame); frame = 0; }

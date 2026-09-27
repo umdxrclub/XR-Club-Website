@@ -24,9 +24,9 @@ export function datePicker(name: string, value: string, opts: { placeholder?: st
 }
 
 /** Every 15 minutes from 9:00 AM to 11:45 PM. `value` is HH:MM. */
-export function timePicker(name: string, value: string) {
+export function timePicker(name: string, value: string, startHour = 9) {
   const options = [];
-  for (let m = 9 * 60; m < 24 * 60; m += 15) {
+  for (let m = startHour * 60; m < 24 * 60; m += 15) {
     const hh = Math.floor(m / 60), mm = m % 60;
     const v = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
     const text = `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;

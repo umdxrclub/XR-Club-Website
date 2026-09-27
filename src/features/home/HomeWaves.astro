@@ -49,6 +49,7 @@ const base = import.meta.env.BASE_URL;
   @media(prefers-reduced-motion:reduce) { .home-waves.has-project-story { height: calc(var(--home-stage-height) * 1.9); } .home-waves.has-project-story.has-sky-journey { height: calc(var(--home-stage-height) * var(--home-story-length-reduced)); } }
 </style>
 <script>
+  import { markHomeReady } from './homeReady';
   let dispose: (() => void) | undefined;
   let generation = 0;
   async function mount() {
@@ -63,6 +64,8 @@ const base = import.meta.env.BASE_URL;
       if (current !== generation) cleanup(); else dispose = cleanup;
     } catch (error) {
       console.warn('Showing the still wave background.', error);
+    } finally {
+      if (current === generation && root.isConnected) markHomeReady(root, 'background');
     }
   }
   document.addEventListener('astro:page-load', mount);

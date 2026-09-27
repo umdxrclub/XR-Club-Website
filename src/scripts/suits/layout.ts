@@ -29,7 +29,7 @@ export async function editLayout(first=false) {
  const closed=openModal({
   title:first?'Choose your layout':'Layout',className:'st-layout-modal',
   submitLabel:first?'Finish setup':'Save layout',cancelLabel:first?'Later':'Cancel',
-  body:`${first?onboardingProgress(2):''}<p class="st-p">Choose where your navigation lives. You can change this anytime with Layout.</p><div class="workspace-layouts" role="group" aria-label="Workspace layout">${layouts.map(([key,title,note])=>`<button type="button" data-layout-choice="${key}" aria-pressed="${selected===key}"><span class="workspace-layout-diagram" data-diagram="${key}" aria-hidden="true"><i></i><i></i></span><strong>${title}</strong><small>${note}</small></button>`).join('')}</div>`,
+  body:`${first?onboardingProgress(2):''}<p class="st-p">Choose a layout. You can change it later.</p><div class="workspace-layouts" role="group" aria-label="Workspace layout">${layouts.map(([key,title,note])=>`<button type="button" data-layout-choice="${key}" aria-pressed="${selected===key}"><span class="workspace-layout-diagram" data-diagram="${key}" aria-hidden="true"><i></i><i></i></span><strong>${title}</strong><small>${note}</small></button>`).join('')}</div>`,
   onSubmit:async(form,close)=>{
    saving=true;
    const choices=form.querySelectorAll<HTMLButtonElement>('[data-layout-choice]');
