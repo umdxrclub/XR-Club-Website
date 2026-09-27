@@ -2,7 +2,7 @@
 //
 // A Google service account is shared on one team folder. The dashboard uses it
 // to browse the folder, create Docs, Sheets, and Slides inside it, give every
-// team member edit access the first time they open the dashboard, and read the
+// approved member access the first time they open the dashboard, and read the
 // proposal document to report its length and sections.
 //
 // Every request carries the caller's Supabase session. Actions:
@@ -20,6 +20,7 @@
 // Deploy: npx supabase functions deploy suits-drive --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { approvedDriveEmail, ensureFolderAccess } from '../_shared/drive-access.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -245,20 +246,9 @@ function parseDriveFileId(url: string) {
   return m ? m[1] : null;
 }
 
-/** Give a team member edit access to the folder if they do not have it yet. */
+/** Give the approved caller viewing access, preserving existing editing access. */
 async function ensureAccess(token: string, folderId: string, email: string) {
-  const data = await gapi(token, `${DRIVE}/files/${folderId}/permissions?fields=permissions(emailAddress,role,type,domain)&supportsAllDrives=true&pageSize=100`);
-  const perms = (data?.permissions || []) as Array<Record<string, string>>;
-  const lower = email.toLowerCase();
-  const has = perms.some(p => (p.emailAddress || '').toLowerCase() === lower && ['writer', 'owner', 'organizer', 'fileOrganizer'].includes(p.role))
-    || perms.some(p => p.type === 'domain' && lower.endsWith('@' + (p.domain || '').toLowerCase()) && ['writer', 'owner'].includes(p.role))
-    || perms.some(p => p.type === 'anyone' && ['writer'].includes(p.role));
-  if (has) return 'already';
-  await gapi(token, `${DRIVE}/files/${folderId}/permissions?sendNotificationEmail=false&supportsAllDrives=true`, {
-    method: 'POST',
-    body: JSON.stringify({ role: 'writer', type: 'user', emailAddress: email }),
-  });
-  return 'granted';
+  return ensureFolderAccess((url, init) => gapi(token, url, init), folderId, email);
 }
 
 // ---------------------------------------------------------------------------
@@ -379,20 +369,25 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   // Who is asking: a signed in team member, or the Discord bot acting for one
-  let user: { id: string; email?: string };
+  let user: { id: string; email?: string; email_confirmed_at?: string };
   if (authHeader.slice(7) === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') && body.as_user_id) {
     const { data: row } = await admin.from('suits_team').select('user_id, email').eq('user_id', String(body.as_user_id)).single();
     if (!row) return json({ error: 'Unknown team member' }, 403);
-    user = { id: row.user_id, email: row.email };
+    const { data: identity } = await admin.auth.admin.getUserById(row.user_id);
+    if (!identity.user) return json({ error: 'Unknown team member' }, 403);
+    user = identity.user;
   } else {
     const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authHeader } } });
     const { data: { user: authed }, error: authError } = await userClient.auth.getUser();
     if (authError || !authed || !TEAM_EMAIL.test(authed.email || '')) return json({ error: 'Not signed in with a UMD account' }, 401);
-    user = { id: authed.id, email: authed.email };
+    user = authed;
   }
 
   const { data: approval, error: approvalError } = await admin.from('suits_membership_requests').select('status').eq('user_id', user.id).maybeSingle();
   if (approvalError || approval?.status !== 'approved') return json({ error: 'Team owner approval is required.' }, 403);
+  const verifiedEmail = approvedDriveEmail(user, approval.status);
+  if (!verifiedEmail) return json({ error: 'A verified UMD account is required.' }, 403);
+  user.email = verifiedEmail;
   const { data: member } = await admin.from('suits_team').select('display_name, role').eq('user_id', user.id).single();
   if (!member) return json({ error: 'You are not on the team roster yet. Open the dashboard once to join.' }, 403);
   const isManager = member.role === 'product_manager' || member.role === 'lead';

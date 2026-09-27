@@ -5,6 +5,7 @@ import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFDocume
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { db, type TeamDocument } from './api';
 import { esc } from './ui';
+import { bindDriveLinks, isGoogleDriveUrl, prepareDriveAccess } from './drive-access';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -39,13 +40,14 @@ export async function openViewer(d: TeamDocument, extras: { subtitle?: string } 
         ${extras.subtitle ? `<span class="st-viewer__sub">${esc(extras.subtitle)}</span>` : ''}
       </div>
       <div class="st-viewer__actions">
-        ${d.drive_url ? `<a class="st-btn st-btn--small" href="${esc(d.drive_url)}" target="_blank" rel="noopener">In Drive</a>` : ''}
-        <a class="st-btn st-btn--small" id="st-viewer-open" href="${esc(d.kind === 'link' ? d.url || '#' : '#')}" target="_blank" rel="noopener">Open in new tab</a>
+        ${d.drive_url ? `<a class="st-btn st-btn--small" data-team-drive href="${esc(d.drive_url)}" target="_blank" rel="noopener">In Drive</a>` : ''}
+        <a class="st-btn st-btn--small" id="st-viewer-open" ${d.kind === 'link' && isGoogleDriveUrl(d.url || '') ? 'data-team-drive' : ''} href="${esc(d.kind === 'link' ? d.url || '#' : '#')}" target="_blank" rel="noopener">Open in new tab</a>
         <button type="button" class="st-btn st-btn--small st-btn--primary" id="st-viewer-close">Close</button>
       </div>
     </div>
     <div class="st-viewer__body" id="st-viewer-body"><p class="st-viewer__note">Loading.</p></div>`;
   document.body.appendChild(overlay);
+  bindDriveLinks(overlay);
   document.body.style.overflow = 'hidden';
   overlay.querySelector('#st-viewer-close')!.addEventListener('click', closeViewer);
   keyHandler = e => { if (e.key === 'Escape') closeViewer(); };
@@ -55,6 +57,8 @@ export async function openViewer(d: TeamDocument, extras: { subtitle?: string } 
   const openLink = overlay.querySelector<HTMLAnchorElement>('#st-viewer-open')!;
   try {
     if (d.kind === 'link') {
+      if (isGoogleDriveUrl(d.url || '')) await prepareDriveAccess();
+      if (!body.isConnected) return;
       renderLink(body, d);
       return;
     }
@@ -194,7 +198,7 @@ function renderLink(body: HTMLElement, d: TeamDocument) {
         <p class="st-viewer__note" style="margin-bottom:0.4rem;">This site does not allow itself to be shown inside another page.</p>
         <p class="st-viewer__url">${esc(url)}</p>
         ${d.notes ? `<p class="st-viewer__note">${esc(d.notes)}</p>` : ''}
-        <a class="st-btn st-btn--primary" href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a>
+        <a class="st-btn st-btn--primary" ${isGoogleDriveUrl(url) ? 'data-team-drive' : ''} href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a>
       </div>
     </div>`;
 }

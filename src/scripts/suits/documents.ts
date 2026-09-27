@@ -7,14 +7,13 @@ import { db, api, state, isManager, isLead, type TeamDocument } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';
 import { openViewer } from './viewer';
+import { bindDriveLinks, getDriveStatus, isGoogleDriveUrl, openTeamDrive, type DriveStatus } from './drive-access';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
 const BUCKET = 'suits-docs';
 const GROUPS = [{ key: 'team', name: 'Everyone' }, ...READER_ROLES.map(r => ({ key: r.key, name: r.name }))];
 const groupName = (key: string) => GROUPS.find(g => g.key === key)?.name ?? 'Everyone';
-
-interface DriveStatus { configured: boolean; serviceEmail: string | null; folder: { id: string; name: string; url: string } | null }
 
 let filter = 'all';
 let driveStatus: DriveStatus | null = null;
@@ -61,7 +60,7 @@ function rememberThumb(id: string, data: string) {
 /** Fetch the list once after sign in so the tab is ready before it is opened. */
 export function warm() {
   void refreshDocs(null);
-  if (!driveStatus) void loadDrive(null);
+  void loadDrive(null);
 }
 
 /** Fetch the list; repaint only if something changed. Resolves true when it did. */
@@ -111,7 +110,7 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
       <div class="st-toolbar">
         <h2 class="st-h1" style="margin:0;">Documents</h2>
         <div class="st-toolbar__group">
-          ${driveStatus?.folder ? `<a class="st-btn" href="${esc(driveStatus.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>` : `<span id="st-drive-open"></span>`}
+          ${driveStatus?.folder ? `<a class="st-btn" data-team-drive href="${esc(driveStatus.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>` : `<span id="st-drive-open"></span>`}
           <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add</button>
         </div>
       </div>
@@ -134,6 +133,7 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
 
   void fillCovers(host, docs);
   paintDriveBits(host);
+  bindDriveLinks(host);
   if (scrollY) window.scrollTo({ top: scrollY });
 }
 
@@ -144,7 +144,7 @@ function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
       <div class="st-group__head">
         <h3 class="st-group__title">${esc(g.name)}</h3>
         <span class="st-group__count">${docs.length}</span>
-        <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
+        <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a data-team-drive href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
       </div>
       ${docs.length ? `<div class="st-docgrid">${docs.map(cardHtml).join('')}</div>` : `<p class="st-group__empty">Nothing here yet.</p>`}
     </section>`;
@@ -298,9 +298,9 @@ function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
     if (!act) return;
     close();
     if (act === 'view') void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
-    if (act === 'drive' && d.drive_url) window.open(d.drive_url, '_blank', 'noopener');
+    if (act === 'drive' && d.drive_url) void openTeamDrive(d.drive_url);
     if (act === 'tab') {
-      if (d.kind === 'link') { window.open(d.url || '#', '_blank', 'noopener'); return; }
+      if (d.kind === 'link') { if (isGoogleDriveUrl(d.url || '')) void openTeamDrive(d.url!); else window.open(d.url || '#', '_blank', 'noopener'); return; }
       const tab = window.open('', '_blank');
       try { const url = await signedUrl(d.storage_path!); if (tab) tab.location.href = url; } catch (err) { tab?.close(); toast((err as Error).message, 'danger'); }
     }
@@ -462,7 +462,7 @@ async function pullFromDrive(host: HTMLElement) {
 /** Refresh what we know about Drive in the background, then apply it to the page. */
 async function loadDrive(host: HTMLElement | null) {
   try {
-    const st = await api.drive<DriveStatus>('status');
+    const st = await getDriveStatus();
     if (st.configured && st.folder && !Object.keys(roleFolders).length) {
       try { roleFolders = (await api.drive<{ folders: Record<string, { id: string; url: string }> }>('folders')).folders || {}; } catch { roleFolders = {}; }
     }
@@ -482,10 +482,10 @@ function paintDriveBits(host: HTMLElement) {
   if (!st) { card.innerHTML = ''; return; }
   if (st.configured && st.folder) {
     const openSlot = host.querySelector<HTMLElement>('#st-drive-open');
-    if (openSlot) openSlot.outerHTML = `<a class="st-btn" href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
+    if (openSlot) openSlot.outerHTML = `<a class="st-btn" data-team-drive href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
     host.querySelectorAll<HTMLElement>('[data-role-folder]').forEach(el => {
       const f = roleFolders[el.dataset.roleFolder!];
-      if (f && !el.querySelector('a')) el.innerHTML = `<a href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
+      if (f && !el.querySelector('a')) el.innerHTML = `<a data-team-drive href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
     });
     const waiting = isManager() ? host.querySelectorAll('.st-doccard__flag').length : 0;
     card.innerHTML = waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '';
