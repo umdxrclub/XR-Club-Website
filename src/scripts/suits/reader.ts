@@ -55,6 +55,8 @@ function getDoc(key: DocKey) {
   return docs.get(key)!;
 }
 
+export async function warm(){await Promise.all(READER_DOCS.map(d=>getDoc(d.key)));}
+
 async function getText(key: DocKey, p: number, page: PDFPageProxy) {
   const id = `${key}:${p}`;
   if (!texts.has(id)) texts.set(id, page.getTextContent().then(t => (t.items as TextItem[]).filter(i => 'str' in i)));

@@ -1,13 +1,13 @@
 // Overview: your open tasks and what is coming up, in the same rows the
 // Tasks and Meetings pages use. Empty until there is something.
-import { api, state } from './api';
+import { api, state, isAdvisor } from './api';
 import { esc, fmtTime } from './ui';
 import { sectionName } from './content';
 import { taskRowHtml, bindRows } from './tasks';
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<p class="st-muted">Loading.</p>`;
-  const [tasks, meetings] = await Promise.all([api.tasks(), api.meetings()]);
+  const [tasks, meetings] = await Promise.all([api.tasks(), isAdvisor()?Promise.resolve([]):api.meetings()]);
   const me = state.me!;
   const now = Date.now();
   const myTasks = tasks.filter(t => t.assignee_id === me.user_id && t.status !== 'done');

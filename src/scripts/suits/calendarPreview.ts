@@ -1,5 +1,6 @@
 // Explicit local design fixtures. Production never imports or routes this module.
-import { api, state, canReviewApplications, isLead, type Member, type Meeting, type Rsvp, type Task, type WorkingRole, type WorkingRoleAssignment, type MembershipRequest } from './api';
+import { api, state, canReviewApplications, isLead, isAdvisor, cacheWorkspaceApi, type Member, type Meeting, type Rsvp, type Task, type WorkingRole, type WorkingRoleAssignment, type MembershipRequest, type TeamDocument } from './api';
+import { preloadWorkspace } from './preload';
 import type { SuitsApplication } from '../../lib/types';
 import { enterWorkspace } from './workspace';
 import { TEAM_ZONE, weekDays, zoneParts, wallTimeToIso } from '../../lib/suitsCalendar';
@@ -17,6 +18,10 @@ export async function bootPreview() {
   state.members[0].email='kcyle@terpmail.umd.edu';
   state.members.forEach((m,i)=>{m.avatar_seed=`suits-${i}`;m.avatar_color=['blue','orange','violet','mint'][i];m.avatar_set_at=new Date().toISOString();m.workspace_layout='scenic';});
   state.me = state.members[new URLSearchParams(location.search).has('member')?1:0];
+  if(new URLSearchParams(location.search).has('advisor')) {
+    state.me={...state.members[0],user_id:'preview-advisor',email:'zwicker@umd.edu',display_name:'Zwicker',designation:'advisor',proposal_role:null,avatar_seed:'suits-advisor'};
+    state.members.push(state.me);
+  }
   if(new URLSearchParams(location.search).has('first')){state.me.avatar_set_at=null;state.me.workspace_layout=null;}
   if(new URLSearchParams(location.search).has('layout-first'))state.me.workspace_layout=null;
   api.saveAvatar=async(seed,color)=>({...state.me!,avatar_seed:seed,avatar_color:color,avatar_set_at:new Date().toISOString()});
@@ -74,6 +79,11 @@ export async function bootPreview() {
   api.setRole = async () => {};
   api.setProposalRole = async () => {};
   api.removeMember = async () => {};
+  let documents:TeamDocument[]=[{id:'sample-document',title:'Proposal guidelines',kind:'link',url:new URL(`${state.base}fy27-suits-proposal-guidelines%20(1).pdf`,location.origin).href,storage_path:null,mime:'application/pdf',size:null,role:'team',notes:'NASA proposal requirements',created_by:'preview-0',created_at:stamp,drive_file_id:null,drive_url:null,drive_status:'not_connected',drive_error:null}];
+  api.documents=async()=>structuredClone(documents);
+  api.updateDocument=async(id,patch)=>{documents=documents.map(d=>d.id===id?{...d,...patch}:d);};
+  api.deleteDocument=async id=>{documents=documents.filter(d=>d.id!==id);};
+  api.drive=async<T>(action:string)=>({configured:false,folder:null,serviceEmail:null,access:null,folders:{},imported:0,ok:action!=='setFolder'} as T);
   let applications: SuitsApplication[] = ['Morgan Brooks', 'Casey Nguyen'].map((full_name, i) => ({
     id: `sample-application-${i}`, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     full_name, email: `applicant-${i}@example.invalid`, discord_username: `sample_applicant_${i}`, status: i ? 'interview' : 'new',
@@ -95,7 +105,7 @@ export async function bootPreview() {
   };
   document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
   document.querySelector<HTMLElement>('[data-nav="access"]')!.hidden = !isLead();
-  document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach(b => { b.disabled = b.dataset.nav === 'documents'; });
+  document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach(b => { b.disabled = false; });
   const { go, showMembershipGate } = await import('./index');
   const accessStatus = new URLSearchParams(location.search).get('access');
   if (accessStatus === 'pending' || accessStatus === 'rejected') {
@@ -106,5 +116,11 @@ export async function bootPreview() {
     const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-nav]');
     if (button && !button.disabled) void go(button.dataset.nav!, false);
   });
-  await enterWorkspace(() => go(new URLSearchParams(location.search).get('view') || 'meetings', false));
+  document.getElementById('st')!.addEventListener('click',e=>{const button=(e.target as HTMLElement).closest<HTMLElement>('[data-go]');if(button){e.preventDefault();void go(button.dataset.go!,false);}});
+  const returning=document.querySelector<HTMLAnchorElement>('.st-preview-note a');
+  if(returning&&isAdvisor())returning.href=`${state.base}suits/preview/?returning=1&advisor=1&roster=full&loading=1`;
+  cacheWorkspaceApi();
+  const [documentView,reader]=await Promise.all([import('./documents'),import('./reader')]);
+  await preloadWorkspace([documentView.warm(),reader.warm(),...(new URLSearchParams(location.search).has('loading')?[new Promise(resolve=>setTimeout(resolve,1800))]:[])]);
+  await enterWorkspace(() => go(new URLSearchParams(location.search).get('view') || (isAdvisor()?'documents':'meetings'), false));
 }

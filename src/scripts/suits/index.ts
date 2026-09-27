@@ -2,7 +2,9 @@
 // roster, then hand off to the section views.
 import type { User } from '@supabase/supabase-js';
 import { googleCallbackError, prepareGoogleReturn } from '../../lib/oauthRedirect';
-import { db, api, state, isManager, isLead, canReviewApplications, type MembershipRequest } from './api';
+import { db, api, state, isManager, isLead, isAdvisor, canReviewApplications, type MembershipRequest } from './api';
+import { workspaceData } from '../../lib/workspaceCache';
+import { preloadWorkspace } from './preload';
 import { toast, esc } from './ui';
 import { navigate } from 'astro:transitions/client';
 import { setupWorkspace, enterWorkspace } from './workspace';
@@ -44,6 +46,7 @@ let authSubscription: { unsubscribe(): void } | null = null;
 let pageVersion = 0;
 let accessTimer = 0;
 function clearWorkspace() {
+  workspaceData.clear();documents.reset();
   stopSky();
   window.clearInterval(accessTimer);
   reader.leave(); meetings.leave(); team.leave(); applications.leave(); tasks.leave(); access.leave();
@@ -74,12 +77,13 @@ export async function boot() {
     document.querySelector('.st-bg')?.classList.toggle('is-dark', dark);
     themeBtn.textContent = dark ? 'Day mode' : 'Night mode';
   };
-  let dark = false;
-  try { dark = localStorage.getItem(THEME_KEY) === 'dark'; } catch { /* ignore */ }
+  const advisorPreview = import.meta.env.DEV && root.dataset.preview === 'true' && new URLSearchParams(location.search).has('advisor');
+  let dark = advisorPreview;
+  try { if (!advisorPreview) dark = localStorage.getItem(THEME_KEY) === 'dark'; } catch { /* ignore */ }
   applyTheme(dark);
   themeBtn.addEventListener('click', () => {
     dark = !dark;
-    try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light'); } catch { /* ignore */ }
+    try { if (!advisorPreview) localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light'); } catch { /* ignore */ }
     applyTheme(dark);
   });
 
@@ -299,17 +303,14 @@ async function authorizeUser(user: User) {
       await navigate(`${state.base}suits/workspace/${initial === 'meetings' ? '' : initial + '/'}`, { history: 'replace' });
       return;
     }
-    state.members = await api.members();
-    if(version!==pageVersion)return;
-    await refreshBadges();
-    if(version!==pageVersion)return;
-
-
     document.querySelectorAll<HTMLElement>('[data-managers]').forEach(el => { el.hidden = !isManager(); });
     document.querySelector<HTMLElement>('[data-nav="applications"]')!.hidden = !canReviewApplications();
     document.querySelector<HTMLElement>('[data-nav="access"]')!.hidden = !isLead();
 
-    documents.warm();
+    await preloadWorkspace([documents.warm(),reader.warm()]);
+    if(version!==pageVersion)return;
+    await refreshBadges();
+    if(version!==pageVersion)return;
     const initial = viewFromLocation();
     if (location.hash) history.replaceState(null, '', pathFor(initial));
     await enterWorkspace(() => go(initial, false));
@@ -342,12 +343,14 @@ function viewFromLocation() {
   rest = rest.replace(/^\/+|\/+$/g, '');
   if (!rest && location.hash && VIEWS[location.hash.slice(1)]) rest = location.hash.slice(1); // older links
   const requested = new URLSearchParams(location.search).get('view') || '';
-  return VIEWS[rest] ? rest : VIEWS[requested] ? requested : 'meetings';
+  const view=VIEWS[rest] ? rest : VIEWS[requested] ? requested : 'meetings';
+  return isAdvisor()&&view==='meetings'?'documents':view;
 }
 
 export async function go(view: string, push = true) {
   if (!state.me) return;
   if (!VIEWS[view]) view = 'meetings';
+  if(isAdvisor()&&view==='meetings')view='documents';
   if (current && VIEWS[current].leave) VIEWS[current].leave!();
   current = view;
   document.querySelectorAll<HTMLElement>('.st-nav__btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === view));
@@ -365,7 +368,7 @@ export async function go(view: string, push = true) {
 /** Counts on the nav: your open tasks, upcoming meetings. */
 export async function refreshBadges() {
   try {
-    const [allTasks, allMeetings] = await Promise.all([api.tasks(), api.meetings()]);
+    const [allTasks, allMeetings] = await Promise.all([api.tasks(), isAdvisor()?Promise.resolve([]):api.meetings()]);
     const mine = allTasks.filter(t => t.assignee_id === state.me?.user_id && t.status !== 'done').length;
     const upcoming = allMeetings.filter(m => new Date(m.ends_at).getTime() > Date.now()).length;
     setBadge('tasks', mine);

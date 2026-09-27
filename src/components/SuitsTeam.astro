@@ -33,7 +33,8 @@ const sections = [
   <div class="st" id="st" data-roles="[]" data-base={base} data-mode={workspace ? "workspace" : "login"} data-preview={preview && import.meta.env.DEV ? "true" : undefined}>
     <script is:inline>
       try {
-        if (localStorage.getItem('xr-suits-theme') === 'dark') {
+        const advisorPreview = document.getElementById('st').dataset.preview === 'true' && new URLSearchParams(location.search).has('advisor');
+        if (advisorPreview || localStorage.getItem('xr-suits-theme') === 'dark') {
           document.getElementById('st').classList.add('is-dark');
           document.querySelector('.st-bg')?.classList.add('is-dark');
         }

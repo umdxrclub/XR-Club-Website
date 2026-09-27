@@ -1,4 +1,4 @@
-import { state } from './api';
+import { state, isAdvisor } from './api';
 import { editAvatar, updateIdentity } from './avatar';
 import { applyMemberLayout, editLayout } from './layout';
 import { startSky } from './sky';
@@ -17,6 +17,14 @@ export async function enterWorkspace(render:()=>Promise<void>){
  if(!root.isConnected)return;
  const commit=async()=>{
   applyMemberLayout(root);
+  const advisor=isAdvisor();
+  document.querySelector<HTMLElement>('[data-nav="meetings"]')!.hidden=advisor;
+  const order=advisor?['documents','proposal','team','tasks','overview']:['meetings','overview','tasks','proposal','documents','team','applications','access'];
+  const nav=document.getElementById('st-nav')!;
+  for(const view of order){const button=nav.querySelector(`[data-nav="${view}"]`);if(button)nav.appendChild(button);}
+  const brand=document.querySelector<HTMLAnchorElement>('.st-workspace-brand')!;
+  brand.href=`${state.base}suits/workspace/${advisor?'documents/':''}`;
+  brand.setAttribute('aria-label',advisor?'Dreamers documents':'Dreamers calendar');
   document.getElementById('st-gate')!.hidden=true;
   document.getElementById('st-app')!.hidden=false;
   root.dataset.ready='true';

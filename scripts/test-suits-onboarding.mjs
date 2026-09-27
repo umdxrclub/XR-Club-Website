@@ -11,11 +11,12 @@ const load=async(path,context)=>{
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 for(const [avatar,layout,saveAvatar,expected] of [[null,null,true,['avatar','layout']], [null,null,false,['avatar']], ['saved',null,true,['layout']], ['saved','top',true,[]]]){
  const state={me:{user_id:'member',avatar_set_at:avatar,workspace_layout:layout}};
+ const element={dataset:{},querySelector:()=>element,setAttribute(){},appendChild(){}};
  const root={dataset:{},isConnected:true},nodes={'st':root,'st-gate':{},'st-app':{}};
  const steps=[];
  const workspace=await load('src/scripts/suits/workspace.ts',{
-  document:{getElementById:id=>nodes[id],querySelector:()=>null,documentElement:{dataset:{}}},window:{},
-  require:name=>name==='./api'?{state}:name==='./avatar'?{updateIdentity(){},editAvatar:async()=>{steps.push('avatar');return saveAvatar;}}:name==='./layout'?{applyMemberLayout(){},editLayout:async()=>{steps.push('layout');}}:{startSky(){}},
+  document:{getElementById:id=>nodes[id]||element,querySelector:selector=>selector==='.st-bg__sky'?null:element,documentElement:{dataset:{}}},window:{},
+  require:name=>name==='./api'?{state,isAdvisor:()=>false}:name==='./avatar'?{updateIdentity(){},editAvatar:async()=>{steps.push('avatar');return saveAvatar;}}:name==='./layout'?{applyMemberLayout(){},editLayout:async()=>{steps.push('layout');}}:{startSky(){}},
  });
  await workspace.enterWorkspace(async()=>{});await tick();assert.deepEqual(steps,expected);
 }

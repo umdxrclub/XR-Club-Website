@@ -23,6 +23,7 @@ for(const id of Object.keys(emails))await db.query('INSERT INTO auth.users(id,em
 for(const [id,role,team] of [[owner,'lead','pm'],[engineer,'member','technical'],[designer,'member','uiux'],[lead,'lead','pm'],[peer,'member','technical']])await db.query('INSERT INTO public.suits_team(user_id,email,display_name,role,proposal_role) VALUES($1,$2,$3,$4,$5)',[id,emails[id],'Sample member',role,team]);
 await db.exec(await fs.readFile('supabase/migrations/20260928000000_suits_membership_work.sql','utf8'));
 await db.exec(await fs.readFile('supabase/migrations/20260928010000_suits_workspace_layout.sql','utf8'));
+await db.exec(await fs.readFile('supabase/migrations/20260928020000_suits_advisor.sql','utf8'));
 async function as(id,fn){await db.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.email',$2,false)",[id,emails[id]]);await db.exec('SET ROLE authenticated');try{return await fn()}finally{await db.exec('RESET ROLE');await db.exec("SELECT set_config('request.jwt.claim.sub','',false),set_config('request.jwt.claim.email','',false)")}}
 const query=(sql,args=[])=>db.query(sql,args);
 const join=id=>as(id,()=>query('SELECT (public.suits_join()).*'));
@@ -98,5 +99,25 @@ await as(engineer,()=>query('DELETE FROM public.suits_subteam_roles WHERE id=$1'
 assert.equal((await query('SELECT responsibility_id FROM public.suits_tasks WHERE id=$1',[task.id])).rows[0].responsibility_id,null,'Removing a role preserves its tasks');
 await db.exec('SET ROLE anon');await assert.rejects(()=>query('SELECT public.suits_review_membership($1,$2)',[fresh,'approved']),/permission/);await db.exec('RESET ROLE');
 await db.exec('SET ROLE anon');await assert.rejects(()=>query("SELECT public.suits_save_layout('top')"),/permission/);await db.exec('RESET ROLE');
+const advisor='91111111-1111-4111-8111-111111111111',lookalike='a1111111-1111-4111-8111-111111111111',unverifiedAdvisor='b1111111-1111-4111-8111-111111111111';
+emails[advisor]='ZWICKER@umd.edu';emails[lookalike]='zwicker@terpmail.umd.edu';emails[unverifiedAdvisor]='zwicker@umd.edu';
+for(const id of [advisor,lookalike,unverifiedAdvisor])await query('INSERT INTO auth.users(id,email,email_confirmed_at,raw_user_meta_data) VALUES($1,$2,$3,$4)',[id,emails[id],id===unverifiedAdvisor?null:new Date().toISOString(),JSON.stringify({full_name:'Advisor',email:'zwicker@umd.edu',designation:'advisor'})]);
+const advisorMember=(await join(advisor)).rows[0];
+assert.equal(advisorMember.role,'lead');assert.equal(advisorMember.designation,'advisor');
+assert.equal(advisorMember.avatar_set_at,null);assert.equal(advisorMember.workspace_layout,null,'Advisors keep the same avatar and layout onboarding');
+assert.equal((await request(advisor)).rows[0].status,'approved');
+assert.equal((await as(advisor,()=>query('SELECT public.suits_is_manager() AS manager, public.suits_is_lead() AS owner'))).rows[0].manager,true);
+assert.equal((await as(advisor,()=>query('SELECT public.suits_is_lead() AS owner'))).rows[0].owner,false,'Advisor lead access does not confer ownership');
+await createTask(advisor,'uiux',designer);
+await assert.rejects(()=>as(advisor,()=>query('SELECT public.suits_review_membership($1,$2)',[fresh,'approved'])),/owner/);
+await assert.rejects(()=>as(engineer,()=>query("UPDATE public.suits_team SET designation='advisor' WHERE user_id=$1",[engineer])),/owner/);
+assert.equal((await join(lookalike)).rows[0].user_id,null,'Only the exact preapproved address qualifies');
+await assert.rejects(()=>join(unverifiedAdvisor),/verified UMD/);
+await as(advisor,()=>query("SELECT public.suits_save_avatar('advisor-face','mint')"));
+await as(advisor,()=>query("SELECT public.suits_save_layout('top')"));
+assert.equal((await join(advisor)).rows[0].workspace_layout,'top');
+await review(advisor,'rejected');
+assert.equal((await join(advisor)).rows[0].user_id,null,'The owner can revoke advisor access without sign-in restoring it');
 await db.close();
+console.log('PASS: exact verified advisor preapproval, lead access, protected designation, normal onboarding, owner-only approvals and persistent revocation.');
 console.log('PASS: membership preservation, verified UMD requests, exclusive owner approval, persistent rejection, data/file revocation, subteam roles, assignment validation, task boundaries, and calendar defaults.');

@@ -58,9 +58,13 @@ function rememberThumb(id: string, data: string) {
 }
 
 /** Fetch the list once after sign in so the tab is ready before it is opened. */
-export function warm() {
-  void refreshDocs(null);
-  void loadDrive(null);
+export async function warm() {
+  await Promise.all([refreshDocs(null),loadDrive(null)]);
+}
+
+export function reset(){
+  docsCache=null;docsKey='';driveStatus=null;roleFolders={};refreshing=null;signedCache.clear();thumbCache.clear();lastPull=0;
+  try{for(const key of [LS_DOCS,LS_DRIVE,LS_THUMBS])localStorage.removeItem(key);}catch{}
 }
 
 /** Fetch the list; repaint only if something changed. Resolves true when it did. */
@@ -325,6 +329,7 @@ async function removeDocument(host: HTMLElement, d: TeamDocument) {
 // Adding and editing
 // ---------------------------------------------------------------------------
 function addDocument(host: HTMLElement) {
+  if(import.meta.env.DEV&&document.getElementById('st')?.dataset.preview==='true'){toast('File uploads are available in the signed-in workspace.');return;}
   const defaultRole = state.me?.proposal_role && GROUPS.some(g => g.key === state.me!.proposal_role) ? state.me!.proposal_role! : 'team';
   openModal({
     title: 'Add a document',

@@ -1,4 +1,4 @@
-import { api, state, isLead, type Member, type Role } from './api';
+import { api, state, isLead, isAdvisor, type Member, type Role } from './api';
 import { esc, toast, confirmModal, roleLabel, openModal, select, field, input, formValue, enhanceSelects } from './ui';
 import { crewAvatar, editAvatar, updateIdentity } from './avatar';
 import { READER_ROLES } from './reader-content';
@@ -34,7 +34,7 @@ export async function render(host:HTMLElement) {
     <header><div class="crew-group__title"><h2 id="crew-subteam-${g.key}">${esc(g.name)}</h2>${isMine?'<span class="crew-group__mine">Your subteam</span>':''}</div><span class="crew-group__count">${countLabel(people.length)}</span></header>
     <ul class="crew-cards">${people.map(m=>`<li class="crew-card">
      ${crewAvatar(m)}<div class="crew-card__person"><h3>${esc(m.display_name)}${m.user_id===state.me?.user_id?' <small>You</small>':''}</h3><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></div>
-     <div class="crew-card__footer"><span class="crew-card__role">${esc(roleLabel(m.role))}</span>${isLead()?`<button type="button" class="crew-manage" data-manage="${m.user_id}" aria-label="Manage ${esc(m.display_name)}">Manage</button>`:''}</div>
+     <div class="crew-card__footer"><span class="crew-card__role">${isAdvisor(m)?(m.role==='lead'?'Advisor with lead access':'Advisor'):esc(roleLabel(m.role))}</span>${isLead()?`<button type="button" class="crew-manage" data-manage="${m.user_id}" aria-label="Manage ${esc(m.display_name)}">Manage</button>`:''}</div>
     </li>`).join('')}</ul>
    </section>`;
   }).join('') || '<p class="crew-empty">No teammates found. Try another name or subteam.</p>';

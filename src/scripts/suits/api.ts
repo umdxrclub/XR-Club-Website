@@ -4,6 +4,7 @@
 import type { CalendarEvent } from '../../lib/suitsCalendar';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase as client } from '../../lib/supabase';
+import { workspaceData } from '../../lib/workspaceCache';
 
 export const db = client as unknown as SupabaseClient;
 
@@ -19,6 +20,7 @@ export interface Member {
   avatar_color?: string;
   avatar_set_at?: string | null;
   workspace_layout?: WorkspaceLayout | null;
+  designation?: 'advisor' | null;
   role: Role;
   discord_username: string | null;
   discord_id: string | null;
@@ -169,6 +171,10 @@ export function canManageSubteam(subteam: string) {
 
 export function isManager() {
   return state.me?.role === 'product_manager' || state.me?.role === 'lead';
+}
+
+export function isAdvisor(member: Member | null = state.me) {
+  return member?.designation === 'advisor';
 }
 
 export function isLead() {
@@ -387,9 +393,50 @@ export const api = {
     return callFunction<T>('suits-discord', action, params);
   },
   async drive<T = Record<string, unknown>>(action: string, params: Record<string, unknown> = {}): Promise<T> {
-    return callFunction<T>('suits-drive', action, params);
+    const result=await callFunction<T>('suits-drive', action, params);
+    if(['pull','sync','update','remove'].includes(action))workspaceData.invalidate('documents');
+    return result;
   },
 };
+
+const cachedMethods=new WeakSet<Function>();
+/** Also wraps the explicitly local fixtures so previews use the same loading behavior. */
+export function cacheWorkspaceApi(){
+ const reads=['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','documents','membershipRequests'] as const;
+ for(const name of reads){
+  const original=api[name];if(cachedMethods.has(original))continue;
+  const cached=()=>workspaceData.read<unknown>(state.me?.user_id||null,name,original);
+  cachedMethods.add(cached);Object.assign(api,{[name]:cached});
+ }
+ if(!cachedMethods.has(api.review)){
+  const original=api.review;
+  const cached:typeof api.review=async<T>(action:string,params:Record<string,unknown>={})=>{
+   if(action==='list'){
+    if(!canReviewApplications())throw new Error('Only the team owner can review applications.');
+    return workspaceData.read(state.me?.user_id||null,'applications',()=>original<T>(action,params));
+   }
+   const result=await original<T>(action,params);
+   if(action==='update'||action==='delete')workspaceData.invalidate('applications');
+   return result;
+  };
+  cachedMethods.add(cached);api.review=cached;
+ }
+ const changes={
+  reviewMembership:['membershipRequests','members','tasks','workingRoles','workingRoleAssignments'],
+  manageMember:['members','tasks','workingRoleAssignments'],setRole:['members'],setProposalRole:['members','workingRoleAssignments'],
+  saveAvatar:['members'],saveLayout:['members'],updateProfile:['members'],removeMember:['members','membershipRequests'],
+  createTask:['tasks'],updateTask:['tasks'],deleteTask:['tasks'],
+  saveWorkingRole:['workingRoles'],assignWorkingRole:['workingRoleAssignments'],deleteWorkingRole:['workingRoles','workingRoleAssignments','tasks'],
+  scheduleMeetings:['meetings','rsvps'],updateMeeting:['meetings'],deleteMeeting:['meetings','rsvps'],setRsvp:['rsvps'],
+  createDocument:['documents'],updateDocument:['documents'],deleteDocument:['documents'],
+ } as const;
+ for(const name of Object.keys(changes) as Array<keyof typeof changes>){
+  const original=api[name] as (...args:never[])=>Promise<unknown>;if(cachedMethods.has(original))continue;
+  const wrapped=async(...args:never[])=>{const result=await original(...args);workspaceData.invalidate(...changes[name]);return result;};
+  cachedMethods.add(wrapped);Object.assign(api,{[name]:wrapped});
+ }
+}
+cacheWorkspaceApi();
 
 /** Tell the Discord bot. Never blocks the dashboard and never surfaces an error. */
 function notify(kind: 'task' | 'meeting' | 'document', id: string, event: string, snapshot?: unknown) {
