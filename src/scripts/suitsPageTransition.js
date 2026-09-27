@@ -4,12 +4,22 @@
   const html = document.documentElement;
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const suits = value => {
-    try { return /\/suits\/(?:team|workspace|preview)(?:\/|$)/.test(new URL(value, location.href).pathname); }
+    try { return /\/suits\/(?:team|workspace|dashboard|preview)(?:\/|$)/.test(new URL(value, location.href).pathname); }
     catch { return false; }
   };
   const connected = (from,to) => !!from && !!to && (suits(from) || suits(to));
   const cleanup = () => html.removeAttribute('data-suits-navigation');
   let active = Promise.resolve();
+  let preparedEntry=null, entering=null;
+  // Astro normally snapshots the new page before its page-load scripts run.
+  // For an approved return, initialize the workspace inside that same snapshot update.
+  const startTransition=document.startViewTransition?.bind(document);
+  if(startTransition)document.startViewTransition=update=>{
+    const entry=preparedEntry;preparedEntry=null;
+    if(!entry||entry.signal.aborted)return startTransition(update);
+    entering=entry;
+    return startTransition(async()=>{await update();await entry.ready;});
+  };
   const smooth = t => t * t * t * (t * (t * 6 - 15) + 10);
   // Match projectStoryMotion's liquid edge and the existing scene transition timing.
   function frames(width, height, compact) {
@@ -57,10 +67,33 @@
     if (!connected(event.from?.href,event.to?.href)) return;
     const load=event.loader;
     event.loader=async()=>{
+      const destination=await window.xrSuitsPrepare?.(event.to,event.signal);
+      if(event.signal?.aborted)return;
+      if(destination)event.to=destination.to;
       await load();
-      const source=event.newDocument.querySelector('.st-bg__astronaut')?.getAttribute('src');
+      if(event.signal?.aborted||event.defaultPrevented)return;
+      const selector=destination?'.st-bg__sky':'.st-bg__astronaut';
+      const source=event.newDocument.querySelector(selector)?.getAttribute('src');
       if(source) { const image=new Image();image.src=new URL(source,event.to).href;await image.decode().catch(()=>{}); }
+      if(destination&&!event.signal.aborted) {
+        let finish;
+        const ready=new Promise(resolve=>{finish=resolve;});
+        preparedEntry={boot:destination.boot,signal:event.signal,ready,finish};
+        event.signal.addEventListener('abort',()=>{
+          finish();if(preparedEntry?.ready===ready)preparedEntry=null;if(entering?.ready===ready)entering=null;
+        },{once:true});
+      }
     };
+  });
+  document.addEventListener('astro:after-swap',()=>{
+    const entry=entering || preparedEntry;
+    preparedEntry=null;
+    if(!entry)return;
+    entering=entry;
+    void entry.boot().catch(()=>{}).finally(()=>{
+      if(entering===entry)entering=null;
+      entry.finish();
+    });
   });
   document.addEventListener('astro:before-swap', event => {
     if (!connected(event.from?.href,event.to?.href) || reduced() || !document.startViewTransition) return;
@@ -69,6 +102,7 @@
     active=animate(event.viewTransition);
   });
   window.xrSuitsReveal=async update=>{
+    if(entering&&!entering.signal.aborted){await update();return;}
     await active;
     if(reduced() || !document.startViewTransition) { await update(); return; }
     html.setAttribute('data-suits-navigation','');

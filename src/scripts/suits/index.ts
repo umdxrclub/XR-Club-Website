@@ -38,6 +38,7 @@ const VIEWS: Record<string, View> = {
 
 let current = '';
 let authorizing = false;
+let authorization: Promise<void> | null = null;
 let bootAbort: AbortController | null = null;
 let authSubscription: { unsubscribe(): void } | null = null;
 let pageVersion = 0;
@@ -54,12 +55,12 @@ function clearWorkspace() {
 document.addEventListener('astro:before-swap', () => {
   stopSky();
   pageVersion++; bootAbort?.abort(); authSubscription?.unsubscribe(); authSubscription=null;
-  clearWorkspace(); authorizing=false;
+  clearWorkspace(); authorizing=false;authorization=null;
 });
 
 export async function boot() {
   const root = document.getElementById('st')!;
-  if(root.dataset.booted)return;root.dataset.booted='true';
+  if(root.dataset.booted){await authorization;return;}root.dataset.booted='true';
   bootAbort?.abort();bootAbort=new AbortController();
   const signal=bootAbort.signal;authorizing=false;current='';googleButtonReady=false;
   setupWorkspace();
@@ -145,7 +146,7 @@ export async function boot() {
   try {
     const { data: { session }, error } = await db.auth.getSession();
     if (error) throw error;
-    if (session) void authorize(session.user);
+    if (session) await authorize(session.user);
     else showGate(googleCallbackError(location.search, location.hash) || undefined);
   } catch (err) {
     showGate(`Could not restore your sign-in: ${err instanceof Error ? err.message : 'Please try again.'}`);
@@ -257,7 +258,15 @@ function showGateError(message: string) {
   el.hidden = false;
 }
 
-async function authorize(user: User) {
+function authorize(user: User): Promise<void> {
+  if(authorization)return authorization;
+  const attempt=authorizeUser(user);
+  authorization=attempt;
+  void attempt.finally(()=>{if(authorization===attempt)authorization=null;});
+  return attempt;
+}
+
+async function authorizeUser(user: User) {
   if (authorizing) return;
   authorizing = true;
   const version=pageVersion;

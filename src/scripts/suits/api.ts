@@ -8,6 +8,7 @@ import { supabase as client } from '../../lib/supabase';
 export const db = client as unknown as SupabaseClient;
 
 export type Role = 'member' | 'product_manager' | 'lead';
+export type WorkspaceLayout = 'scenic' | 'top' | 'dock' | 'right' | 'rail' | 'wide';
 
 export interface Member {
   user_id: string;
@@ -17,6 +18,7 @@ export interface Member {
   avatar_seed?: string | null;
   avatar_color?: string;
   avatar_set_at?: string | null;
+  workspace_layout?: WorkspaceLayout | null;
   role: Role;
   discord_username: string | null;
   discord_id: string | null;
@@ -239,6 +241,9 @@ export const api = {
   },
   async saveAvatar(seed: string, color: string): Promise<Member> {
     return unwrap(await db.rpc('suits_save_avatar', { seed, color }));
+  },
+  async saveLayout(layout: WorkspaceLayout): Promise<Member> {
+    return unwrap(await db.rpc('suits_save_layout', { layout }));
   },
   async updateProfile(patch: Partial<Pick<Member, 'display_name' | 'discord_username'>>) {
     unwrap(await db.from('suits_team').update(patch).eq('user_id', state.me!.user_id));

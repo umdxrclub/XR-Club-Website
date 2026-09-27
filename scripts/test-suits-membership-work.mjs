@@ -22,6 +22,7 @@ const emails={[owner]:'kcyle@terpmail.umd.edu',[engineer]:'engineer@umd.edu',[de
 for(const id of Object.keys(emails))await db.query('INSERT INTO auth.users(id,email,email_confirmed_at,raw_user_meta_data) VALUES($1,$2,$3,$4)',[id,emails[id],id===unverified?null:new Date().toISOString(),JSON.stringify({full_name:'Sample member',email:'kcyle@terpmail.umd.edu'})]);
 for(const [id,role,team] of [[owner,'lead','pm'],[engineer,'member','technical'],[designer,'member','uiux'],[lead,'lead','pm'],[peer,'member','technical']])await db.query('INSERT INTO public.suits_team(user_id,email,display_name,role,proposal_role) VALUES($1,$2,$3,$4,$5)',[id,emails[id],'Sample member',role,team]);
 await db.exec(await fs.readFile('supabase/migrations/20260928000000_suits_membership_work.sql','utf8'));
+await db.exec(await fs.readFile('supabase/migrations/20260928010000_suits_workspace_layout.sql','utf8'));
 async function as(id,fn){await db.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.email',$2,false)",[id,emails[id]]);await db.exec('SET ROLE authenticated');try{return await fn()}finally{await db.exec('RESET ROLE');await db.exec("SELECT set_config('request.jwt.claim.sub','',false),set_config('request.jwt.claim.email','',false)")}}
 const query=(sql,args=[])=>db.query(sql,args);
 const join=id=>as(id,()=>query('SELECT (public.suits_join()).*'));
@@ -29,6 +30,11 @@ const review=(id,decision,team=null)=>as(owner,()=>query('SELECT public.suits_re
 const request=id=>query('SELECT * FROM public.suits_membership_requests WHERE user_id=$1',[id]);
 assert.equal((await query("SELECT count(*)::int n FROM public.suits_membership_requests WHERE status='approved'")).rows[0].n,5,'Existing members are grandfathered');
 assert.equal((await join(engineer)).rows[0].user_id,engineer);
+assert.equal((await join(engineer)).rows[0].workspace_layout,null,'Existing accounts can finish layout onboarding without redoing their avatar');
+for(const layout of ['scenic','top','dock','right','rail','wide'])assert.equal((await as(engineer,()=>query('SELECT (public.suits_save_layout($1)).*',[layout]))).rows[0].workspace_layout,layout);
+assert.equal((await join(engineer)).rows[0].workspace_layout,'wide','Signing in again preserves the account layout');
+assert.equal((await query('SELECT workspace_layout FROM public.suits_team WHERE user_id=$1',[owner])).rows[0].workspace_layout,null,'Saving a layout changes only the signed-in member');
+for(const layout of [null,'unknown',''])await assert.rejects(()=>as(engineer,()=>query('SELECT public.suits_save_layout($1)',[layout])),/valid layout/);
 assert.equal((await join(fresh)).rows[0].user_id,null,'New users never join before approval');
 assert.equal((await request(fresh)).rows[0].status,'pending');
 assert.equal((await query('SELECT user_id FROM public.suits_team WHERE user_id=$1',[fresh])).rows.length,0);
@@ -39,6 +45,7 @@ await as(fresh,async()=>{
  await assert.rejects(()=>query("UPDATE public.suits_membership_requests SET status='approved'"),/permission/);
  await assert.rejects(()=>query('SELECT public.suits_manage_member($1,$2,$3)',[fresh,'lead','technical']),/owner/);
  await assert.rejects(()=>query("SELECT public.suits_save_avatar('sample','blue')"),/Sign in/);
+ await assert.rejects(()=>query("SELECT public.suits_save_layout('top')"),/approval/);
  await assert.rejects(()=>query("INSERT INTO public.suits_team(user_id,email,display_name) VALUES($1,$2,'Self join')",[fresh,emails[fresh]]));
 });
 await review(fresh,'rejected');
@@ -75,6 +82,7 @@ await review(fresh,'rejected');
 assert.equal((await query("SELECT * FROM public.suits_calendar_notifications WHERE recipient_id=$1 AND status IN ('pending','processing')",[fresh])).rows.length,0,'Revocation cancels future DMs');
 assert.equal((await query('SELECT * FROM public.suits_subteam_role_members WHERE user_id=$1',[fresh])).rows.length,0,'Revocation clears working roles');
 await as(fresh,async()=>{
+ await assert.rejects(()=>query("SELECT public.suits_save_layout('top')"),/approval/);
  for(const table of ['suits_team','suits_tasks','suits_documents','suits_settings','suits_meetings','suits_subteam_roles','suits_subteam_role_members','suits_calendar_notifications'])assert.equal((await query(`SELECT * FROM public.${table}`)).rows.length,0,`${table} cannot be read after revocation`);
  assert.equal((await query('SELECT * FROM storage.objects')).rows.length,0,'Private files blocked after revocation');
  await assert.rejects(()=>query("INSERT INTO public.suits_tasks(title,section,created_by) VALUES('Blocked','technical',$1)",[fresh]),/approval|policy/);
@@ -89,5 +97,6 @@ await assign(engineer,[]);assert.equal((await query('SELECT * FROM public.suits_
 await as(engineer,()=>query('DELETE FROM public.suits_subteam_roles WHERE id=$1',[role.id]));
 assert.equal((await query('SELECT responsibility_id FROM public.suits_tasks WHERE id=$1',[task.id])).rows[0].responsibility_id,null,'Removing a role preserves its tasks');
 await db.exec('SET ROLE anon');await assert.rejects(()=>query('SELECT public.suits_review_membership($1,$2)',[fresh,'approved']),/permission/);await db.exec('RESET ROLE');
+await db.exec('SET ROLE anon');await assert.rejects(()=>query("SELECT public.suits_save_layout('top')"),/permission/);await db.exec('RESET ROLE');
 await db.close();
 console.log('PASS: membership preservation, verified UMD requests, exclusive owner approval, persistent rejection, data/file revocation, subteam roles, assignment validation, task boundaries, and calendar defaults.');

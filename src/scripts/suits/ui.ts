@@ -74,6 +74,10 @@ export interface ModalOptions {
   onSubmit?: (form: HTMLFormElement, close: () => void) => Promise<void> | void;
 }
 
+export function onboardingProgress(step: 1 | 2) {
+  return `<ol class="st-onboarding-steps" aria-label="Setup progress"><li${step===1?' aria-current="step"':''}>1. Avatar</li><li${step===2?' aria-current="step"':''}>2. Layout</li></ol>`;
+}
+
 /** Opens a modal with a form. Resolves when it closes. */
 export function openModal(opts: ModalOptions): Promise<void> {
   const host = document.getElementById('st-modal-host')!;

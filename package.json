@@ -11,7 +11,7 @@
     "check": "astro check",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node scripts/test-story.mjs && node scripts/test-equipment-cat.mjs && node scripts/test-oauth.mjs && node scripts/test-suits-transition.mjs && node scripts/test-calendar.mjs && node scripts/test-suits-profiles.mjs && node scripts/test-suits-applications.mjs && node scripts/test-suits-membership-work.mjs && node scripts/test-suits-drive-access.mjs"
+    "test": "node scripts/test-story.mjs && node scripts/test-equipment-cat.mjs && node scripts/test-oauth.mjs && node scripts/test-suits-transition.mjs && node scripts/test-calendar.mjs && node scripts/test-suits-profiles.mjs && node scripts/test-suits-applications.mjs && node scripts/test-suits-membership-work.mjs && node scripts/test-suits-drive-access.mjs && node scripts/test-suits-onboarding.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.96.0",

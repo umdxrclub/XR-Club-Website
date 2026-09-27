@@ -2,6 +2,9 @@
 import pageTransition from '../scripts/suitsPageTransition.js?raw';
 ---
 <script is:inline set:html={pageTransition}></script>
+<script>
+  import '../scripts/suits/navigation';
+</script>
 <style is:global>
   @view-transition { navigation: auto; }
   html[data-suits-navigation]::view-transition { pointer-events:none; }

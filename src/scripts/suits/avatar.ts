@@ -1,5 +1,5 @@
 import { api, state, type Member } from './api';
-import { esc, openModal, toast } from './ui';
+import { esc, onboardingProgress, openModal, toast } from './ui';
 
 const colors = ['blue','orange','violet','mint'] as const;
 export function avatarUrl(seed:string) { return `https://api.dicebear.com/10.x/bottts-neutral/svg?seed=${encodeURIComponent(seed)}`; }
@@ -15,12 +15,17 @@ export function updateIdentity() {
  document.dispatchEvent(new Event('suits:profile-updated'));
 }
 export async function editAvatar(first=false) {
- const me=state.me; if(!me) return;
+ const me=state.me; if(!me) return false;
+ let saved=false;
  let selected=me.avatar_seed || crypto.randomUUID(), color=me.avatar_color || 'blue';
  let choices=[selected,...Array.from({length:5},()=>crypto.randomUUID())];
- const closed = openModal({ title:'Choose an avatar!', className:'st-avatar-modal', submitLabel:'Save avatar', cancelLabel:first?'Later':'Cancel',
- body:`<div class="avatar-picker"><div class="avatar-picker__hero" data-avatar-hero></div><div class="avatar-picker__choices" data-avatar-choices></div><button type="button" class="avatar-picker__shuffle" data-shuffle>Shuffle <span aria-hidden="true">↻</span></button><div class="avatar-picker__colors" role="group" aria-label="Suit color">${colors.map(c=>`<button type="button" data-suit-color="${c}" aria-label="${c[0].toUpperCase()+c.slice(1)} suit" aria-pressed="${c===color}"><span></span></button>`).join('')}</div></div>`,
- onSubmit:async(_form,close)=>{const member=await api.saveAvatar(selected,color);state.me=member;state.members=state.members.map(m=>m.user_id===member.user_id?member:m);updateIdentity();close();toast('Avatar saved.');}
+ const closed = openModal({ title:'Choose your avatar', className:'st-avatar-modal', submitLabel:first?'Continue':'Save avatar', cancelLabel:first?'Later':'Cancel',
+ body:`${first?onboardingProgress(1):''}<div class="avatar-picker"><div class="avatar-picker__hero" data-avatar-hero></div><div class="avatar-picker__choices" data-avatar-choices></div><button type="button" class="avatar-picker__shuffle" data-shuffle>Shuffle <span aria-hidden="true">↻</span></button><div class="avatar-picker__colors" role="group" aria-label="Suit color">${colors.map(c=>`<button type="button" data-suit-color="${c}" aria-label="${c[0].toUpperCase()+c.slice(1)} suit" aria-pressed="${c===color}"><span></span></button>`).join('')}</div></div>`,
+ onSubmit:async(_form,close)=>{
+  const member=await api.saveAvatar(selected,color);
+  if(state.me?.user_id!==me.user_id){close();return;}
+  state.me=member;state.members=state.members.map(m=>m.user_id===member.user_id?member:m);updateIdentity();saved=true;close();if(!first)toast('Avatar saved.');
+ }
  });
  function draw() {
   const modal=document.querySelector('.avatar-picker');if(!modal)return;
@@ -38,4 +43,5 @@ export async function editAvatar(first=false) {
   draw();
  });
  await closed;
+ return saved;
 }

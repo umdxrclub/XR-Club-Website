@@ -56,6 +56,8 @@ const sections = [
       </div>
     </section>
 
+    {!workspace && <a class="st-image-credit" href="https://www.nasa.gov/" target="_blank" rel="noopener noreferrer">Image credit NASA</a>}
+
     <!-- App -->
     <main class="st-app" id="st-app" hidden>
       <header class="st-top">
@@ -111,7 +113,7 @@ const sections = [
 
     <div id="st-modal-host"></div>
     <SuitsApplications />
-    {preview && import.meta.env.DEV && <div class="st-preview-note">Design preview · sample events · no messages sent</div>}
+    {preview && import.meta.env.DEV && <div class="st-preview-note">Design preview · sample events · no messages sent <a href={`${base}suits/preview/?returning=1`}>Test returning visit</a></div>}
   </div>
 
   <script>

@@ -15,10 +15,12 @@ export async function bootPreview() {
     state.members.push(...extraNames.map((display_name,i)=>({...state.members[1],user_id:'preview-'+(i+4),email:'teammate-'+(i+4)+'@example.invalid',display_name,proposal_role:teams[i]})));
   }
   state.members[0].email='kcyle@terpmail.umd.edu';
-  state.members.forEach((m,i)=>{m.avatar_seed=`suits-${i}`;m.avatar_color=['blue','orange','violet','mint'][i];m.avatar_set_at=new Date().toISOString();});
+  state.members.forEach((m,i)=>{m.avatar_seed=`suits-${i}`;m.avatar_color=['blue','orange','violet','mint'][i];m.avatar_set_at=new Date().toISOString();m.workspace_layout='scenic';});
   state.me = state.members[new URLSearchParams(location.search).has('member')?1:0];
-  if(new URLSearchParams(location.search).has('first'))state.me.avatar_set_at=null;
+  if(new URLSearchParams(location.search).has('first')){state.me.avatar_set_at=null;state.me.workspace_layout=null;}
+  if(new URLSearchParams(location.search).has('layout-first'))state.me.workspace_layout=null;
   api.saveAvatar=async(seed,color)=>({...state.me!,avatar_seed:seed,avatar_color:color,avatar_set_at:new Date().toISOString()});
+  api.saveLayout=async(layout)=>({...state.me!,workspace_layout:layout});
   const days = weekDays(zoneParts(new Date()).day);
   const sample = (id: string, title: string, day: number, time: string, minutes: number, audience: 'team' | 'subteam' | 'check_in', subteam: string | null = null): Meeting => {
     const start = wallTimeToIso(days[day], time);

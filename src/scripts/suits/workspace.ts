@@ -1,30 +1,12 @@
 import { state } from './api';
 import { editAvatar, updateIdentity } from './avatar';
-import { openModal } from './ui';
+import { applyMemberLayout, editLayout } from './layout';
 import { startSky } from './sky';
-
-const layouts = [
- ['scenic','Sidebar','Navigation on the left.'],
- ['top','Top tabs','Navigation above your work.'],
- ['dock','Bottom dock','Navigation below your work.'],
- ['right','Right sidebar','Navigation on the right.'],
- ['rail','Icon rail','A narrow sidebar with icons.'],
- ['wide','Wide','More space across the screen.'],
-] as const;
 
 export function setupWorkspace(){
  const root=document.getElementById('st')!;
- let layout='scenic';try{layout=localStorage.getItem('xr-suits-layout')||layout;}catch{}
- root.dataset.layout=layouts.some(([key])=>key===layout)?layout:'scenic';
- document.getElementById('st-layout')?.addEventListener('click',()=>{
-  void openModal({title:'Layout',className:'st-layout-modal',cancelLabel:'Done',body:`<div class="workspace-layouts">${layouts.map(([key,title,note])=>`<button type="button" data-layout-choice="${key}" aria-pressed="${root.dataset.layout===key}"><span class="workspace-layout-diagram" data-diagram="${key}" aria-hidden="true"><i></i><i></i></span><strong>${title}</strong><small>${note}</small></button>`).join('')}</div>`});
-  document.querySelector('.workspace-layouts')?.addEventListener('click',e=>{
-   const b=(e.target as HTMLElement).closest<HTMLElement>('[data-layout-choice]');if(!b)return;
-   root.dataset.layout=b.dataset.layoutChoice;
-   try{localStorage.setItem('xr-suits-layout',b.dataset.layoutChoice!);}catch{}
-   document.querySelectorAll('[data-layout-choice]').forEach(x=>x.setAttribute('aria-pressed',String((x as HTMLElement).dataset.layoutChoice===b.dataset.layoutChoice)));
-  });
- });
+ root.dataset.layout='scenic';
+ document.getElementById('st-layout')?.addEventListener('click',()=>void editLayout());
  document.getElementById('st-edit-avatar')?.addEventListener('click',()=>void editAvatar());
  document.getElementById('st-mobile-avatar')?.addEventListener('click',()=>void editAvatar());
 }
@@ -34,6 +16,7 @@ export async function enterWorkspace(render:()=>Promise<void>){
  if(image)await image.decode().catch(()=>{});
  if(!root.isConnected)return;
  const commit=async()=>{
+  applyMemberLayout(root);
   document.getElementById('st-gate')!.hidden=true;
   document.getElementById('st-app')!.hidden=false;
   root.dataset.ready='true';
@@ -44,5 +27,13 @@ export async function enterWorkspace(render:()=>Promise<void>){
  if(reveal)await reveal(commit);else await commit();
  if(!root.isConnected)return;
  startSky();
- if(!state.me?.avatar_set_at)void editAvatar(true);
+ void onboardWorkspace(root);
+}
+
+async function onboardWorkspace(root: HTMLElement) {
+ const me=state.me;if(!me)return;
+ if(!me.avatar_set_at) {
+  if(!await editAvatar(true))return;
+ } else if(me.workspace_layout)return;
+ if(root.isConnected&&state.me?.user_id===me.user_id)await editLayout(true);
 }
