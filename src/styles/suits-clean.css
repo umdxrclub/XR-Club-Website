@@ -262,3 +262,8 @@
   .st-repo__list { padding: 14px 12px 40px; }
   .st-repo .st-viewer__sub { display: none; }
 }
+
+/* Dreamers logo in the workspace top bar. */
+.st-workspace-brand { display: inline-flex; align-items: center; line-height: 0; }
+.st-workspace-logo { display: block; width: auto; height: 34px; }
+@media (max-width: 760px) { .st-workspace-logo { height: 28px; } }
