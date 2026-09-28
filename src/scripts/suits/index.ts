@@ -6,7 +6,7 @@ import { db, api, state, isManager, isLead, canReviewApplications, type Membersh
 import { workspaceData } from '../../lib/workspaceCache';
 import { preloadWorkspace } from './preload';
 import { toast, esc } from './ui';
-import { navigate } from 'astro:transitions/client';
+import { navigate, type TransitionBeforeSwapEvent } from 'astro:transitions/client';
 import { setupWorkspace, enterWorkspace } from './workspace';
 import { stopSky } from './sky';
 import * as overview from './overview';
@@ -60,6 +60,13 @@ document.addEventListener('astro:before-swap', () => {
   stopSky();
   pageVersion++; bootAbort?.abort(); authSubscription?.unsubscribe(); authSubscription=null;
   clearWorkspace(); authorizing=false;authorization=null;
+});
+// Google adds its button CSS to <head> once per page load, and Astro drops head styles the next
+// page lacks. Carry it over or the re-rendered button flashes its logo unstyled at full width.
+document.addEventListener('astro:before-swap', event => {
+  const styles = document.getElementById('googleidentityservice_button_styles');
+  const { newDocument } = event as TransitionBeforeSwapEvent;
+  if (styles && !newDocument.getElementById(styles.id)) newDocument.head.append(styles.cloneNode(true));
 });
 
 export async function boot() {
