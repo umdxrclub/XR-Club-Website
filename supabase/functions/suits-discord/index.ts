@@ -1088,7 +1088,7 @@ Deno.serve(async (req) => {
     if (action === 'calendar-options') {
       const bot = Deno.env.get('DISCORD_BOT_TOKEN');
       if (!bot || !ctx.settings.guild_id) return json({ configured: false, guildId: null, meetingChannelId: null, announcementChannelId: null, remindersChannelId: null, channels: [] });
-      if (!isManager(me)) return json({ configured: true, guildId: ctx.settings.guild_id, meetingChannelId: null, announcementChannelId: null, remindersChannelId: null, channels: [] });
+      // All approved members can choose channels when scheduling a meeting.
       const raw = await calendarDiscord(`/guilds/${ctx.settings.guild_id}/channels`, bot);
       const channels = raw.filter((c: { type: number }) => [0,2,5,13].includes(c.type)).map((c: { id: string; name: string; type: number }) => ({ id: c.id, name: c.name, type: c.type }));
       if (channels.length) {

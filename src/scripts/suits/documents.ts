@@ -7,7 +7,8 @@ import { db, api, state, isManager, isLead, type TeamDocument } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';
 import { openViewer } from './viewer';
-import { bindDriveLinks, getDriveStatus, isGoogleDriveUrl, openTeamDrive, type DriveStatus } from './drive-access';
+import { bindDriveLinks, getDriveStatus, isGoogleDriveUrl, openTeamDrive, resetDriveAccess, driveAccountUrl, type DriveStatus } from './drive-access';
+import { documentUrl as signedUrl, warmDocumentFiles, resetDocumentFiles } from './document-files';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -23,7 +24,6 @@ let lastPull = 0;
 let docsCache: TeamDocument[] | null = null;
 let docsKey = '';
 let refreshing: Promise<boolean> | null = null;
-const signedCache = new Map<string, { url: string; until: number }>();
 const thumbCache = new Map<string, string>();
 
 // Remembered on this device so the page paints before the network answers
@@ -59,11 +59,15 @@ function rememberThumb(id: string, data: string) {
 
 /** Fetch the list once after sign in so the tab is ready before it is opened. */
 export async function warm() {
-  await Promise.all([refreshDocs(null),loadDrive(null)]);
+  for (const origin of ['https://drive.google.com', 'https://docs.google.com']) {
+    if (document.querySelector(`link[rel="preconnect"][href="${origin}"]`)) continue;
+    const link = document.createElement('link'); link.rel = 'preconnect'; link.href = origin; document.head.appendChild(link);
+  }
+  await Promise.all([refreshDocs(null).then(() => warmDocumentFiles((docsCache || []).flatMap(d => d.storage_path ? [d.storage_path] : []))),loadDrive(null)]);
 }
 
 export function reset(){
-  docsCache=null;docsKey='';driveStatus=null;roleFolders={};refreshing=null;signedCache.clear();thumbCache.clear();lastPull=0;
+  docsCache=null;docsKey='';driveStatus=null;roleFolders={};refreshing=null;resetDriveAccess();resetDocumentFiles();thumbCache.clear();lastPull=0;
   try{for(const key of [LS_DOCS,LS_DRIVE,LS_THUMBS])localStorage.removeItem(key);}catch{}
 }
 
@@ -203,11 +207,7 @@ async function fillCovers(host: HTMLElement, docs: TeamDocument[]) {
   });
   if (!pending.length) return;
   // One request for every signed link this page needs
-  const paths = pending.map(el => byId.get(el.dataset.cover!)!.storage_path!).filter(p => !(signedCache.get(p)?.until ?? 0 > Date.now()));
-  if (paths.length) {
-    const { data } = await db.storage.from(BUCKET).createSignedUrls(paths, 3600);
-    for (const row of data || []) if (row.signedUrl && row.path) signedCache.set(row.path, { url: row.signedUrl, until: Date.now() + 50 * 60 * 1000 });
-  }
+  await warmDocumentFiles(pending.map(el => byId.get(el.dataset.cover!)!.storage_path!)).catch(() => {});
   if (!('IntersectionObserver' in window)) { for (const el of pending) void drawCover(el, byId.get(el.dataset.cover!)!); return; }
   const io = new IntersectionObserver(entries => {
     for (const e of entries) {
@@ -255,15 +255,6 @@ async function drawCover(el: HTMLElement, d: TeamDocument) {
     void task.destroy();
     if (el.isConnected) el.innerHTML = `<img class="st-doccard__img st-doccard__img--page" src="${data}" alt="" />`;
   } catch { /* the type label stays */ }
-}
-
-async function signedUrl(path: string) {
-  const hit = signedCache.get(path);
-  if (hit && hit.until > Date.now()) return hit.url;
-  const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 3600);
-  if (error || !data) throw error || new Error('Could not open the file');
-  signedCache.set(path, { url: data.signedUrl, until: Date.now() + 50 * 60 * 1000 });
-  return data.signedUrl;
 }
 
 function memberFirst(id: string) {
@@ -468,9 +459,7 @@ async function pullFromDrive(host: HTMLElement) {
 async function loadDrive(host: HTMLElement | null) {
   try {
     const st = await getDriveStatus();
-    if (st.configured && st.folder && !Object.keys(roleFolders).length) {
-      try { roleFolders = (await api.drive<{ folders: Record<string, { id: string; url: string }> }>('folders')).folders || {}; } catch { roleFolders = {}; }
-    }
+    roleFolders = st.folders || {};
     driveStatus = st;
     remember();
   } catch {
@@ -493,7 +482,9 @@ function paintDriveBits(host: HTMLElement) {
       if (f && !el.querySelector('a')) el.innerHTML = `<a data-team-drive href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
     });
     const waiting = isManager() ? host.querySelectorAll('.st-doccard__flag').length : 0;
-    card.innerHTML = waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '';
+    card.innerHTML = (st.accessError ? `<p class="st-notice st-notice--danger" style="margin-top:1rem;">${esc(st.accessError)} <button type="button" class="st-btn st-btn--small" data-drive-retry>Try again</button></p>` : '') + (waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '');
+    if (st.setupRequired && isLead()) card.insertAdjacentHTML('beforeend', `<p class="st-muted">Share the folder with <strong>${esc(st.serviceEmail || '')}</strong> as an Editor and allow editors to share. In a shared drive, this account needs permission to share folders. <a class="st-btn st-btn--small" href="${esc(driveAccountUrl(st.folder.url))}" target="_blank" rel="noopener">Folder settings</a></p>`);
+    card.querySelector('[data-drive-retry]')?.addEventListener('click', async () => { resetDriveAccess(); await loadDrive(host); });
     card.querySelector('#st-drive-sync-all')?.addEventListener('click', async () => {
       const btn = card.querySelector('#st-drive-sync-all') as HTMLButtonElement;
       btn.disabled = true;
@@ -528,6 +519,7 @@ function paintDriveBits(host: HTMLElement) {
     btn.disabled = true;
     try {
       await api.drive('setFolder', { url: formValue(form, 'url') });
+      resetDriveAccess();
       toast('Team folder saved.');
       roleFolders = {};
       await loadDrive(host);

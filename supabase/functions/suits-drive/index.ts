@@ -412,18 +412,28 @@ Deno.serve(async (req) => {
 
   try {
     if (action === 'status') {
-      if (!sa) return json({ configured: false, reason: raw ? 'key could not be parsed' : 'key not set', serviceEmail: null, folder, proposal: null, access: null, isManager });
+      const folders = settings.drive_folders || {};
+      if (!sa) return json({ configured: false, reason: raw ? 'key could not be parsed' : 'key not set', serviceEmail: null, folder, folders, proposal: null, access: null, isManager });
       let access: string | null = null;
       let accessError: string | null = null;
+      let canShare: boolean | null = null;
       if (folder) {
         try {
           const token = await accessToken(sa);
           access = await ensureAccess(token, folder.id, user.email!);
         } catch (err) {
           accessError = (err as Error).message;
+          if ((err as GoogleError).status === 403) {
+            try {
+              const token = await accessToken(sa);
+              const details = await gapi(token, `${DRIVE}/files/${encodeURIComponent(folder.id)}?fields=capabilities(canShare)&supportsAllDrives=true`);
+              canShare = details.capabilities?.canShare ?? null;
+              if (canShare === false) accessError = 'The Drive folder owner needs to allow the website to share this folder.';
+            } catch { /* Keep the original Google error if metadata is unavailable. */ }
+          }
         }
       }
-      return json({ configured: true, serviceEmail: sa.client_email, folder, proposal, access, accessError, isManager });
+      return json({ configured: true, serviceEmail: sa.client_email, folder, folders, proposal, access, accessError, canShare, setupRequired: canShare === false, isManager });
     }
 
     // Mirror a dashboard document into the team folder and make sure the whole team can edit it

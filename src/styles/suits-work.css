@@ -40,7 +40,7 @@
 .st .sw-task-row .st-trow__due { font-size:11px; }
 .st .sw-task-row .st-tcheck { width:18px; height:18px; flex-shrink:0; }
 .st .sw-task-row .st-avatar-sm { width:26px; height:26px; font-size:9px; background:var(--fill); color:var(--ink-2); border:1px solid var(--hair); }
-.st .sw-task-row .st-trow__link { display:grid; place-items:center; font-size:17px; text-decoration:none; }
+.st .sw-task-row .st-trow__link { display:grid; place-items:center; width:auto; padding:0 5px; border-radius:5px; font-size:11px; white-space:nowrap; text-decoration:none; }
 .sw-status { font-size:10px; color:var(--ink-2); background:var(--fill); padding:3px 7px; border-radius:5px; white-space:nowrap; }
 .sw-status[data-status="doing"] { background:color-mix(in srgb,var(--accent) 10%,var(--surface)); color:var(--accent); }
 .sw-status[data-status="done"] { background:var(--ok-bg); color:var(--ok); }
@@ -57,9 +57,9 @@
 .sw-group-heading p { font-size:11px; color:var(--ink-2); margin:4px 0 0; }
 .sw-role-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(235px,100%),1fr)); gap:13px; }
 .sw-role-card { border:1px solid var(--hair); border-radius:10px; padding:17px; display:flex; flex-direction:column; min-width:0; }
-.sw-role-card__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:13px; }
-.sw-role-symbol { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:var(--fill); color:var(--accent); font-size:20px; }
-.sw-role-card h4 { font-size:15px; font-weight:500; line-height:1.4; margin:0 0 7px; overflow-wrap:anywhere; }
+.sw-role-card__head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:7px; }
+.sw-role-card__head .sw-text-button { flex-shrink:0; }
+.sw-role-card h4 { min-width:0; font-size:15px; font-weight:500; line-height:1.4; margin:0; overflow-wrap:anywhere; }
 .sw-role-card>p { font-size:12px; color:var(--ink-2); line-height:1.65; margin:0 0 17px; overflow-wrap:anywhere; white-space:pre-wrap; }
 .sw-role-card footer { display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--hair); padding-top:12px; margin-top:16px; }
 .sw-role-card footer small { font-size:10px; color:var(--ink-2); }

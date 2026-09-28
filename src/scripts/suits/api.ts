@@ -170,7 +170,11 @@ export interface WorkingRole {
 }
 export interface WorkingRoleAssignment { role_id: string; user_id: string; }
 export function canManageSubteam(subteam: string) {
-  return !!state.me && (isManager() || (subteam !== 'team' && subteam === state.me.proposal_role));
+  return !!state.me && (isManager() || subteam === 'team' || subteam === state.me.proposal_role);
+}
+
+export function canManageMeeting(meeting: Pick<Meeting, 'created_by'>) {
+  return !!state.me && (isManager() || meeting.created_by === state.me.user_id);
 }
 
 export function isManager() {
@@ -309,7 +313,7 @@ export const api = {
   },
   async scheduleMeetings(events: MeetingInput[]): Promise<Meeting[]> {
     const rows = unwrap<Meeting[]>(await db.rpc('suits_schedule_meetings', { events }));
-    void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
+    if (isManager()) void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
     return rows;
   },
   async createMeeting(m: MeetingInput): Promise<Meeting> {
@@ -317,11 +321,11 @@ export const api = {
   },
   async updateMeeting(id: string, m: Partial<Meeting>) {
     unwrap(await db.from('suits_meetings').update(m).eq('id', id).select('id').single());
-    void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
+    if (isManager()) void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
   },
   async deleteMeeting(id: string, _snapshot?: Meeting) {
     unwrap(await db.from('suits_meetings').delete().eq('id', id).select('id').single());
-    void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
+    if (isManager()) void callFunction('suits-discord', 'calendar-dispatch', {}).catch(() => {});
   },
   async meetingDeliveries(id: string): Promise<CalendarDelivery[]> {
     return unwrap(await db.from('suits_calendar_notifications').select('recipient_id, kind, status, last_error').eq('meeting_id', id).neq('status', 'cancelled').order('due_at'));

@@ -3,13 +3,13 @@
 // everything else.
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFDocumentLoadingTask } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
-import { db, type TeamDocument } from './api';
+import { type TeamDocument } from './api';
 import { esc } from './ui';
-import { bindDriveLinks, isGoogleDriveUrl, prepareDriveAccess } from './drive-access';
+import { bindDriveLinks, isGoogleDriveUrl, prepareDriveAccess, driveAccountUrl } from './drive-access';
+import { documentUrl } from './document-files';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-const BUCKET = 'suits-docs';
 let overlay: HTMLElement | null = null;
 let keyHandler: ((e: KeyboardEvent) => void) | null = null;
 let pdfDoc: PDFDocumentProxy | null = null;
@@ -63,13 +63,12 @@ export async function openViewer(d: TeamDocument, extras: { subtitle?: string } 
       return;
     }
     if (!d.storage_path) throw new Error('This document has no file.');
-    const { data, error } = await db.storage.from(BUCKET).createSignedUrl(d.storage_path, 3600);
-    if (error || !data) throw error || new Error('Could not open the file');
-    if (!overlay) return;
-    openLink.href = data.signedUrl;
-    await renderFile(body, d, data.signedUrl);
+    const url = await documentUrl(d.storage_path);
+    if (!body.isConnected) return;
+    openLink.href = url;
+    await renderFile(body, d, url);
   } catch (err) {
-    body.innerHTML = `<p class="st-viewer__note">${esc((err as Error).message)}</p>`;
+    if (body.isConnected) body.innerHTML = `<p class="st-viewer__note">${esc((err as Error).message)}</p>`;
   }
 }
 
@@ -110,7 +109,7 @@ async function renderFile(body: HTMLElement, d: TeamDocument, url: string) {
 }
 
 async function renderPdf(body: HTMLElement, url: string) {
-  pdfTask = getDocument({ url });
+  pdfTask = getDocument({ url, disableAutoFetch: true, disableStream: true, rangeChunkSize: 65536 });
   try {
     pdfDoc = await pdfTask.promise;
   } catch {
@@ -189,7 +188,7 @@ function renderLink(body: HTMLElement, d: TeamDocument) {
   const url = d.url || '';
   const embed = embedFor(url);
   if (embed) {
-    body.innerHTML = `<iframe class="st-viewer__frame" src="${esc(embed.src)}" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe><p class="st-viewer__hint">${esc(embed.hint)}</p>`;
+    body.innerHTML = `<iframe class="st-viewer__frame" src="${esc(driveAccountUrl(embed.src))}" title="${esc(d.title)}" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe><p class="st-viewer__hint">${esc(embed.hint)}</p>`;
     return;
   }
   body.innerHTML = `

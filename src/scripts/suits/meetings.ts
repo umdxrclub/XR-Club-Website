@@ -1,4 +1,4 @@
-import { api, state, isManager, memberName, type Meeting, type Rsvp, type CalendarOptions, type AdvisorAvailability } from './api';
+import { api, state, isManager, canManageMeeting, memberName, type Meeting, type Rsvp, type CalendarOptions, type AdvisorAvailability } from './api';
 import { availabilityDate, availabilityTime } from './advisorAvailability';
 import { workspaceData } from '../../lib/workspaceCache';
 import { esc, toast, openModal, confirmModal, field, input, formValue } from './ui';
@@ -84,7 +84,7 @@ function draw(host: HTMLElement, preserveScroll = false) {
       <div class="sc-arrows"><button type="button" class="sc-icon" data-shift="-1" aria-label="Previous ${mode === 'month' ? 'month' : mode === 'day' ? 'day' : 'week'}">${icon('prev')}</button><button type="button" class="sc-icon" data-shift="1" aria-label="Next ${mode === 'month' ? 'month' : mode === 'day' ? 'day' : 'week'}">${icon('next')}</button></div>
       <p class="sc-period" aria-live="polite">${esc(rangeLabel())}</p>
       <select class="sc-mode" aria-label="Calendar view">${['day', 'week', 'month', 'schedule'].map(v => `<option value="${v}"${v === mode ? ' selected' : ''}>${v[0].toUpperCase() + v.slice(1)}</option>`).join('')}</select>
-      ${isManager() ? '<button type="button" class="sc-create" data-create><span aria-hidden="true">+</span> Create</button>' : ''}
+      ${state.me ? '<button type="button" class="sc-create" data-create><span aria-hidden="true">+</span> Create</button>' : ''}
     </div>
     <div class="sc-filters">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<label class="sc-filter sc-filter--${a}"><input type="checkbox" data-filter="${a}"${visible.has(a) ? ' checked' : ''} />${a === 'team' ? 'All team' : a === 'subteam' ? 'Subteams' : 'Check-ins'}</label>`).join('')}
       <label class="sc-filter sc-filter--availability"><input type="checkbox" data-availability-filter${showAvailability ? ' checked' : ''} />Advisor availability</label>
@@ -105,7 +105,7 @@ function draw(host: HTMLElement, preserveScroll = false) {
   host.querySelectorAll<HTMLInputElement>('[data-filter]').forEach(b => b.addEventListener('change', () => { const a = b.dataset.filter as Audience; if (b.checked) visible.add(a); else visible.delete(a); draw(host, true); }));
   host.querySelector<HTMLInputElement>('[data-availability-filter]')?.addEventListener('change', e => { showAvailability = (e.target as HTMLInputElement).checked; draw(host, true); });
   host.querySelector('[data-create]')?.addEventListener('click', () => void editMeeting(host));
-  host.querySelectorAll<HTMLElement>('[data-create-day]').forEach(b => b.addEventListener('click', () => { if (isManager()) void editMeeting(host, undefined, b.dataset.createDay, b.dataset.time); else { cursor = b.dataset.createDay!; mode = 'day'; draw(host); } }));
+  host.querySelectorAll<HTMLElement>('[data-create-day]').forEach(b => b.addEventListener('click', () => { if (state.me) void editMeeting(host, undefined, b.dataset.createDay, b.dataset.time); }));
   host.querySelectorAll<HTMLElement>('[data-event]').forEach(b => b.addEventListener('click', () => { const m = meetings.find(m => m.id === b.dataset.event); if (m) showMeeting(host, m); }));
   host.querySelectorAll<HTMLElement>('[data-availability]').forEach(b => b.addEventListener('click', () => {
     const slot = availability.find(s => s.id === b.dataset.availability); if (!slot) return;
@@ -124,7 +124,7 @@ function weekHtml(items: CalendarItem[]) {
   const early=items.filter(m=>days.includes(zoneParts(m.starts_at).day)&&zoneParts(m.starts_at).minutes<CALENDAR_START_MINUTE).length;
   return `${early?`<button type="button" class="sc-early" data-early>${early} calendar item${early===1?'':'s'} before 9 AM. View in Schedule</button>`:''}<div class="sc-week" style="--days:${days.length}"><div class="sc-week__head"><span></span>${days.map(d => `<div class="sc-week__day${today.day === d ? ' is-today' : ''}"><span>${formatDay(d, { weekday: 'short' })}</span><strong>${Number(d.slice(8))}</strong></div>`).join('')}</div>
   <div class="sc-week__scroll"><div class="sc-week__body"><div class="sc-hours">${Array.from({ length: 15 }, (_, i) => `<span style="top:${i * 60 + 12}px">${(i + 9) % 12 || 12} ${i + 9 < 12 ? 'AM' : 'PM'}</span>`).join('')}</div>
-  ${days.map(d => `<div class="sc-day">${isManager() ? Array.from({ length: 30 }, (_, i) => `<button type="button" class="sc-slot" style="top:${i * 30 + 12}px" data-create-day="${d}" data-time="${String((Math.floor(i / 2) + 9)).padStart(2, '0')}:${i % 2 ? '30' : '00'}" aria-label="Schedule ${formatDay(d, { month: 'long', day: 'numeric' })} at ${(Math.floor(i / 2) + 9)}:${i % 2 ? '30' : '00'} Eastern"></button>`).join('') : ''}
+  ${days.map(d => `<div class="sc-day">${state.me ? Array.from({ length: 30 }, (_, i) => `<button type="button" class="sc-slot" style="top:${i * 30 + 12}px" data-create-day="${d}" data-time="${String((Math.floor(i / 2) + 9)).padStart(2, '0')}:${i % 2 ? '30' : '00'}" aria-label="Schedule ${formatDay(d, { month: 'long', day: 'numeric' })} at ${(Math.floor(i / 2) + 9)}:${i % 2 ? '30' : '00'} Eastern"></button>`).join('') : ''}
   ${calendarDayWindow(items, d).map(e => eventHtml(e.event, `top:${e.start + 12}px;height:${Math.max(22, e.end - e.start - 2)}px;left:calc(${e.column / e.columns * 100}% + 2px);width:calc(${100 / e.columns}% - 5px)`, e.end - e.start <= 30)).join('')}${today.day === d && today.minutes >= CALENDAR_START_MINUTE ? `<div class="sc-now" style="top:${today.minutes - CALENDAR_START_MINUTE + 12}px"></div>` : ''}</div>`).join('')}</div></div></div>`;
 }
 function monthHtml(items: CalendarItem[]) {
@@ -144,7 +144,7 @@ function showMeeting(host: HTMLElement, m: Meeting) {
     ${m.location || channel ? `<p><small>Where</small>${channel ? `<a href="${channel}" target="_blank" rel="noopener">Join Discord channel ↗</a>` : esc(m.location)}</p>` : ''}
     ${m.agenda ? `<p style="white-space:pre-wrap"><small>Agenda</small>${esc(m.agenda)}</p>` : ''}
     <div><small>Your response</small>${rsvpControlHtml(m, answers)}</div></div>
-    <div class="sc-detail-actions"><a class="st-btn st-btn--small" href="${esc(calendarGoogleUrl(m))}" target="_blank" rel="noopener">Add to Google Calendar</a><button type="button" class="st-btn st-btn--small" data-ics>Download event</button>${isManager() ? '<button type="button" class="st-btn st-btn--small" data-edit>Edit</button><button type="button" class="st-btn st-btn--small st-btn--danger" data-delete>Cancel meeting</button>' : ''}</div>
+    <div class="sc-detail-actions"><a class="st-btn st-btn--small" href="${esc(calendarGoogleUrl(m))}" target="_blank" rel="noopener">Add to Google Calendar</a><button type="button" class="st-btn st-btn--small" data-ics>Download event</button>${canManageMeeting(m) ? '<button type="button" class="st-btn st-btn--small" data-edit>Edit</button><button type="button" class="st-btn st-btn--small st-btn--danger" data-delete>Cancel meeting</button>' : ''}</div>
     ${isManager() ? '<details class="sc-deliveries"><summary>Discord delivery</summary><div data-deliveries>Loading…</div></details>' : ''}` });
   const modal = document.querySelector<HTMLElement>('.st-modal')!;
   const close = () => modal.querySelector<HTMLButtonElement>('[data-modal-cancel]')?.click();
