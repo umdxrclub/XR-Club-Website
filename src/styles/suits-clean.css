@@ -191,8 +191,9 @@
 .st[data-mode="workspace"] .sd__pill--new { background: #e9edf4; color: var(--ink-2); }
 .st[data-mode="workspace"].is-dark .sd__pill--new { background: #ffffff1a; }
 
-/* Avatar: the neck ring sits inside the helmet's curve instead of crossing its outline. */
-.crew-avatar__collar { bottom: 6%; left: 25%; width: 50%; height: 8%; border-radius: 999px; }
+/* Avatar: the neck ring stays at the base and is cut off by the helmet outline, so nothing pokes past the curve. */
+.crew-avatar { clip-path: inset(0 round 49% 49% 43% 43%); }
+.crew-avatar__collar { left: -14%; bottom: -19%; width: 128%; height: 34%; border: 0; border-radius: 50%; background: radial-gradient(ellipse closest-side at 50% 50%, var(--suit) 0 74%, var(--suit-dark) 76% 85%, #eff3f7 87% 95%, #8b98a6 96% 100%, transparent 100%); }
 
 /* Phones: still clear glass with no blur, but a stronger tint so small text stays calm over the sky. */
 @media (max-width: 760px) {
