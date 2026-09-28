@@ -99,7 +99,7 @@ export async function render(host: HTMLElement) {
     paint(host, docsCache);
     void refreshDocs(host);
   } else {
-    host.innerHTML = `<p class="st-muted">Loading.</p>`;
+    host.innerHTML = `<p class="st-muted">Loading</p>`;
     await refreshDocs(host);
     if (!docsCache) return;
     if (!host.querySelector('.st-doccard, .st-group')) paint(host, docsCache);
@@ -113,24 +113,17 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
   const mine = state.me?.proposal_role || null;
   const order = filter === 'all' ? GROUPS : filter === 'team' ? GROUPS.filter(g => g.key === 'team') : [GROUPS.find(g => g.key === filter)!, GROUPS[0]];
 
+  const filters = [{ key: 'all', name: 'All subteams' }, ...GROUPS];
   host.innerHTML = `
-    <div class="st-section" style="margin-bottom:1.5rem;">
-      <div class="st-toolbar">
-        <h2 class="st-h1" style="margin:0;">Documents</h2>
-        <div class="st-toolbar__group">
-          ${driveStatus?.folder ? `<a class="st-btn" data-team-drive href="${esc(driveStatus.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>` : `<span id="st-drive-open"></span>`}
-          <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add</button>
-        </div>
-      </div>
-      <div class="st-chips" style="margin-top:0.9rem;">
-        <button type="button" class="st-chip${filter === 'all' ? ' is-active' : ''}" data-filter="all">All</button>
-        ${GROUPS.map(g => `<button type="button" class="st-chip${filter === g.key ? ' is-active' : ''}" data-filter="${g.key}">${esc(g.name)}${g.key === mine ? ' (you)' : ''}</button>`).join('')}
-      </div>
-      <div id="st-drive-card"></div>
-    </div>
-    ${order.map(g => groupHtml(g, docs.filter(d => d.role === g.key))).join('')}`;
+    <header class="st-page-head"><h1 class="st-page-title">Documents</h1><div class="st-page-actions">
+      <select class="st-select st-select--inline" id="st-doc-filter" aria-label="Subteam" style="width:auto;">${filters.map(g => `<option value="${g.key}"${filter === g.key ? ' selected' : ''}>${esc(g.name)}${g.key === mine ? ' (yours)' : ''}</option>`).join('')}</select>
+      ${driveStatus?.folder ? `<a class="st-btn" data-team-drive href="${esc(driveStatus.folder.url)}" target="_blank" rel="noopener">Open Drive</a>` : `<span id="st-drive-open"></span>`}
+      <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add</button>
+    </div></header>
+    <div id="st-drive-card"></div>
+    ${groupsHtml(order, docs)}`;
 
-  host.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter!; paint(host, docsCache || docs); }));
+  host.querySelector<HTMLSelectElement>('#st-doc-filter')!.addEventListener('change', e => { filter = (e.target as HTMLSelectElement).value; paint(host, docsCache || docs); });
   host.querySelector('#st-doc-add')!.addEventListener('click', () => addDocument(host));
   host.querySelectorAll<HTMLElement>('[data-view-doc]').forEach(card => {
     const open = () => { const d = docs.find(x => x.id === card.dataset.viewDoc)!; void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` }); };
@@ -145,16 +138,22 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
   if (scrollY) window.scrollTo({ top: scrollY });
 }
 
+/** The All view lists only subteams that have documents; a single subteam always shows. */
+function groupsHtml(order: Array<{ key: string; name: string }>, docs: TeamDocument[]) {
+  const groups = order.map(g => ({ g, docs: docs.filter(d => d.role === g.key) }));
+  const shown = filter === 'all' ? groups.filter(x => x.docs.length) : groups;
+  return shown.length ? shown.map(x => groupHtml(x.g, x.docs)).join('') : `<p class="st-group__empty">No documents yet</p>`;
+}
+
 function groupHtml(g: { key: string; name: string }, docs: TeamDocument[]) {
   const folder = roleFolders[g.key];
   return `
     <section class="st-group">
       <div class="st-group__head">
         <h3 class="st-group__title">${esc(g.name)}</h3>
-        <span class="st-group__count">${docs.length}</span>
         <span class="st-group__drive" data-role-folder="${g.key}">${folder ? `<a data-team-drive href="${esc(folder.url)}" target="_blank" rel="noopener">Drive folder</a>` : ''}</span>
       </div>
-      ${docs.length ? `<div class="st-docgrid">${docs.map(cardHtml).join('')}</div>` : `<p class="st-group__empty">Nothing here yet.</p>`}
+      ${docs.length ? `<div class="st-docgrid">${docs.map(cardHtml).join('')}</div>` : `<p class="st-group__empty">No documents yet</p>`}
     </section>`;
 }
 
@@ -305,7 +304,7 @@ function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
 }
 
 async function removeDocument(host: HTMLElement, d: TeamDocument) {
-  if (!(await confirmModal('Remove this document?', `"${d.title}" is removed from the dashboard and its copy in Drive goes to the trash.`, 'Remove'))) return;
+  if (!(await confirmModal('Remove this document?', `"${d.title}" will be removed here and its Drive copy moved to the trash.`, 'Remove'))) return;
   try {
     if (d.kind === 'file' && d.storage_path) await db.storage.from(BUCKET).remove([d.storage_path]).catch(() => { /* the row is what matters */ });
     if (d.drive_file_id) await api.drive('remove', { driveFileId: d.drive_file_id }).catch(() => { /* Drive copy stays if it cannot be trashed */ });
@@ -320,24 +319,24 @@ async function removeDocument(host: HTMLElement, d: TeamDocument) {
 // Adding and editing
 // ---------------------------------------------------------------------------
 function addDocument(host: HTMLElement) {
-  if(import.meta.env.DEV&&document.getElementById('st')?.dataset.preview==='true'){toast('File uploads are available in the signed-in workspace.');return;}
+  if(import.meta.env.DEV&&document.getElementById('st')?.dataset.preview==='true'){toast('Sign in to add documents.');return;}
   const defaultRole = state.me?.proposal_role && GROUPS.some(g => g.key === state.me!.proposal_role) ? state.me!.proposal_role! : 'team';
   openModal({
-    title: 'Add a document',
+    title: 'Add document',
     body: `
-      <div class="st-segment" id="st-doc-kind" style="margin-bottom:1rem;"><button type="button" data-kind="file" class="is-active">Upload a file</button><button type="button" data-kind="link">Add a link</button></div>
+      <div class="st-segment" id="st-doc-kind" style="margin-bottom:1rem;"><button type="button" data-kind="file" class="is-active">File</button><button type="button" data-kind="link">Link</button></div>
       <div data-pane="file">
         <label class="st-drop" id="st-doc-drop">
           <input type="file" name="file" id="f-file" />
-          <span class="st-drop__text" id="st-doc-dropname">Choose a file or drop it here. Anything up to 50 MB.</span>
+          <span class="st-drop__text" id="st-doc-dropname">Choose or drop a file, up to 50 MB</span>
         </label>
       </div>
       <div data-pane="link" hidden>
-        ${field('url', 'Address', input('url', 'type="url" placeholder="https://"'), 'A Google Doc, Sheet, Figma file, video, anything with a link.')}
+        ${field('url', 'Link', input('url', 'type="url" placeholder="https://"'))}
       </div>
-      ${field('title', 'Name', input('title', 'type="text" placeholder="What the team will see"'))}
-      ${field('role', 'For', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === defaultRole }))))}
-      ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional, one line"'))}`,
+      ${field('title', 'Name', input('title', 'type="text"'))}
+      ${field('role', 'Subteam', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === defaultRole }))))}
+      ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional"'))}`,
     submitLabel: 'Add',
     onSubmit: async (form, close) => {
       const kind = form.querySelector<HTMLElement>('#st-doc-kind .is-active')!.dataset.kind as 'file' | 'link';
@@ -349,7 +348,7 @@ function addDocument(host: HTMLElement) {
         const fileInput = form.querySelector<HTMLInputElement>('#f-file')!;
         const file = fileInput.files?.[0];
         if (!file) throw new Error('Choose a file first.');
-        if (file.size > 50 * 1024 * 1024) throw new Error('That file is over 50 MB.');
+        if (file.size > 50 * 1024 * 1024) throw new Error('Files must be 50 MB or smaller.');
         if (!title) title = file.name.replace(/\.[^.]+$/, '');
         const safe = file.name.replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'file';
         const path = `uploads/${role}/${Date.now()}-${safe}`;
@@ -358,13 +357,13 @@ function addDocument(host: HTMLElement) {
         created = await api.createDocument({ title, kind: 'file', url: null, storage_path: path, mime: file.type || null, size: file.size, role, notes });
       } else {
         let url = formValue(form, 'url');
-        if (!url) throw new Error('Paste the link first.');
+        if (!url) throw new Error('Paste a link first.');
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
         if (!title) title = titleFromUrl(url);
         created = await api.createDocument({ title, kind: 'link', url, storage_path: null, mime: null, size: null, role, notes });
       }
       close();
-      toast('Added.');
+      toast('Document added');
       await refreshDocs(host);
       void syncToDrive(host, created.id, true);
     },
@@ -408,17 +407,17 @@ function editDocument(host: HTMLElement, d: TeamDocument) {
     body: `
       ${field('title', 'Name', input('title', `type="text" required value="${esc(d.title)}"`))}
       ${d.kind === 'link' ? `<p class="st-help" style="margin:-0.4rem 0 1rem; word-break:break-all;">Link: <a href="${esc(d.url || '#')}" target="_blank" rel="noopener" style="color:inherit;">${esc(d.url || '')}</a></p>` : ''}
-      ${field('role', 'For', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === d.role }))))}
-      ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional, one line"'))}`,
+      ${field('role', 'Subteam', select('role', GROUPS.map(g => ({ value: g.key, label: g.name, selected: g.key === d.role }))))}
+      ${field('notes', 'Note', textarea('notes', 'rows="2" placeholder="Optional"'))}`,
     submitLabel: 'Save',
     onSubmit: async (form, close) => {
       const title = formValue(form, 'title');
-      if (!title) throw new Error('Give it a name.');
+      if (!title) throw new Error('Enter a name.');
       const role = formValue(form, 'role') || 'team';
       const notes = formValue(form, 'notes') || null;
       await api.updateDocument(d.id, { title, role, notes });
       close();
-      toast('Saved.');
+      toast('Document updated');
       await refreshDocs(host);
       if (d.drive_file_id) {
         try { await api.drive('update', { documentId: d.id }); } catch { /* Drive copy keeps its old name until next sync */ }
@@ -434,9 +433,9 @@ function editDocument(host: HTMLElement, d: TeamDocument) {
 async function syncToDrive(host: HTMLElement, id: string, announce = false) {
   try {
     const r = await api.drive<{ drive_status: string; error?: string }>('sync', { documentId: id });
-    if (r.drive_status === 'error') toast(`Saved here, but Drive said: ${r.error}`, 'danger');
+    if (r.drive_status === 'error') toast(`Saved here, but not copied to Drive. ${r.error}`, 'danger');
   } catch (err) {
-    toast(`Saved here, but Drive could not be reached: ${(err as Error).message}`, 'danger');
+    toast(`Saved here, but Drive couldn't be reached. ${(err as Error).message}`, 'danger');
   }
   // Tell Discord once the Drive link exists, so the post can point at it
   if (announce) void api.discord('announce', { kind: 'document', id, event: 'created' }).catch(() => { /* the bot may not be set up */ });
@@ -476,14 +475,14 @@ function paintDriveBits(host: HTMLElement) {
   if (!st) { card.innerHTML = ''; return; }
   if (st.configured && st.folder) {
     const openSlot = host.querySelector<HTMLElement>('#st-drive-open');
-    if (openSlot) openSlot.outerHTML = `<a class="st-btn" data-team-drive href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive folder</a>`;
+    if (openSlot) openSlot.outerHTML = `<a class="st-btn" data-team-drive href="${esc(st.folder.url)}" target="_blank" rel="noopener">Open Drive</a>`;
     host.querySelectorAll<HTMLElement>('[data-role-folder]').forEach(el => {
       const f = roleFolders[el.dataset.roleFolder!];
       if (f && !el.querySelector('a')) el.innerHTML = `<a data-team-drive href="${esc(f.url)}" target="_blank" rel="noopener">Drive folder</a>`;
     });
     const waiting = isManager() ? host.querySelectorAll('.st-doccard__flag').length : 0;
-    card.innerHTML = (st.accessError ? `<p class="st-notice st-notice--danger" style="margin-top:1rem;">${esc(st.accessError)} <button type="button" class="st-btn st-btn--small" data-drive-retry>Try again</button></p>` : '') + (waiting ? `<p class="st-muted" style="margin:0.9rem 0 0; font-size:0.92rem;">${waiting} document${waiting === 1 ? ' is' : 's are'} not in Drive. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send ${waiting === 1 ? 'it' : 'them'} now</button></p>` : '');
-    if (st.setupRequired && isLead()) card.insertAdjacentHTML('beforeend', `<p class="st-muted">Share the folder with <strong>${esc(st.serviceEmail || '')}</strong> as an Editor and allow editors to share. In a shared drive, this account needs permission to share folders. <a class="st-btn st-btn--small" href="${esc(driveAccountUrl(st.folder.url))}" target="_blank" rel="noopener">Folder settings</a></p>`);
+    card.innerHTML = (st.accessError ? `<p class="st-notice st-notice--danger" style="margin:0 0 1.25rem;">${esc(st.accessError)} <button type="button" class="st-btn st-btn--small" data-drive-retry>Try again</button></p>` : '') + (waiting ? `<p class="st-muted" style="margin:0 0 1.25rem; font-size:0.92rem;">${waiting === 1 ? 'A document isn’t' : 'Some documents aren’t'} in Drive yet. <button type="button" class="st-btn st-btn--small" id="st-drive-sync-all" style="margin-left:0.5rem;">Send now</button></p>` : '');
+    if (st.setupRequired && isLead()) card.insertAdjacentHTML('beforeend', `<p class="st-muted" style="margin:0 0 1.25rem;">Share the folder with <strong>${esc(st.serviceEmail || '')}</strong> as an editor and let editors share. <a class="st-btn st-btn--small" href="${esc(driveAccountUrl(st.folder.url))}" target="_blank" rel="noopener">Open folder</a></p>`);
     card.querySelector('[data-drive-retry]')?.addEventListener('click', async () => { resetDriveAccess(); await loadDrive(host); });
     card.querySelector('#st-drive-sync-all')?.addEventListener('click', async () => {
       const btn = card.querySelector('#st-drive-sync-all') as HTMLButtonElement;
@@ -496,20 +495,16 @@ function paintDriveBits(host: HTMLElement) {
   }
   if (!isLead()) { card.innerHTML = ''; return; }
   if (!st.configured) {
-    card.innerHTML = `
-      <div class="st-card" style="margin-top:1rem;">
-        <h3 class="st-h3">Google Drive is not connected</h3>
-        <p class="st-p">Your documents are available here. Ask the site administrator to connect Google Drive to keep a shared copy in the team folder.</p>
-      </div>`;
+    card.innerHTML = `<p class="st-muted" style="margin:0 0 1.25rem;">Google Drive isn’t connected. Files are still saved here.</p>`;
     return;
   }
   card.innerHTML = `
-    <div class="st-card" style="margin-top:1rem;">
-      <h3 class="st-h3">Choose the team's Drive folder</h3>
-      <p class="st-p">In Google Drive, share the folder with <strong>${esc(st.serviceEmail || '')}</strong> as an Editor, then paste its link.</p>
+    <div class="st-card" style="margin:0 0 1.5rem;">
+      <h3 class="st-h3">Connect a Drive folder</h3>
+      <p class="st-p">Share the folder with <strong>${esc(st.serviceEmail || '')}</strong> as an editor, then paste its link.</p>
       <form id="st-folder-form" novalidate>
         ${field('url', 'Folder link', input('url', 'type="url" required placeholder="https://drive.google.com/drive/folders/..."'))}
-        <button type="submit" class="st-btn st-btn--primary">Use this folder</button>
+        <button type="submit" class="st-btn st-btn--primary">Connect</button>
       </form>
     </div>`;
   card.querySelector<HTMLFormElement>('#st-folder-form')!.addEventListener('submit', async e => {
@@ -520,7 +515,7 @@ function paintDriveBits(host: HTMLElement) {
     try {
       await api.drive('setFolder', { url: formValue(form, 'url') });
       resetDriveAccess();
-      toast('Team folder saved.');
+      toast('Folder connected');
       roleFolders = {};
       await loadDrive(host);
     } catch (err) {

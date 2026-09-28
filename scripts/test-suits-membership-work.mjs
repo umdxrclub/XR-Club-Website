@@ -27,6 +27,7 @@ await db.exec(await fs.readFile('supabase/migrations/20260928020000_suits_adviso
 await db.exec(await fs.readFile('supabase/migrations/20260928030000_suits_advisor_availability.sql','utf8'));
 await db.exec(await fs.readFile('supabase/migrations/20260928040000_suits_advisor_test_account.sql','utf8'));
 await db.exec(await fs.readFile('supabase/migrations/20260928050000_suits_member_contributions.sql','utf8'));
+await db.exec(await fs.readFile('supabase/migrations/20260928060000_suits_advisor_lead_access.sql','utf8'));
 async function as(id,fn){await db.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.email',$2,false)",[id,emails[id]]);await db.exec('SET ROLE authenticated');try{return await fn()}finally{await db.exec('RESET ROLE');await db.exec("SELECT set_config('request.jwt.claim.sub','',false),set_config('request.jwt.claim.email','',false)")}}
 const query=(sql,args=[])=>db.query(sql,args);
 const join=id=>as(id,()=>query('SELECT (public.suits_join()).*'));
@@ -142,9 +143,11 @@ assert.equal(advisorMember.role,'lead');assert.equal(advisorMember.designation,'
 assert.equal(advisorMember.avatar_set_at,null);assert.equal(advisorMember.workspace_layout,null,'Advisors keep the same avatar and layout onboarding');
 assert.equal((await request(advisor)).rows[0].status,'approved');
 assert.equal((await as(advisor,()=>query('SELECT public.suits_is_manager() AS manager, public.suits_is_lead() AS owner'))).rows[0].manager,true);
-assert.equal((await as(advisor,()=>query('SELECT public.suits_is_lead() AS owner'))).rows[0].owner,false,'Advisor lead access does not confer ownership');
+assert.equal((await as(advisor,()=>query('SELECT public.suits_is_lead() AS owner, public.suits_can_review_applications() AS review'))).rows[0].owner,true,'The advisor shares the owner lead abilities');
+assert.equal((await as(advisor,()=>query('SELECT public.suits_can_review_applications() AS review'))).rows[0].review,true,'The advisor reviews applications');
 await createTask(advisor,'uiux',designer);
-await assert.rejects(()=>as(advisor,()=>query('SELECT public.suits_review_membership($1,$2)',[fresh,'approved'])),/owner/);
+await as(advisor,()=>query('SELECT public.suits_review_membership($1,$2)',[fresh,'rejected']));
+assert.equal((await request(fresh)).rows[0].status,'rejected','The advisor reviews membership requests');
 await assert.rejects(()=>as(engineer,()=>query("UPDATE public.suits_team SET designation='advisor' WHERE user_id=$1",[engineer])),/owner/);
 assert.equal((await join(lookalike)).rows[0].user_id,null,'Only the exact preapproved address qualifies');
 await assert.rejects(()=>join(unverifiedAdvisor),/verified UMD/);
@@ -155,7 +158,8 @@ const advisorTest='c1111111-1111-4111-8111-111111111111';emails[advisorTest]='kc
 await query('INSERT INTO auth.users(id,email,email_confirmed_at) VALUES($1,$2,now())',[advisorTest,emails[advisorTest]]);
 const testingAdvisor=(await join(advisorTest)).rows[0];
 assert.equal(testingAdvisor.role,'lead');assert.equal(testingAdvisor.designation,'advisor');
-assert.equal((await as(advisorTest,()=>query('SELECT public.suits_is_lead() AS owner'))).rows[0].owner,false,'Test advisor does not inherit the separate owner account');
+assert.equal((await as(advisorTest,()=>query('SELECT public.suits_is_lead() AS owner'))).rows[0].owner,true,'The advisor test account has advisor lead abilities');
+for(const id of [lookalike,unverifiedAdvisor])assert.equal((await as(id,()=>query('SELECT public.suits_is_lead() AS owner, public.suits_can_review_applications() AS review'))).rows[0].owner,false,'Lookalike and unverified advisor addresses get no lead abilities');
 const availableDay=calendar.shiftDay(calendar.zoneParts(new Date()).day,7);
 const at=time=>calendar.wallTimeToIso(availableDay,time);
 const saveSlot=(who,start,end,id=null)=>as(who,()=>query('SELECT * FROM public.suits_save_advisor_availability($1,$2,$3)',[start,end,id]));
@@ -185,11 +189,12 @@ assert.equal((await query('SELECT count(*)::int n FROM public.suits_calendar_not
 await db.exec('SET ROLE anon');await assert.rejects(()=>query('SELECT * FROM public.suits_advisor_availability'),/permission/);await assert.rejects(()=>query('SELECT public.suits_save_advisor_availability($1,$2)',[at('08:00'),at('09:00')]),/permission/);await db.exec('RESET ROLE');
 await review(advisor,'rejected');
 assert.equal((await join(advisor)).rows[0].user_id,null,'The owner can revoke advisor access without sign-in restoring it');
+assert.deepEqual((await as(advisor,()=>query('SELECT public.suits_is_lead() AS owner, public.suits_can_review_applications() AS review'))).rows[0],{owner:false,review:false},'Revoking the advisor removes lead abilities');
 assert.equal((await as(engineer,()=>query('SELECT id FROM public.suits_advisor_availability WHERE advisor_id=$1',[advisor]))).rows.length,0,'Revoked advisors disappear from the calendar');
 await assert.rejects(()=>saveSlot(advisor,at('10:00'),at('11:00'),slot.id),/approved advisor/);
 await review(advisorTest,'rejected');assert.equal((await join(advisorTest)).rows[0].user_id,null,'Test advisor revocation also persists');
 await db.close();
 console.log('PASS: advisor availability ownership, approved team visibility, editing, deletion, overlaps, validation, revocation, no Discord messages, and separate advisor test account.');
-console.log('PASS: exact verified advisor preapproval, lead access, protected designation, normal onboarding, owner-only approvals and persistent revocation.');
+console.log('PASS: exact verified advisor preapproval, owner-level lead abilities and application review, protected designation, normal onboarding, and revocation that removes them.');
 console.log('PASS: membership preservation, verified UMD requests, exclusive owner approval, persistent rejection, data/file revocation, subteam roles, assignment validation, task boundaries, and calendar defaults.');
 console.log('PASS: member-created meetings and shared tasks, organizer controls, private check-ins, recurring events, notification queuing, calendar channels, and approval enforcement.');

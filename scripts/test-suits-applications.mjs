@@ -12,6 +12,8 @@ const result = { data: { id: 'sample', resume_path: null }, error: null };
 const chain = new Proxy({}, { get: (_, key) => key === 'then' ? resolve => resolve(result) : () => chain });
 const handler = createReviewHandler(() => ({
   auth: { getUser: async () => ({ data: { user: identity }, error: null }) },
+  // Mirrors suits_can_review_applications(): the verified owner, or an approved advisor account.
+  rpc: async () => ({ data: !!identity?.email_confirmed_at && (identity.email.toLowerCase() === 'kcyle@terpmail.umd.edu' || identity.approvedAdvisor === true), error: null }),
   from: () => { operations++; return chain; },
   storage: { from: () => ({ createSignedUrl: async () => { operations++; return { data: { signedUrl: 'https://example.invalid/resume' }, error: null }; } }) },
 }));
@@ -32,6 +34,8 @@ for (const user of [
 assert.equal(operations, 0, 'Blocked requests never touch applications or storage');
 identity = { email: 'KCYLE@terpmail.umd.edu', email_confirmed_at: '2026-01-01' };
 for (const action of ['list', 'update', 'delete', 'resume']) assert.equal((await handler(request(action))).status, 200);
+identity = { email: 'zwicker@umd.edu', email_confirmed_at: '2026-01-01', approvedAdvisor: true };
+for (const action of ['list', 'update', 'delete', 'resume']) assert.equal((await handler(request(action))).status, 200, 'The approved advisor reviews applications');
 assert.ok(operations > 0);
 
 // Exercise real RLS against the schema, including older broad board/storage grants.

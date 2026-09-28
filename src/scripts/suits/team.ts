@@ -7,18 +7,17 @@ import { openAdvisorAvailability } from './advisorAvailability';
 export async function render(host:HTMLElement) {
  host.innerHTML='<p class="st-muted">Loading team…</p>';
  state.members=await api.members();
- const groups=[{key:'advisor',name:'Advisor'},...READER_ROLES.map(r=>({key:r.key,name:r.name})),{key:'unassigned',name:'No subteam yet'}];
+ const groups=[{key:'advisor',name:'Advisors'},...READER_ROLES.map(r=>({key:r.key,name:r.name})),{key:'unassigned',name:'No subteam'}];
  const groupFor=(m:Member)=>isAdvisor(m)?groups[0]:groups.find(g=>g.key===m.proposal_role)||groups[groups.length-1];
- const countLabel=(n:number)=>`${n} member${n===1?'':'s'}`;
  let query='',subteam='all';
  const availableGroups=groups.filter(g=>state.members.some(m=>groupFor(m).key===g.key));
  host.innerHTML=`<div class="crew-directory">
-  <div class="crew-head"><div><h1 class="st-h1">Meet your team.</h1><p>${state.members.length} team member${state.members.length===1?'':'s'}</p></div><button type="button" class="st-btn" data-profile>Your profile</button></div>
+  <header class="st-page-head"><h1 class="st-page-title">Team</h1><div class="st-page-actions"><button type="button" class="st-btn" data-profile>Edit profile</button></div></header>
   <div class="crew-toolbar">
-   <label class="crew-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Find a teammate" aria-label="Find a teammate" /></label>
+   <label class="crew-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Search people" aria-label="Search people" /></label>
    <div class="crew-filter">${select('crew_subteam',[{value:'all',label:'All subteams',selected:true},...availableGroups.map(g=>({value:g.key,label:g.name}))],'aria-label="Filter by subteam"')}</div>
   </div>
-  <p class="crew-results" data-crew-results role="status" hidden></p>
+  <p class="crew-results sw-sr-only" data-crew-results role="status" hidden></p>
   <div class="crew-groups" data-crew-groups></div>
  </div>`;
  enhanceSelects(host);
@@ -32,14 +31,14 @@ export async function render(host:HTMLElement) {
    if(!people.length)return '';
    const isMine=!isAdvisor()&&state.me?.proposal_role===g.key;
    return `<section class="crew-group" aria-labelledby="crew-subteam-${g.key}">
-    <header><div class="crew-group__title"><h2 id="crew-subteam-${g.key}">${esc(g.name)}</h2>${isMine?'<span class="crew-group__mine">Your subteam</span>':''}</div><span class="crew-group__count">${countLabel(people.length)}</span></header>
+    <header><div class="crew-group__title"><h2 id="crew-subteam-${g.key}">${esc(g.name)}</h2>${isMine?'<span class="crew-group__mine">Your subteam</span>':''}</div></header>
     <ul class="crew-cards">${people.map(m=>`<li class="crew-card">
      ${crewAvatar(m)}<div class="crew-card__person"><h3>${esc(m.display_name)}${m.user_id===state.me?.user_id?' <small>You</small>':''}</h3><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></div>
-     <div class="crew-card__footer"><span class="crew-card__role">${isAdvisor(m)?(m.role==='lead'?'Advisor with lead access':'Advisor'):esc(roleLabel(m.role))}</span>${isLead()?`<button type="button" class="crew-manage" data-manage="${m.user_id}" aria-label="Manage ${esc(m.display_name)}">Manage</button>`:''}</div>
+     <div class="crew-card__footer"><span class="crew-card__role">${isAdvisor(m)?'Advisor':esc(roleLabel(m.role))}</span>${isLead()?`<button type="button" class="crew-manage" data-manage="${m.user_id}" aria-label="Manage ${esc(m.display_name)}">Manage</button>`:''}</div>
      ${isAdvisor(m)?`<button type="button" class="st-btn st-btn--small crew-availability" data-advisor-availability="${esc(m.user_id)}">${m.user_id===state.me?.user_id?'Edit availability':'View availability'}</button>`:''}
     </li>`).join('')}</ul>
    </section>`;
-  }).join('') || '<p class="crew-empty">No teammates found. Try another name or subteam.</p>';
+  }).join('') || '<p class="crew-empty">No matching people</p>';
  }
  draw();
  host.querySelector('input[type="search"]')!.addEventListener('input',e=>{query=(e.target as HTMLInputElement).value.trim().toLowerCase();draw();});
@@ -57,25 +56,25 @@ export function leave(){profileAbort?.abort();}
 
 async function manage(m:Member,host:HTMLElement){
  const owner=m.email.toLowerCase()==='kcyle@terpmail.umd.edu';
- const done=openModal({title:m.display_name,submitLabel:'Save changes',body:`<div class="crew-manage-avatar">${crewAvatar(m)}</div>${field('subteam','Subteam',select('subteam',[{value:'',label:'Not assigned',selected:!m.proposal_role},...READER_ROLES.map(r=>({value:r.key,label:r.name,selected:r.key===m.proposal_role}))]))}${owner?'<p class="st-muted">Team owner · lead access</p>':field('access','Access',select('access',(['member','product_manager','lead'] as Role[]).map(r=>({value:r,label:roleLabel(r),selected:r===m.role}))))}${!owner?'<button type="button" class="crew-remove" data-remove-member>Remove from team</button>':''}`,onSubmit:async(form,close)=>{
-  if(!isLead())throw new Error('Only the team owner can manage roles.');
+ const done=openModal({title:m.display_name,submitLabel:'Save changes',body:`<div class="crew-manage-avatar">${crewAvatar(m)}</div>${field('subteam','Subteam',select('subteam',[{value:'',label:'No subteam',selected:!m.proposal_role},...READER_ROLES.map(r=>({value:r.key,label:r.name,selected:r.key===m.proposal_role}))]))}${owner?'<p class="st-muted">Team owner</p>':field('access','Access',select('access',(['member','product_manager','lead'] as Role[]).map(r=>({value:r,label:roleLabel(r),selected:r===m.role}))))}${!owner?'<button type="button" class="crew-remove" data-remove-member>Revoke access</button>':''}`,onSubmit:async(form,close)=>{
+  if(!isLead())throw new Error('Only the team owner can change access.');
   const subteam=formValue(form,'subteam')||null;
   const access=owner?'lead':formValue(form,'access') as Role;
   await api.manageMember(m.user_id,access,subteam);
-  close();toast('Team member updated.');await render(host);
+  close();toast('Member updated');await render(host);
  }});
  document.querySelector('[data-remove-member]')?.addEventListener('click',async()=>{
-  if(!await confirmModal('Revoke team access?',`${m.display_name} will lose dashboard access until you approve them again in Team access. Their past work will be kept.`,'Revoke access'))return;
-  try{await api.removeMember(m.user_id);document.querySelector<HTMLButtonElement>('.st-modal [data-modal-cancel]')?.click();await render(host);toast('Member removed.');}catch(e){toast((e as Error).message,'danger');}
+  if(!await confirmModal('Revoke access?',`${m.display_name} loses access until you approve them again in Team access. Their work is kept.`,'Revoke access'))return;
+  try{await api.removeMember(m.user_id);document.querySelector<HTMLButtonElement>('.st-modal [data-modal-cancel]')?.click();await render(host);toast('Access revoked');}catch(e){toast((e as Error).message,'danger');}
  });
  await done;
 }
 async function editProfile(host:HTMLElement){
  const me=state.me!;
- const closed=openModal({title:'Your profile',submitLabel:'Save profile',body:`<button type="button" class="crew-profile-avatar" data-edit-profile-avatar>${crewAvatar(me,'crew-avatar--large')}<span>Edit avatar</span></button>${field('name','Your name',input('name',`value="${esc(me.display_name)}" required maxlength="100"`))}${field('discord','Discord username',input('discord',`value="${esc(me.discord_username||'')}"`))}<p class="st-help">To receive meeting reminders, use /link with your UMD email in the Discord server.</p>`,onSubmit:async(form,close)=>{
+ const closed=openModal({title:'Edit profile',submitLabel:'Save profile',body:`<button type="button" class="crew-profile-avatar" data-edit-profile-avatar>${crewAvatar(me,'crew-avatar--large')}<span>Edit avatar</span></button>${field('name','Name',input('name',`value="${esc(me.display_name)}" required maxlength="100"`))}${field('discord','Discord username',input('discord',`value="${esc(me.discord_username||'')}"`))}<p class="st-help">For meeting reminders, run /link with your UMD email in Discord.</p>`,onSubmit:async(form,close)=>{
   const name=formValue(form,'name');if(!name)throw new Error('Enter your name.');
   const patch={display_name:name,discord_username:formValue(form,'discord')||null};
-  await api.updateProfile(patch);state.me={...state.me!,...patch};updateIdentity();close();await render(host);toast('Profile saved.');
+  await api.updateProfile(patch);state.me={...state.me!,...patch};updateIdentity();close();await render(host);toast('Profile saved');
  }});
  document.querySelector('[data-edit-profile-avatar]')?.addEventListener('click',()=>{document.querySelector<HTMLButtonElement>('.st-modal [data-modal-cancel]')?.click();void editAvatar().then(()=>render(host));});
  await closed;

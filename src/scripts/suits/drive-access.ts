@@ -27,7 +27,7 @@ function readyStatus() {
 /** Reuse only successful server confirmation for this account, never saved metadata. */
 export function getDriveStatus(force = false): Promise<DriveStatus> {
   const account = accountKey(), version = generation;
-  if (!account) return Promise.reject(new Error('Sign in to the SUITS dashboard first.'));
+  if (!account) return Promise.reject(new Error('Sign in to open Drive.'));
   const hit = !force && readyStatus();
   if (hit) return Promise.resolve(hit);
   if (force) confirmed = null;
@@ -43,9 +43,9 @@ export function getDriveStatus(force = false): Promise<DriveStatus> {
 
 export async function prepareDriveAccess() {
   const status = await getDriveStatus();
-  if (!status.configured || !status.folder) throw new Error('The team Drive folder is not connected yet.');
+  if (!status.configured || !status.folder) throw new Error('The team Drive folder isn’t connected yet.');
   if (status.accessError || !['already', 'granted'].includes(status.access || '')) {
-    throw new Error('Drive access could not be granted. ' + (status.accessError || 'Please try again.'));
+    throw new Error('Couldn’t get Drive access. ' + (status.accessError || 'Try again.'));
   }
   return status;
 }
@@ -73,7 +73,7 @@ export async function openTeamDrive(url: string) {
   tab.opener = null;
   if (readyStatus()) { tab.location.replace(driveAccountUrl(url)); return; }
   tab.document.title = 'Opening Drive';
-  tab.document.body.textContent = 'Opening your team Drive…';
+  tab.document.body.textContent = 'Opening Drive';
   try {
     await prepareDriveAccess();
     if (!tab.closed) tab.location.replace(driveAccountUrl(url));

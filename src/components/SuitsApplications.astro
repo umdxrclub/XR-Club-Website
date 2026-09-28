@@ -1,26 +1,23 @@
 <template id="st-applications-template">
 <div class="sd" id="sd">
-    <header class="sd__top">
-      <div class="sd__top-left">
-        <h1 class="sd__title">Applications</h1>
-        <span class="sd__count" id="sd-count"></span>
-      </div>
-      <div class="sd__top-right">
-        <button type="button" class="sd__btn" id="sd-export">Export CSV</button>
+    <header class="st-page-head sd__head">
+      <h1 class="st-page-title">Applications</h1>
+      <div class="st-page-actions">
+        <button type="button" class="st-btn" id="sd-export">Export CSV</button>
       </div>
     </header>
 
     <div class="sd__filters">
       <div class="sd__segment" id="sd-status-filter" aria-label="Filter by application status">
-        <button type="button" class="sd__seg is-active" data-status="">All <span class="sd__seg-n" data-count="all"></span></button>
-        <button type="button" class="sd__seg" data-status="new">New <span class="sd__seg-n" data-count="new"></span></button>
-        <button type="button" class="sd__seg" data-status="interview">Interview <span class="sd__seg-n" data-count="interview"></span></button>
-        <button type="button" class="sd__seg" data-status="accepted">Accepted <span class="sd__seg-n" data-count="accepted"></span></button>
-        <button type="button" class="sd__seg" data-status="rejected">Rejected <span class="sd__seg-n" data-count="rejected"></span></button>
+        <button type="button" class="sd__seg is-active" data-status="">All</button>
+        <button type="button" class="sd__seg" data-status="new">New</button>
+        <button type="button" class="sd__seg" data-status="interview">Interview</button>
+        <button type="button" class="sd__seg" data-status="accepted">Accepted</button>
+        <button type="button" class="sd__seg" data-status="rejected">Rejected</button>
       </div>
 
       <div class="sd__tools">
-        <input class="sd__search" id="sd-search" aria-label="Search applications" type="search" placeholder="Search name, email, Discord, major" autocomplete="off" />
+        <input class="sd__search" id="sd-search" aria-label="Search applications" type="search" placeholder="Search applicants" autocomplete="off" />
         <select class="sd__select" id="sd-year" aria-label="Year">
           <option value="">Any year</option>
           <option>Freshman</option>
@@ -62,12 +59,11 @@
 
     <div class="sd__body">
       <section class="sd__list" id="sd-list" aria-label="Applicants"></section>
-      <p class="sd__empty" id="sd-empty" hidden>No applications match these filters.</p>
+      <p class="sd__empty" id="sd-empty" hidden>No matching applications</p>
 
       <section class="sd__detail" id="sd-detail" aria-live="polite">
         <div class="sd__detail-placeholder" id="sd-placeholder">
-          <p>Select an applicant to review.</p>
-          <p class="sd__hint">Arrow keys move through the list. Press <kbd>I</kbd> to mark for interview, <kbd>A</kbd> accept, <kbd>R</kbd> reject, <kbd>N</kbd> reset to new.</p>
+          <p>Select an applicant</p>
         </div>
         <div id="sd-detail-content" hidden></div>
       </section>

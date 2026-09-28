@@ -1,11 +1,11 @@
 export const TEAM_ZONE = 'America/New_York';
 export const SUBTEAMS = [
-  { key: 'technical', name: 'Technical Design & Systems' },
-  { key: 'uiux', name: 'UI / UX Design' },
-  { key: 'aiml', name: 'AI / ML' },
-  { key: 'hitl', name: 'HITL & Human Factors' },
+  { key: 'technical', name: 'Technical Design and Systems' },
+  { key: 'uiux', name: 'UI/UX Design' },
+  { key: 'aiml', name: 'AI/ML' },
+  { key: 'hitl', name: 'HITL and Human Factors' },
   { key: 'pm', name: 'Project Management' },
-  { key: 'engagement', name: 'Community & Industry' },
+  { key: 'engagement', name: 'Community and Industry Engagement' },
 ] as const;
 export function defaultSubteam(proposalRole: string | null | undefined) {
   return SUBTEAMS.some(team => team.key === proposalRole) ? proposalRole! : '';
@@ -45,12 +45,12 @@ export function wallTimeToIso(day: string, time: string, zone = TEAM_ZONE) {
   let guess = base;
   for (let i = 0; i < 4; i++) { const p = zoneParts(new Date(guess), zone); guess += base - Date.parse(`${p.day}T${p.time}:00Z`); }
   const actual = zoneParts(new Date(guess), zone);
-  if (actual.day !== day || actual.time !== time) throw new Error('That time does not exist during the daylight-saving change. Choose another time.');
-  for (const offset of [-3600000, 3600000]) { const p = zoneParts(new Date(guess + offset), zone); if (p.day === day && p.time === time) throw new Error('That time occurs twice during the daylight-saving change. Choose a time after 2 AM.'); }
+  if (actual.day !== day || actual.time !== time) throw new Error('That time does not exist because of daylight saving time. Choose another time.');
+  for (const offset of [-3600000, 3600000]) { const p = zoneParts(new Date(guess + offset), zone); if (p.day === day && p.time === time) throw new Error('That time occurs twice because of daylight saving time. Choose a time after 2 AM.'); }
   return new Date(guess).toISOString();
 }
 export function audienceLabel(event: CalendarEvent) {
-  return event.audience === 'check_in' ? 'Check-in' : event.audience === 'subteam' ? SUBTEAMS.find(t => t.key === event.subteam)?.name || 'Subteam' : 'All team';
+  return event.audience === 'check_in' ? '1:1' : event.audience === 'subteam' ? SUBTEAMS.find(t => t.key === event.subteam)?.name || 'Subteam' : 'Everyone';
 }
 export function eventsOnDay<T extends CalendarEvent>(events: T[], day: string, zone = TEAM_ZONE): T[] {
   return events.filter(e => zoneParts(e.starts_at, zone).day <= day && zoneParts(new Date(Date.parse(e.ends_at) - 1), zone).day >= day).sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));

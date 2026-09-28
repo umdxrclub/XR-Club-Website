@@ -17,7 +17,7 @@ export function datePicker(name: string, value: string, opts: { placeholder?: st
     <div class="st-datepick" data-datepick${opts.clearable ? ' data-clearable' : ''}>
       <input type="hidden" id="f-${name}" name="${name}" value="${esc(value || '')}" />
       <button type="button" class="st-dd__btn st-datepick__btn" aria-haspopup="dialog">
-        <span class="st-dd__label${value ? '' : ' is-empty'}">${esc(value ? label(value) : (opts.placeholder || 'Pick a date'))}</span>
+        <span class="st-dd__label${value ? '' : ' is-empty'}">${esc(value ? label(value) : (opts.placeholder || 'Choose a date'))}</span>
         <span class="st-dd__chev" aria-hidden="true"></span>
       </button>
     </div>`;
@@ -66,7 +66,7 @@ export function bindPickers(root: ParentNode) {
     const hidden = box.querySelector<HTMLInputElement>('input[type="hidden"]')!;
     const btn = box.querySelector<HTMLButtonElement>('.st-datepick__btn')!;
     const text = btn.querySelector<HTMLElement>('.st-dd__label')!;
-    const placeholder = text.textContent || 'Pick a date';
+    const placeholder = text.textContent || 'Choose a date';
     const draw = () => {
       text.textContent = hidden.value ? label(hidden.value) : placeholder;
       text.classList.toggle('is-empty', !hidden.value);
@@ -83,7 +83,7 @@ export function bindPickers(root: ParentNode) {
       const start = hidden.value ? new Date(hidden.value + 'T12:00:00') : new Date();
       let y = start.getFullYear(), mo = start.getMonth();
       const paint = () => {
-        pop.innerHTML = `<div class="st-month st-month--pop">${monthHtml(y, mo, hidden.value)}</div>${box.hasAttribute('data-clearable') ? '<button type="button" class="st-datepick__clear" data-clear>No date</button>' : ''}`;
+        pop.innerHTML = `<div class="st-month st-month--pop">${monthHtml(y, mo, hidden.value)}</div>${box.hasAttribute('data-clearable') ? '<button type="button" class="st-datepick__clear" data-clear>Clear</button>' : ''}`;
       };
       paint();
       host.appendChild(pop);

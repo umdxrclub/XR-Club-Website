@@ -186,12 +186,12 @@ export function isAdvisor(member: Member | null = state.me) {
 }
 
 export function isLead() {
-  return state.me?.role === 'lead' && state.me.email.toLowerCase() === 'kcyle@terpmail.umd.edu';
+  return state.me?.role === 'lead' && (state.me.email.toLowerCase() === 'kcyle@terpmail.umd.edu' || isAdvisor());
 }
 
 // Navigation only; the review service and database independently verify Auth identity.
 export function canReviewApplications() {
-  return state.me?.email.toLowerCase() === 'kcyle@terpmail.umd.edu';
+  return state.me?.email.toLowerCase() === 'kcyle@terpmail.umd.edu' || isAdvisor();
 }
 
 export function memberName(id: string | null | undefined) {
@@ -463,7 +463,7 @@ function notify(kind: 'task' | 'meeting' | 'document', id: string, event: string
 
 async function callFunction<T>(name: string, action: string, params: Record<string, unknown>): Promise<T> {
     const { data: { session } } = await db.auth.getSession();
-    if (!session) throw new Error('Not signed in');
+    if (!session) throw new Error('You are signed out. Sign in again.');
     const res = await fetch(`${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1/${name}`, {
       method: 'POST',
       headers: {
@@ -474,6 +474,6 @@ async function callFunction<T>(name: string, action: string, params: Record<stri
       body: JSON.stringify({ action, ...params }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status}). Try again.`);
     return data as T;
 }

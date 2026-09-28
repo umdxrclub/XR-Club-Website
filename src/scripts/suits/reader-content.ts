@@ -117,7 +117,7 @@ export const READER_ROLES: ReaderRole[] = [
   },
   {
     key: 'hitl',
-    name: 'HITL / Human Factors',
+    name: 'HITL and Human Factors',
     sections: [
       g(6, 'Human in the loop testing', HITL, PM),
       g(14, 'How the HITL plan is scored', 'HUMAN-IN-THE-LOOP', 'TECHNICAL REFERENCES'),

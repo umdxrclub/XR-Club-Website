@@ -83,16 +83,11 @@ export async function render(host: HTMLElement) {
   if (!roleKey && state.me?.proposal_role && READER_ROLES.some(r => r.key === state.me!.proposal_role)) roleKey = state.me.proposal_role;
   host.innerHTML = `
     <div class="st-reader">
-      <div class="st-reader__head">
-        <div>
-          <h2 class="st-h1">Proposal</h2>
-
-        </div>
-      </div>
+      <header class="st-page-head st-reader__head"><h1 class="st-page-title">Proposal</h1></header>
       <div class="st-reader__roles" id="st-reader-roles"></div>
       <div class="st-reader__tools">
         <div class="st-segment" id="st-reader-docs">${READER_DOCS.map(d => `<button type="button" data-doc="${d.key}">${esc(d.short)}</button>`).join('')}</div>
-        <label class="st-reader__only" id="st-reader-only"><input type="checkbox" /><span class="st-reader__only-box"></span><span>Only my pages</span></label>
+        <label class="st-reader__only" id="st-reader-only"><input type="checkbox" /><span class="st-reader__only-box"></span><span>Only highlighted pages</span></label>
       </div>
       <div class="st-reader__stage" id="st-reader-stage">
         <button type="button" class="st-reader__flip st-reader__flip--prev" id="st-reader-prev" aria-label="Previous page"><span></span></button>
@@ -110,15 +105,15 @@ export async function render(host: HTMLElement) {
           <button type="button" class="st-btn st-btn--small" data-flip="1">Next</button>
         </div>
       </div>
-      <details class="st-reader__outline" id="st-reader-outline"><summary>Your sections</summary><div class="st-reader__sections" id="st-reader-sections"></div></details>
+      <details class="st-reader__outline" id="st-reader-outline"><summary>Sections</summary><div class="st-reader__sections" id="st-reader-sections"></div></details>
     </div>`;
 
   // Roles
   const rolesEl = host.querySelector<HTMLElement>('#st-reader-roles')!;
   const drawRoles = () => {
-    rolesEl.innerHTML = `<span class="st-reader__roles-label">${role() ? 'Highlight role' : 'Choose highlights'}</span>`
+    rolesEl.innerHTML = `<span class="st-reader__roles-label">Highlights</span>`
       + READER_ROLES.map(r => `<button type="button" class="st-chip${r.key === roleKey ? ' is-active' : ''}" data-role="${r.key}">${esc(r.name)}</button>`).join('')
-      + `<div class="st-reader__roledd">${select('reader_role', [{ value: '', label: 'Pick a role', selected: !roleKey }, ...READER_ROLES.map(r => ({ value: r.key, label: r.name, selected: r.key === roleKey }))])}</div>`;
+      + `<div class="st-reader__roledd">${select('reader_role', [{ value: '', label: 'No highlights', selected: !roleKey }, ...READER_ROLES.map(r => ({ value: r.key, label: r.name, selected: r.key === roleKey }))], 'aria-label="Highlights"')}</div>`;
     enhanceSelects(rolesEl);
     rolesEl.querySelector<HTMLSelectElement>('select')!.addEventListener('change', e => pickRole((e.target as HTMLSelectElement).value || null));
   };
@@ -238,8 +233,8 @@ async function show() {
     const seen = new Set<string>();
     const rows = inDoc.filter(s => { const k = `${s.label}:${s.page}`; if (seen.has(k)) return false; seen.add(k); return true; });
     list.innerHTML = rows.length
-      ? `<p class="st-reader__sections-label">For ${esc(r.name)} in the ${esc(d.short)}</p><div class="st-reader__seclist">${rows.map(s => `<button type="button" class="st-reader__sec${s.page === pageNo ? ' is-current' : ''}" data-page="${s.page}"><span>${esc(s.label)}</span><span class="st-reader__sec-page">p. ${s.page}</span></button>`).join('')}</div>`
-      : `<p class="st-reader__sections-label">Nothing in the ${esc(d.short)} is aimed at ${esc(r.name)} specifically. Read it once for context.</p>`;
+      ? `<p class="st-reader__sections-label">For ${esc(r.name)} in the ${esc(d.short)}</p><div class="st-reader__seclist">${rows.map(s => `<button type="button" class="st-reader__sec${s.page === pageNo ? ' is-current' : ''}" data-page="${s.page}"><span>${esc(s.label)}</span><span class="st-reader__sec-page">${s.page}</span></button>`).join('')}</div>`
+      : `<p class="st-reader__sections-label">No highlights for ${esc(r.name)} in the ${esc(d.short)}</p>`;
     list.querySelectorAll<HTMLElement>('[data-page]').forEach(b => b.addEventListener('click', () => { pageNo = Number(b.dataset.page); host.querySelector<HTMLDetailsElement>('#st-reader-outline')!.open = false; void show(); }));
   } else {
     list.innerHTML = '';
@@ -290,7 +285,7 @@ async function show() {
   } catch (err) {
     if (seq !== renderSeq) return;
     loading.hidden = false;
-    loading.innerHTML = `<div class="st-reader__fail"><p>Could not load the page.</p><p class="st-muted">${esc((err as Error).message)}</p><div class="st-reader__fail-actions"><button type="button" class="st-btn st-btn--small st-btn--primary" data-reader-retry>Try again</button><a class="st-btn st-btn--small" href="${state.base}${encodeURIComponent(d.file)}" target="_blank" rel="noopener">Open the PDF</a></div></div>`;
+    loading.innerHTML = `<div class="st-reader__fail"><p>Couldn’t load this page.</p><p class="st-muted">${esc((err as Error).message)}</p><div class="st-reader__fail-actions"><button type="button" class="st-btn st-btn--small st-btn--primary" data-reader-retry>Try again</button><a class="st-btn st-btn--small" href="${state.base}${encodeURIComponent(d.file)}" target="_blank" rel="noopener">Open PDF</a></div></div>`;
     loading.querySelector('[data-reader-retry]')?.addEventListener('click', () => { loading.textContent = 'Loading page'; void show(); });
   }
 }

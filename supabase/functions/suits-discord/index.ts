@@ -20,6 +20,7 @@
 //   curl -X POST <function url> -H "Authorization: Bearer <SUITS_CRON_SECRET>" -d '{"action":"register"}'
 
 import { processCalendarQueue, calendarDiscord, isInvited } from '../_shared/calendar-delivery.ts';
+import { ensureTeamFolderAccess } from '../_shared/drive-access.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
@@ -472,7 +473,9 @@ async function announceDocument(ctx: Ctx, d: Doc, event: string, actor: Member |
 // Google Drive activity
 // ---------------------------------------------------------------------------
 interface ServiceAccount { client_email: string; private_key: string; token_uri?: string }
-let cachedToken: { value: string; expires: number } | null = null;
+const cachedTokens = new Map<string, { value: string; expires: number }>();
+const DRIVE_READ = 'https://www.googleapis.com/auth/drive.readonly';
+const DRIVE_SHARE = 'https://www.googleapis.com/auth/drive';
 
 function b64url(data: ArrayBuffer | string) {
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
@@ -489,11 +492,12 @@ function pemToDer(pem: string) {
   return out.buffer;
 }
 
-async function googleToken(sa: ServiceAccount) {
-  if (cachedToken && cachedToken.expires > Date.now() + 60000) return cachedToken.value;
+async function googleToken(sa: ServiceAccount, scope = DRIVE_READ) {
+  const cached = cachedTokens.get(scope);
+  if (cached && cached.expires > Date.now() + 60000) return cached.value;
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const claims = b64url(JSON.stringify({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/drive.readonly', aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 }));
+  const claims = b64url(JSON.stringify({ iss: sa.client_email, scope, aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 }));
   const key = await crypto.subtle.importKey('pkcs8', pemToDer(sa.private_key), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${header}.${claims}`));
   const r = await fetch(sa.token_uri || 'https://oauth2.googleapis.com/token', {
@@ -503,8 +507,8 @@ async function googleToken(sa: ServiceAccount) {
   });
   if (!r.ok) throw new Error('Google did not accept the service account key');
   const data = await r.json();
-  cachedToken = { value: data.access_token, expires: Date.now() + (data.expires_in || 3600) * 1000 };
-  return cachedToken.value;
+  cachedTokens.set(scope, { value: data.access_token, expires: Date.now() + (data.expires_in || 3600) * 1000 });
+  return data.access_token as string;
 }
 
 interface DriveFile { id: string; name: string; mimeType: string; modifiedTime: string; parents?: string[]; trashed: boolean; trashedTime?: string; webViewLink?: string; lastModifyingUser?: { displayName?: string; emailAddress?: string }; trashingUser?: { displayName?: string; emailAddress?: string } }
@@ -543,6 +547,23 @@ async function driveTree(token: string, rootId: string) {
     level = next;
   }
   return { files, folders };
+}
+
+/** Share the team folder with every approved member so Drive links work without an access request. */
+async function teamDriveAccess(ctx: Ctx) {
+  const raw = Deno.env.get('SUITS_GOOGLE_SERVICE_ACCOUNT');
+  if (!raw) return { skipped: 'not set up' };
+  const { data: setting } = await ctx.admin.from('suits_settings').select('value').eq('key', 'drive_folder').maybeSingle();
+  const rootId = setting?.value?.id as string | undefined;
+  if (!rootId) return { skipped: 'no folder' };
+  const token = await googleToken(JSON.parse(raw) as ServiceAccount, DRIVE_SHARE);
+  const request = async (url: string, init: RequestInit = {}) => {
+    const r = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error?.message || `Google returned ${r.status}`);
+    return data;
+  };
+  return ensureTeamFolderAccess(request, rootId, ctx.members.map(m => m.email).filter(Boolean));
 }
 
 interface Change { verb: string; file: DriveFile; actor: string; folder: string }
@@ -708,9 +729,9 @@ const COMMANDS = [
   {
     name: 'setup', description: 'Choose where the bot posts', default_member_permissions: '32',
     options: [
-      { type: CHANNEL, name: 'announcements', description: 'All-team meeting notifications and task updates go here', required: true, channel_types: [0, 5] },
+      { type: CHANNEL, name: 'announcements', description: 'Team meeting notifications and task updates go here', required: true, channel_types: [0, 5] },
       { type: CHANNEL, name: 'log', description: 'Drive and document activity goes here', channel_types: [0] },
-      { type: CHANNEL, name: 'reminders', description: '1:1 check-ins and reminders tag the two participants here', channel_types: [0] },
+      { type: CHANNEL, name: 'reminders', description: '1:1s and reminders tag the two people here', channel_types: [0] },
     ],
   },
 ];
@@ -759,7 +780,7 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       '**You and the team**',
       '/link connects your Discord to the dashboard. /team shows everyone. /dashboard opens the site.',
       '',
-      'All-team meeting notifications go to announcements. Subteam meetings post in their selected channel. 1:1 check-ins use the reminders channel and tag only their participants; private titles and notes stay in DMs. Use /setup to choose the announcements and reminders channels.',
+      'Team meeting notifications go to announcements. Subteam meetings post in their selected channel. 1:1s use the reminders channel and tag only their participants; private titles and notes stay in DMs. Use /setup to choose the announcements and reminders channels.',
     ].join('\n'));
   }
 
@@ -784,13 +805,13 @@ async function handleCommand(ctx: Ctx, body: Record<string, any>) {
       reminders_channel_id: get('reminders') || ctx.settings.reminders_channel_id,
     };
     if (s.reminders_channel_id) {
-      if (s.reminders_channel_id === s.channel_id) return reply('Choose a separate reminders channel. Announcements are for all-team meetings.');
+      if (s.reminders_channel_id === s.channel_id) return reply('Choose a separate reminders channel. Announcements are for team meetings.');
       const reminders = await discord(`/channels/${s.reminders_channel_id}`);
       if (reminders.guild_id !== s.guild_id || reminders.type !== 0) return reply('Choose a text reminders channel in this server.');
     }
     await ctx.saveSettings(s);
     ctx.settings = s;
-    return reply(`Set. All-team meetings go to <#${s.channel_id}>. Subteam meetings use their own channel.${s.reminders_channel_id ? ` 1:1 check-ins go to <#${s.reminders_channel_id}> and tag their participants.` : ' Add a reminders channel with /setup for 1:1 check-ins.'}${s.log_channel_id && s.log_channel_id !== s.channel_id ? ` Activity goes to <#${s.log_channel_id}>.` : ''}`);
+    return reply(`Set. Team meetings go to <#${s.channel_id}>. Subteam meetings use their own channel.${s.reminders_channel_id ? ` 1:1s go to <#${s.reminders_channel_id}> and tag their participants.` : ' Add a reminders channel with /setup for 1:1 check-ins.'}${s.log_channel_id && s.log_channel_id !== s.channel_id ? ` Activity goes to <#${s.log_channel_id}>.` : ''}`);
   }
 
   if (name === 'team') {
@@ -1057,6 +1078,7 @@ Deno.serve(async (req) => {
       if (action === 'calendar-cron') return json(await processCalendarQueue(ctx.admin, ctx.settings, ctx.members, Deno.env.get('DISCORD_BOT_TOKEN')));
       if (action === 'cron') {
         const results: Record<string, unknown> = {};
+        try { results.driveAccess = await teamDriveAccess(ctx); } catch (err) { results.driveAccess = { error: (err as Error).message }; }
         try { results.drive = await driveActivity(ctx); } catch (err) { results.drive = { error: (err as Error).message }; }
         try { results.reminders = await reminders(ctx); } catch (err) { results.reminders = { error: (err as Error).message }; }
         try { results.calendar = await processCalendarQueue(ctx.admin, ctx.settings, ctx.members, Deno.env.get('DISCORD_BOT_TOKEN')); } catch (err) { results.calendar = { error: (err as Error).message }; }

@@ -17,7 +17,7 @@ let availability: AdvisorAvailability[] = [], showAvailability = true;
 type AvailabilityEvent = AdvisorAvailability & { title: string };
 type CalendarItem = Meeting | AvailabilityEvent;
 const isAvailability = (item: CalendarItem): item is AvailabilityEvent => 'advisor_id' in item;
-const itemLabel = (item: CalendarItem) => isAvailability(item) ? `${memberName(item.advisor_id)} availability` : audienceLabel(item);
+const itemLabel = (item: CalendarItem) => isAvailability(item) ? memberName(item.advisor_id) : audienceLabel(item);
 const eventAttribute = (item: CalendarItem) => `${isAvailability(item) ? 'data-availability' : 'data-event'}="${esc(item.id)}"`;
 let calendarOptions: CalendarOptions | null = null;
 let optionsError = '';
@@ -28,7 +28,11 @@ let timer: ReturnType<typeof setInterval> | undefined;
 const dayDate = (d: string) => new Date(`${d}T12:00:00Z`);
 const formatDay = (d: string, opts: Intl.DateTimeFormatOptions) => dayDate(d).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
 const time = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: TEAM_ZONE, hour: 'numeric', minute: '2-digit' });
-const errorText = (err: unknown) => err instanceof Error ? err.message : 'Please try again.';
+const errorText = (err: unknown) => err instanceof Error ? err.message : 'Check your connection and try again.';
+const timeRange = (start: string, end: string) => {
+  const a = time(start), b = time(end);
+  return a.slice(-2) === b.slice(-2) ? `${a.slice(0, -3)} to ${b}` : `${a} to ${b}`;
+};
 const icon = (direction: 'prev' | 'next') => direction === 'prev' ? '‹' : '›';
 
 export async function render(host: HTMLElement) {
@@ -41,7 +45,7 @@ export async function render(host: HTMLElement) {
   }
   activeHost = host;
   const request = ++requestVersion;
-  host.innerHTML = '<div class="sc-empty" role="status">Opening your calendar…</div>';
+  host.innerHTML = '<div class="sc-empty" role="status">Loading…</div>';
   try {
     [meetings, answers, availability] = await Promise.all([api.meetings(), api.rsvps(), api.advisorAvailability()]);
     if (request !== requestVersion || activeHost !== host) return;
@@ -51,7 +55,7 @@ export async function render(host: HTMLElement) {
     void api.discord<CalendarOptions>('calendar-options').then(options => { calendarOptions = options; optionsError = ''; }).catch(err => { optionsError = errorText(err); });
   } catch (err) {
     if (activeHost !== host) return;
-    host.innerHTML = `<div class="sc-error"><h2 class="st-h2">Your calendar couldn’t load.</h2><p class="st-muted">${esc(errorText(err))}</p><button type="button" class="st-btn" data-retry>Try again</button></div>`;
+    host.innerHTML = `<div class="sc-error"><h2 class="st-h2">Couldn’t load the calendar</h2><p class="st-muted">${esc(errorText(err))}</p><button type="button" class="st-btn" data-retry>Try again</button></div>`;
     host.querySelector('[data-retry]')?.addEventListener('click', () => void render(host));
   }
 }
@@ -73,22 +77,22 @@ function rangeLabel() {
   if (mode === 'month') return formatDay(cursor, { month: 'long', year: 'numeric' });
   if (mode === 'day') return formatDay(cursor, { month: 'long', day: 'numeric', year: 'numeric' });
   const days = weekDays(cursor), end = days[6];
-  return `${formatDay(days[0], { month: 'short', day: 'numeric' })} – ${formatDay(end, { ...(days[0].slice(0, 7) !== end.slice(0, 7) ? { month: 'short' as const } : {}), day: 'numeric' })}, ${end.slice(0, 4)}`;
+  return `${formatDay(days[0], { month: 'short', day: 'numeric' })} to ${formatDay(end, { ...(days[0].slice(0, 7) !== end.slice(0, 7) ? { month: 'short' as const } : {}), day: 'numeric' })}, ${end.slice(0, 4)}`;
 }
 function draw(host: HTMLElement, preserveScroll = false) {
   const scroll = preserveScroll ? host.querySelector('.sc-week__scroll')?.scrollTop : undefined;
   const items = filtered();
   host.innerHTML = `<div class="st-calendar">
     <div class="sc-toolbar">
-      <h1>Calendar</h1><button type="button" class="sc-today" data-today>Today</button>
+      <h1 class="st-page-title">Calendar</h1><button type="button" class="sc-today" data-today>Today</button>
       <div class="sc-arrows"><button type="button" class="sc-icon" data-shift="-1" aria-label="Previous ${mode === 'month' ? 'month' : mode === 'day' ? 'day' : 'week'}">${icon('prev')}</button><button type="button" class="sc-icon" data-shift="1" aria-label="Next ${mode === 'month' ? 'month' : mode === 'day' ? 'day' : 'week'}">${icon('next')}</button></div>
       <p class="sc-period" aria-live="polite">${esc(rangeLabel())}</p>
       <select class="sc-mode" aria-label="Calendar view">${['day', 'week', 'month', 'schedule'].map(v => `<option value="${v}"${v === mode ? ' selected' : ''}>${v[0].toUpperCase() + v.slice(1)}</option>`).join('')}</select>
       ${state.me ? '<button type="button" class="sc-create" data-create><span aria-hidden="true">+</span> Create</button>' : ''}
     </div>
-    <div class="sc-filters">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<label class="sc-filter sc-filter--${a}"><input type="checkbox" data-filter="${a}"${visible.has(a) ? ' checked' : ''} />${a === 'team' ? 'All team' : a === 'subteam' ? 'Subteams' : 'Check-ins'}</label>`).join('')}
-      <label class="sc-filter sc-filter--availability"><input type="checkbox" data-availability-filter${showAvailability ? ' checked' : ''} />Advisor availability</label>
-      <select class="sc-subteam" aria-label="Filter subteam"><option value="">All subteams</option>${SUBTEAMS.map(t => `<option value="${t.key}"${selectedSubteam === t.key ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="sc-zone">Eastern time</span>
+    <div class="sc-filters">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<label class="sc-filter sc-filter--${a}"><input type="checkbox" data-filter="${a}"${visible.has(a) ? ' checked' : ''} />${a === 'team' ? 'Everyone' : a === 'subteam' ? 'Subteams' : '1:1s'}</label>`).join('')}
+      <label class="sc-filter sc-filter--availability"><input type="checkbox" data-availability-filter${showAvailability ? ' checked' : ''} />Advisor</label>
+      <select class="sc-subteam" aria-label="Subteam"><option value="">All subteams</option>${SUBTEAMS.map(t => `<option value="${t.key}"${selectedSubteam === t.key ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="sc-zone">Eastern time</span>
     </div>
     ${mode === 'month' ? monthHtml(items) : mode === 'schedule' ? scheduleHtml(items) : weekHtml(items)}
   </div>`;
@@ -110,21 +114,21 @@ function draw(host: HTMLElement, preserveScroll = false) {
   host.querySelectorAll<HTMLElement>('[data-availability]').forEach(b => b.addEventListener('click', () => {
     const slot = availability.find(s => s.id === b.dataset.availability); if (!slot) return;
     const person = state.members.find(m => m.user_id === slot.advisor_id);
-    void openModal({ title: 'Advisor available', cancelLabel: 'Done', body: `<div class="sc-details"><p><strong>${esc(memberName(slot.advisor_id))}</strong></p><p>${esc(availabilityDate(slot.starts_at))}<br>${esc(availabilityTime(slot.starts_at))} to ${esc(availabilityTime(slot.ends_at))}<span class="sc-details__zone">Eastern time</span></p><p class="st-muted">Contact your advisor to arrange a meeting during this time.</p>${person ? `<a class="st-btn" href="mailto:${esc(person.email)}">Email advisor</a>` : ''}</div>` });
+    void openModal({ title: 'Advisor available', cancelLabel: 'Done', body: `<div class="sc-details"><p><strong>${esc(memberName(slot.advisor_id))}</strong></p><p>${esc(availabilityDate(slot.starts_at))}<br>${esc(availabilityTime(slot.starts_at))} to ${esc(availabilityTime(slot.ends_at))}<span class="sc-details__zone">Eastern time</span></p>${person ? `<a class="st-btn" href="mailto:${esc(person.email)}">Email advisor</a>` : ''}</div>` });
   }));
   const scroller = host.querySelector('.sc-week__scroll');
   if (scroller) scroller.scrollTop = scroll ?? 0;
 }
 function eventHtml(m: CalendarItem, style = '', compact = false) {
   const available = isAvailability(m);
-  return `<button type="button" class="sc-event" ${eventAttribute(m)} data-audience="${available ? 'availability' : m.audience || 'team'}" ${style ? `style="${style}"` : ''} aria-label="${esc(`${m.title}, ${time(m.starts_at)}, ${itemLabel(m)}`)}"><strong>${esc(m.title)}</strong>${compact ? '' : `<small>${esc(time(m.starts_at))} – ${esc(time(m.ends_at))}</small>${available ? `<small>${esc(memberName(m.advisor_id))}</small>` : m.location ? `<small>${esc(m.location)}</small>` : ''}`}</button>`;
+  return `<button type="button" class="sc-event" ${eventAttribute(m)} data-audience="${available ? 'availability' : m.audience || 'team'}" ${style ? `style="${style}"` : ''} aria-label="${esc(`${m.title}, ${time(m.starts_at)}, ${itemLabel(m)}`)}"><strong>${esc(m.title)}</strong>${compact ? '' : `<small>${esc(timeRange(m.starts_at, m.ends_at))}</small>${available ? `<small>${esc(memberName(m.advisor_id))}</small>` : m.location ? `<small>${esc(m.location)}</small>` : ''}`}</button>`;
 }
 function weekHtml(items: CalendarItem[]) {
   const days = mode === 'day' ? [cursor] : weekDays(cursor), today = zoneParts(new Date());
   const early=items.filter(m=>days.includes(zoneParts(m.starts_at).day)&&zoneParts(m.starts_at).minutes<CALENDAR_START_MINUTE).length;
-  return `${early?`<button type="button" class="sc-early" data-early>${early} calendar item${early===1?'':'s'} before 9 AM. View in Schedule</button>`:''}<div class="sc-week" style="--days:${days.length}"><div class="sc-week__head"><span></span>${days.map(d => `<div class="sc-week__day${today.day === d ? ' is-today' : ''}"><span>${formatDay(d, { weekday: 'short' })}</span><strong>${Number(d.slice(8))}</strong></div>`).join('')}</div>
+  return `${early?'<button type="button" class="sc-early" data-early>View events before 9 AM</button>':''}<div class="sc-week" style="--days:${days.length}"><div class="sc-week__head"><span></span>${days.map(d => `<div class="sc-week__day${today.day === d ? ' is-today' : ''}"><span>${formatDay(d, { weekday: 'short' })}</span><strong>${Number(d.slice(8))}</strong></div>`).join('')}</div>
   <div class="sc-week__scroll"><div class="sc-week__body"><div class="sc-hours">${Array.from({ length: 15 }, (_, i) => `<span style="top:${i * 60 + 12}px">${(i + 9) % 12 || 12} ${i + 9 < 12 ? 'AM' : 'PM'}</span>`).join('')}</div>
-  ${days.map(d => `<div class="sc-day">${state.me ? Array.from({ length: 30 }, (_, i) => `<button type="button" class="sc-slot" style="top:${i * 30 + 12}px" data-create-day="${d}" data-time="${String((Math.floor(i / 2) + 9)).padStart(2, '0')}:${i % 2 ? '30' : '00'}" aria-label="Schedule ${formatDay(d, { month: 'long', day: 'numeric' })} at ${(Math.floor(i / 2) + 9)}:${i % 2 ? '30' : '00'} Eastern"></button>`).join('') : ''}
+  ${days.map(d => `<div class="sc-day">${state.me ? Array.from({ length: 30 }, (_, i) => `<button type="button" class="sc-slot" style="top:${i * 30 + 12}px" data-create-day="${d}" data-time="${String((Math.floor(i / 2) + 9)).padStart(2, '0')}:${i % 2 ? '30' : '00'}" aria-label="New meeting on ${formatDay(d, { month: 'long', day: 'numeric' })} at ${(Math.floor(i / 2) + 9) % 12 || 12}:${i % 2 ? '30' : '00'} ${Math.floor(i / 2) + 9 < 12 ? 'AM' : 'PM'}"></button>`).join('') : ''}
   ${calendarDayWindow(items, d).map(e => eventHtml(e.event, `top:${e.start + 12}px;height:${Math.max(22, e.end - e.start - 2)}px;left:calc(${e.column / e.columns * 100}% + 2px);width:calc(${100 / e.columns}% - 5px)`, e.end - e.start <= 30)).join('')}${today.day === d && today.minutes >= CALENDAR_START_MINUTE ? `<div class="sc-now" style="top:${today.minutes - CALENDAR_START_MINUTE + 12}px"></div>` : ''}</div>`).join('')}</div></div></div>`;
 }
 function monthHtml(items: CalendarItem[]) {
@@ -133,18 +137,18 @@ function monthHtml(items: CalendarItem[]) {
 }
 function scheduleHtml(items: CalendarItem[]) {
   const end = shiftDay(cursor, 35), days = [...new Set(items.filter(m => zoneParts(m.starts_at).day >= cursor && zoneParts(m.starts_at).day < end).map(m => zoneParts(m.starts_at).day))];
-  return `<div class="sc-agenda">${days.length ? days.map(d => `<section class="sc-agenda__day"><div class="sc-agenda__date">${formatDay(d, { weekday: 'short', month: 'short' })}<strong>${Number(d.slice(8))}</strong></div><div>${eventsOnDay(items, d).map(m => `<button type="button" class="sc-agenda__event" ${eventAttribute(m)}${isAvailability(m)?' data-audience="availability"':''}><small>${esc(time(m.starts_at))}</small><strong>${esc(m.title)}</strong><small>${esc(itemLabel(m))}</small></button>`).join('')}</div></section>`).join('') : '<p class="sc-empty"><strong>No calendar items.</strong>No meetings or availability in the next five weeks.</p>'}</div>`;
+  return `<div class="sc-agenda">${days.length ? days.map(d => `<section class="sc-agenda__day"><div class="sc-agenda__date">${formatDay(d, { weekday: 'short', month: 'short' })}<strong>${Number(d.slice(8))}</strong></div><div>${eventsOnDay(items, d).map(m => `<button type="button" class="sc-agenda__event" ${eventAttribute(m)}${isAvailability(m)?' data-audience="availability"':''}><small>${esc(time(m.starts_at))}</small><strong>${esc(m.title)}</strong><small>${esc(itemLabel(m))}</small></button>`).join('')}</div></section>`).join('') : '<p class="sc-empty"><strong>No events in the next five weeks</strong></p>'}</div>`;
 }
 
 function showMeeting(host: HTMLElement, m: Meeting) {
   const channel = discordChannelUrl(calendarOptions?.guildId, m.discord_channel_id);
   void openModal({ title: m.title, cancelLabel: 'Done', body: `
-    <div class="sc-details"><p><small>${esc(audienceLabel(m))}</small>${esc(formatDay(zoneParts(m.starts_at).day, { weekday: 'long', month: 'long', day: 'numeric' }))}<br>${esc(time(m.starts_at))} – ${esc(time(m.ends_at))}<span class="sc-details__zone">Eastern time</span></p>
+    <div class="sc-details"><p><small>${esc(audienceLabel(m))}</small>${esc(formatDay(zoneParts(m.starts_at).day, { weekday: 'long', month: 'long', day: 'numeric' }))}<br>${esc(timeRange(m.starts_at, m.ends_at))}<span class="sc-details__zone">Eastern time</span></p>
     ${m.audience === 'check_in' ? `<p><small>With</small>${esc((m.attendee_ids || []).map(memberName).join(', '))}</p>` : ''}
-    ${m.location || channel ? `<p><small>Where</small>${channel ? `<a href="${channel}" target="_blank" rel="noopener">Join Discord channel ↗</a>` : esc(m.location)}</p>` : ''}
-    ${m.agenda ? `<p style="white-space:pre-wrap"><small>Agenda</small>${esc(m.agenda)}</p>` : ''}
+    ${m.location || channel ? `<p><small>Where</small>${channel ? `<a href="${channel}" target="_blank" rel="noopener">Join on Discord ↗</a>` : esc(m.location)}</p>` : ''}
+    ${m.agenda ? `<p style="white-space:pre-wrap"><small>Notes</small>${esc(m.agenda)}</p>` : ''}
     <div><small>Your response</small>${rsvpControlHtml(m, answers)}</div></div>
-    <div class="sc-detail-actions"><a class="st-btn st-btn--small" href="${esc(calendarGoogleUrl(m))}" target="_blank" rel="noopener">Add to Google Calendar</a><button type="button" class="st-btn st-btn--small" data-ics>Download event</button>${canManageMeeting(m) ? '<button type="button" class="st-btn st-btn--small" data-edit>Edit</button><button type="button" class="st-btn st-btn--small st-btn--danger" data-delete>Cancel meeting</button>' : ''}</div>
+    <div class="sc-detail-actions"><a class="st-btn st-btn--small" href="${esc(calendarGoogleUrl(m))}" target="_blank" rel="noopener">Add to Google Calendar</a><button type="button" class="st-btn st-btn--small" data-ics>Download event</button>${canManageMeeting(m) ? '<button type="button" class="st-btn st-btn--small" data-edit>Edit</button><button type="button" class="st-btn st-btn--small st-btn--danger" data-delete>Delete</button>' : ''}</div>
     ${isManager() ? '<details class="sc-deliveries"><summary>Discord delivery</summary><div data-deliveries>Loading…</div></details>' : ''}` });
   const modal = document.querySelector<HTMLElement>('.st-modal')!;
   const close = () => modal.querySelector<HTMLButtonElement>('[data-modal-cancel]')?.click();
@@ -153,13 +157,13 @@ function showMeeting(host: HTMLElement, m: Meeting) {
   modal.querySelector('[data-edit]')?.addEventListener('click', () => { close(); void editMeeting(host, m); });
   modal.querySelector('[data-delete]')?.addEventListener('click', async () => {
     close();
-    if (!(await confirmModal('Cancel this meeting?', 'Everyone invited will see the cancellation. Other dates in a recurring series stay scheduled.', 'Cancel meeting'))) return;
-    try { await api.deleteMeeting(m.id, m); await refresh(host); await refreshBadges(); toast('Meeting cancelled.'); } catch (err) { toast(errorText(err), 'danger'); }
+    if (!(await confirmModal('Delete this meeting?', 'Invited people will be notified. Other dates in the series stay on the calendar.', 'Delete'))) return;
+    try { await api.deleteMeeting(m.id, m); await refresh(host); await refreshBadges(); toast('Meeting deleted'); } catch (err) { toast(errorText(err), 'danger'); }
   });
   if (isManager()) void api.meetingDeliveries(m.id).then(rows => {
     const area = modal.querySelector('[data-deliveries]');
-    if (area) area.innerHTML = rows.length ? `<table class="sc-deliveries__table"><thead><tr><th scope="col">Destination</th><th scope="col">Message</th><th scope="col">Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.recipient_id ? memberName(r.recipient_id) : m.audience === 'check_in' ? 'Reminders channel' : m.audience === 'subteam' ? 'Subteam channel' : 'Announcements channel')}</td><td>${esc(r.kind === 'reminder' ? 'Reminder' : 'Update')}</td><td class="sc-deliveries__status">${esc(r.status)}</td></tr>${r.last_error ? `<tr><td colspan="3" class="sc-deliveries__error">${esc(r.last_error)}</td></tr>` : ''}`).join('')}</tbody></table>` : '<p>No notifications queued for this event.</p>';
-  }).catch(() => { const area = modal.querySelector('[data-deliveries]'); if (area) area.textContent = 'Delivery status isn’t available yet.'; });
+    if (area) area.innerHTML = rows.length ? `<table class="sc-deliveries__table"><thead><tr><th scope="col">Destination</th><th scope="col">Message</th><th scope="col">Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.recipient_id ? memberName(r.recipient_id) : m.audience === 'check_in' ? 'Reminders channel' : m.audience === 'subteam' ? 'Subteam channel' : 'Announcements channel')}</td><td>${esc(r.kind === 'reminder' ? 'Reminder' : 'Update')}</td><td class="sc-deliveries__status">${esc(r.status)}</td></tr>${r.last_error ? `<tr><td colspan="3" class="sc-deliveries__error">${esc(r.last_error)}</td></tr>` : ''}`).join('')}</tbody></table>` : '<p>Nothing queued</p>';
+  }).catch(() => { const area = modal.querySelector('[data-deliveries]'); if (area) area.textContent = 'Delivery status isn’t available'; });
 }
 
 async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, startTime?: string) {
@@ -177,7 +181,7 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
   const channels = [...(calendarOptions?.channels || [])];
   // A temporary Discord outage must not clear an existing channel on save.
   for (const [id, type] of [[existing?.discord_channel_id, 2], [existing?.announcement_channel_id, 0]] as const) {
-    if (id && !channels.some(c => c.id === id)) channels.push({ id, type, name: 'Current saved channel' });
+    if (id && !channels.some(c => c.id === id)) channels.push({ id, type, name: 'Saved channel' });
   }
   const options = (values: { value: string; label: string }[], current: string) => values.map(o => `<option value="${esc(o.value)}"${o.value === current ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
   const reservedChannels = [calendarOptions?.announcementChannelId, calendarOptions?.remindersChannelId];
@@ -185,47 +189,47 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
   const savedUpdatesChannel = audience === 'subteam' && subteamChannels.some(c => c.id === existing?.announcement_channel_id) ? existing!.announcement_channel_id! : '';
   const zones = [...new Set([TEAM_ZONE, existing?.timezone || TEAM_ZONE, Intl.DateTimeFormat().resolvedOptions().timeZone, 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'UTC'])];
   let desiredAudience = audience;
-  void openModal({ title: existing ? 'Edit meeting' : 'Create a meeting', className:'sc-compose', submitLabel: existing ? 'Save changes' : 'Schedule meeting', body: `
-    <div class="sc-type" aria-label="Meeting audience">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<button type="button" data-audience-choice="${a}" aria-pressed="${a === audience}">${a === 'team' ? 'All team' : a === 'subteam' ? 'Subteam' : '1:1 check-in'}</button>`).join('')}</div>
-    ${field('title', 'Title', input('title', `maxlength="160" value="${esc(existing?.title || '')}" placeholder="Meeting title"`))}
+  void openModal({ title: existing ? 'Edit meeting' : 'New meeting', className:'sc-compose', submitLabel: existing ? 'Save' : 'Create', body: `
+    <div class="sc-type" aria-label="Audience">${(['team', 'subteam', 'check_in'] as Audience[]).map(a => `<button type="button" data-audience-choice="${a}" aria-pressed="${a === audience}">${a === 'team' ? 'Everyone' : a === 'subteam' ? 'Subteam' : '1:1'}</button>`).join('')}</div>
+    ${field('title', 'Title', input('title', `maxlength="160" value="${esc(existing?.title || '')}" placeholder="Weekly sync"`))}
     <div data-subteam-field${audience !== 'subteam' ? ' hidden' : ''}>${field('subteam', 'Subteam', `<select class="sc-native" name="subteam" id="f-subteam">${options(SUBTEAMS.map(t => ({ value: t.key, label: t.name })), existing?.subteam || selectedSubteam || state.me?.proposal_role || 'technical')}</select>`)}</div>
-    <div data-person-field${audience !== 'check_in' ? ' hidden' : ''}>${field('person', 'Who are you checking in with?', `<select class="sc-native" name="person" id="f-person"><option value="">Choose a teammate</option>${options(state.members.filter(m => m.user_id !== state.me!.user_id).map(m => ({ value: m.user_id, label: m.display_name })), existing?.attendee_ids?.[0] || '')}</select>`)}<p class="sc-form-note" data-person-link></p></div>
+    <div data-person-field${audience !== 'check_in' ? ' hidden' : ''}>${field('person', 'With', `<select class="sc-native" name="person" id="f-person"><option value="">Choose a teammate</option>${options(state.members.filter(m => m.user_id !== state.me!.user_id).map(m => ({ value: m.user_id, label: m.display_name })), existing?.attendee_ids?.[0] || '')}</select>`)}<p class="sc-form-note" data-person-link></p></div>
     <div class="st-row">${field('date', 'Date', datePicker('date',day || p.day))}${field('start', 'Time', timePicker('start',startTime || (existing ? p.time : `${String(Math.max(9,Number(p.time.slice(0,2)))).padStart(2,'0')}:00`)))}</div>
     <div class="st-row">${field('duration', 'Duration', `<select class="sc-native" name="duration" id="f-duration">${options([...new Set([15, 30, 45, 60, 90, 120, minutes])].sort((a, b) => a - b).map(n => ({ value: String(n), label: `${n} minutes` })), String(minutes))}</select>`)}
-    ${field('channel', 'Discord meeting channel', `<select class="sc-native" name="channel" id="f-channel"><option value="">Choose a channel</option>${options(channels.filter(c => [0, 2, 13].includes(c.type)).map(c => ({ value: c.id, label: `${c.type === 2 || c.type === 13 ? 'Voice: ' : '# '}${c.name}` })), existing?.discord_channel_id || calendarOptions?.meetingChannelId || '')}</select>`)}</div>
-    ${!calendarOptions?.configured ? `<p class="sc-form-note">${esc(optionsError ? 'Discord channels are temporarily unavailable. You can still add a meeting location.' : 'Connect the SUITS bot to load server channels.')}</p>` : ''}
-    ${field('location', 'Location or call link', input('location', `maxlength="500" value="${esc(existing?.location || '')}" placeholder="Optional when using a Discord channel"`))}
-    ${field('agenda', 'Notes', `<textarea class="st-textarea" id="f-agenda" name="agenda" rows="2" maxlength="4000" placeholder="A short agenda, if needed">${esc(existing?.agenda || '')}</textarea>`)}
-    <details class="sc-advanced"><summary>Repeat, reminders & more</summary>
+    ${field('channel', 'Discord channel', `<select class="sc-native" name="channel" id="f-channel"><option value="">Choose a channel</option>${options(channels.filter(c => [0, 2, 13].includes(c.type)).map(c => ({ value: c.id, label: `${c.type === 2 || c.type === 13 ? 'Voice: ' : '# '}${c.name}` })), existing?.discord_channel_id || calendarOptions?.meetingChannelId || '')}</select>`)}</div>
+    ${!calendarOptions?.configured ? `<p class="sc-form-note">${esc(optionsError ? 'Discord channels didn’t load. You can add a location instead.' : 'Connect the SUITS bot to choose a Discord channel.')}</p>` : ''}
+    ${field('location', 'Location', input('location', `maxlength="500" value="${esc(existing?.location || '')}" placeholder="Room or call link"`))}
+    ${field('agenda', 'Notes', `<textarea class="st-textarea" id="f-agenda" name="agenda" rows="2" maxlength="4000" placeholder="Agenda">${esc(existing?.agenda || '')}</textarea>`)}
+    <details class="sc-advanced"><summary>More options</summary>
     <div class="st-row">${field('timezone', 'Time zone', `<select class="sc-native" name="timezone" id="f-timezone">${options(zones.map(z => ({ value: z, label: z === TEAM_ZONE ? 'Eastern time (New York)' : z.replace(/_/g, ' ') })), existing?.timezone || TEAM_ZONE)}</select>`)}
     ${!existing ? field('repeat', 'Repeat', `<select class="sc-native" name="repeat" id="f-repeat">${options([{ value: '1', label: 'Does not repeat' }, { value: '4', label: 'Weekly for 4 meetings' }, { value: '8', label: 'Weekly for 8 meetings' }, { value: '12', label: 'Weekly for 12 meetings' }], '1')}</select>`) : existing.series_id ? '<p class="sc-form-note">Changes apply to this meeting only.</p>' : ''}</div>
     <label class="sc-filter"><input type="checkbox" name="notify"${existing?.notify_discord !== false ? ' checked' : ''} />Send Discord updates and reminders</label>
-    <div class="st-field" style="margin-top:14px"><span class="st-label">Remind invited people</span><div class="sc-reminders">${[1440, 60, 10].map(n => `<label><input type="checkbox" name="reminder" value="${n}"${(existing?.reminder_minutes || [60, 10]).includes(n) ? ' checked' : ''} />${n === 1440 ? '1 day' : n === 60 ? '1 hour' : '10 minutes'} before</label>`).join('')}</div></div>
-    <div data-updates-channel${audience !== 'subteam' ? ' hidden' : ''}>${field('announcement', 'Subteam updates channel', `<select class="sc-native" name="announcement" id="f-announcement"><option value="">Same as the meeting channel</option>${options(subteamChannels.map(c => ({ value: c.id, label: `# ${c.name}` })), savedUpdatesChannel)}</select>`)}</div>
+    <div class="st-field" style="margin-top:14px"><span class="st-label">Reminders</span><div class="sc-reminders">${[1440, 60, 10].map(n => `<label><input type="checkbox" name="reminder" value="${n}"${(existing?.reminder_minutes || [60, 10]).includes(n) ? ' checked' : ''} />${n === 1440 ? '1 day' : n === 60 ? '1 hour' : '10 minutes'} before</label>`).join('')}</div></div>
+    <div data-updates-channel${audience !== 'subteam' ? ' hidden' : ''}>${field('announcement', 'Subteam updates channel', `<select class="sc-native" name="announcement" id="f-announcement"><option value="">Same as meeting channel</option>${options(subteamChannels.map(c => ({ value: c.id, label: `# ${c.name}` })), savedUpdatesChannel)}</select>`)}</div>
     <p class="sc-form-note" data-discord-routing aria-live="polite"></p>
-    <p class="sc-form-note">Linked teammates also get a DM when scheduled and before the meeting. Private check-in titles and notes stay in DMs.</p>
+    <p class="sc-form-note">Teammates with Discord linked also get DMs. 1:1 titles and notes stay private.</p>
     </details>
     <p class="sc-form-note" data-conflict></p>
   `, onSubmit: async (form, close) => {
     const attendee = formValue(form, 'person');
-    if (desiredAudience === 'check_in' && !attendee) throw new Error('Choose a teammate for the check-in.');
+    if (desiredAudience === 'check_in' && !attendee) throw new Error('Choose a teammate for the 1:1.');
     const zone = formValue(form, 'timezone');
     const starts = recurringStarts(formValue(form, 'date'), formValue(form, 'start'), existing ? 1 : Number(formValue(form, 'repeat')), zone);
     const duration = Number(formValue(form, 'duration'));
     if (!Number.isFinite(duration) || duration < 5 || duration > 720) throw new Error('Choose a duration between 5 minutes and 12 hours.');
-    const title = formValue(form, 'title') || (desiredAudience === 'check_in' ? `Check-in with ${memberName(attendee)}` : desiredAudience === 'subteam' ? `${SUBTEAMS.find(t => t.key === formValue(form, 'subteam'))?.name || 'Subteam'} meeting` : 'Team meeting');
+    const title = formValue(form, 'title') || (desiredAudience === 'check_in' ? `1:1 with ${memberName(attendee)}` : desiredAudience === 'subteam' ? `${SUBTEAMS.find(t => t.key === formValue(form, 'subteam'))?.name || 'Subteam'} meeting` : 'Team meeting');
     const notify = (form.elements.namedItem('notify') as HTMLInputElement).checked;
     const updatesChannel = desiredAudience === 'subteam' ? formValue(form, 'announcement') || null : null;
-    if (notify && desiredAudience === 'check_in' && (!calendarOptions?.remindersChannelId || calendarOptions.remindersChannelId === calendarOptions.announcementChannelId)) throw new Error('Set a separate reminders channel with /setup in Discord, then reopen the calendar. Or turn off Discord updates for this meeting.');
+    if (notify && desiredAudience === 'check_in' && (!calendarOptions?.remindersChannelId || calendarOptions.remindersChannelId === calendarOptions.announcementChannelId)) throw new Error('Set a separate reminders channel with /setup in Discord, or turn off Discord updates for this meeting.');
     if (notify && desiredAudience === 'subteam') {
       const destination = updatesChannel || formValue(form, 'channel');
-      if (!destination || reservedChannels.includes(destination)) throw new Error('Choose this subteam’s meeting or updates channel. Subteam meetings cannot post to announcements or reminders.');
+      if (!destination || reservedChannels.includes(destination)) throw new Error('Choose a subteam channel. Subteam meetings can’t post to announcements or reminders.');
     }
     const payload = { title, starts_at: starts[0], ends_at: new Date(Date.parse(starts[0]) + duration * 60000).toISOString(), timezone: zone, audience: desiredAudience, subteam: desiredAudience === 'subteam' ? formValue(form, 'subteam') : null, attendee_ids: desiredAudience === 'check_in' ? [attendee] : [], discord_channel_id: formValue(form, 'channel') || null, announcement_channel_id: updatesChannel, location: formValue(form, 'location') || null, agenda: formValue(form, 'agenda') || null, notify_discord: notify, reminder_minutes: [...form.querySelectorAll<HTMLInputElement>('input[name="reminder"]:checked')].map(i => Number(i.value)) };
     if (existing) await api.updateMeeting(existing.id, payload);
     else await api.scheduleMeetings(starts.map(start => ({ ...payload, starts_at: start, ends_at: new Date(Date.parse(start) + duration * 60000).toISOString() })));
     cursor = zoneParts(starts[0]).day; close();
-    toast(existing ? 'Meeting updated.' : starts.length > 1 ? `${starts.length} meetings scheduled.` : 'Meeting scheduled.');
+    toast(existing ? 'Meeting saved' : starts.length > 1 ? `${starts.length} meetings created` : 'Meeting created');
     await refresh(host); await refreshBadges();
   } });
   const modal = document.querySelector<HTMLElement>('.st-modal')!, form = modal.querySelector('form')!;
@@ -234,19 +238,19 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
   const update = () => {
     const person = state.members.find(m => m.user_id === formValue(form, 'person'));
     const note = modal.querySelector<HTMLElement>('[data-person-link]')!;
-    note.textContent = person ? person.discord_id ? 'Discord linked. Participant tags and reminder DMs enabled.' : 'This teammate needs to link Discord in Team to receive tags and DMs.' : '';
+    note.textContent = person && !person.discord_id ? 'They haven’t linked Discord, so they won’t get tags or DMs.' : '';
     const channelLabel = (id: string | null | undefined, fallback: string) => channels.find(c => c.id === id)?.name ? `#${channels.find(c => c.id === id)!.name}` : fallback;
     const routing = modal.querySelector<HTMLElement>('[data-discord-routing]')!;
     modal.querySelector<HTMLElement>('[data-updates-channel]')!.hidden = desiredAudience !== 'subteam';
     routing.textContent = desiredAudience === 'check_in'
-      ? calendarOptions?.remindersChannelId ? `1:1 updates and reminders go to ${channelLabel(calendarOptions.remindersChannelId, 'the reminders channel')} and tag the two participants. People who decline are not tagged in reminders.` : 'Set a separate reminders channel with /setup in Discord before enabling check-in notifications.'
+      ? calendarOptions?.remindersChannelId ? `Updates and reminders go to ${channelLabel(calendarOptions.remindersChannelId, 'the reminders channel')} and tag both people.` : 'Set a separate reminders channel with /setup in Discord to send 1:1 updates.'
       : desiredAudience === 'subteam' ? `Updates and reminders go only to ${channelLabel(formValue(form, 'announcement') || formValue(form, 'channel'), 'the selected subteam channel')}.`
-      : `All-team updates and reminders go to ${channelLabel(calendarOptions?.announcementChannelId, 'the announcements channel')}.`;
+      : `Updates and reminders go to ${channelLabel(calendarOptions?.announcementChannelId, 'the announcements channel')}.`;
     try {
       const starts = recurringStarts(formValue(form, 'date'), formValue(form, 'start'), 1, formValue(form, 'timezone'));
       const start = Date.parse(starts[0]), end = start + Number(formValue(form, 'duration')) * 60000;
       const conflicts = meetings.filter(m => m.id !== existing?.id && Date.parse(m.starts_at) < end && Date.parse(m.ends_at) > start && (m.audience === 'team' || desiredAudience === 'team' || (desiredAudience === 'subteam' && m.subteam === formValue(form, 'subteam')) || (desiredAudience === 'check_in' && ((m.attendee_ids || []).includes(formValue(form, 'person')) || m.created_by === state.me?.user_id))));
-      modal.querySelector<HTMLElement>('[data-conflict]')!.textContent = conflicts.length ? `Overlaps with ${conflicts.map(m => m.title).join(', ')}. Choose another time or schedule anyway.` : '';
+      modal.querySelector<HTMLElement>('[data-conflict]')!.textContent = conflicts.length ? `Overlaps with ${conflicts.map(m => m.title).join(', ')}` : '';
     } catch { modal.querySelector<HTMLElement>('[data-conflict]')!.textContent = ''; }
   };
   modal.querySelectorAll<HTMLElement>('[data-audience-choice]').forEach(b => b.addEventListener('click', () => {
@@ -260,7 +264,7 @@ async function editMeeting(host: HTMLElement, existing?: Meeting, day?: string, 
 
 export function rsvpControlHtml(m: Meeting, rsvps: Rsvp[]) {
   const mine = rsvps.find(r => r.meeting_id === m.id && r.user_id === state.me!.user_id)?.response;
-  return `<span class="st-rsvp" data-rsvp="${m.id}">${(['yes', 'maybe', 'no'] as const).map(r => `<button type="button" data-response="${r}" aria-pressed="${mine === r}" class="${mine === r ? 'is-active' : ''}">${r === 'yes' ? 'Going' : r === 'maybe' ? 'Maybe' : "Can't go"}</button>`).join('')}</span>`;
+  return `<span class="st-rsvp" data-rsvp="${m.id}">${(['yes', 'maybe', 'no'] as const).map(r => `<button type="button" data-response="${r}" aria-pressed="${mine === r}" class="${mine === r ? 'is-active' : ''}">${r === 'yes' ? 'Going' : r === 'maybe' ? 'Maybe' : 'Can’t go'}</button>`).join('')}</span>`;
 }
 export function bindRsvp(host: HTMLElement, after: () => Promise<void>) {
   host.querySelectorAll<HTMLElement>('[data-rsvp]').forEach(group => group.addEventListener('click', async e => {

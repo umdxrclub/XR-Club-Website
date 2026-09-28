@@ -1,13 +1,13 @@
-import { api, state, type WorkspaceLayout } from './api';
+import { api, state, isAdvisor, type WorkspaceLayout } from './api';
 import { onboardingProgress, openModal, toast } from './ui';
 
 const layouts = [
- ['scenic','Sidebar','Navigation on the left.'],
- ['top','Top tabs','Navigation above your work.'],
- ['dock','Bottom dock','Navigation below your work.'],
- ['right','Right sidebar','Navigation on the right.'],
- ['rail','Icon rail','A narrow sidebar with icons.'],
- ['wide','Wide','More space across the screen.'],
+ ['scenic','Sidebar','Navigation on the left'],
+ ['top','Top tabs','Navigation above your work'],
+ ['dock','Bottom dock','Navigation below your work'],
+ ['right','Right sidebar','Navigation on the right'],
+ ['rail','Icon rail','A narrow sidebar with icons'],
+ ['wide','Wide','More space across the screen'],
 ] as const;
 
 function validLayout(value: unknown): value is WorkspaceLayout {
@@ -22,14 +22,15 @@ export function applyMemberLayout(root: HTMLElement) {
 }
 
 export async function editLayout(first=false) {
+ const more=first&&isAdvisor();
  const me=state.me, root=document.getElementById('st');
  if(!me||!root||document.querySelector('.st-layout-modal'))return false;
  const previous=root.dataset.layout || 'scenic';
  let selected: WorkspaceLayout=validLayout(previous)?previous:'scenic', saved=false, saving=false;
  const closed=openModal({
   title:first?'Choose your layout':'Layout',className:'st-layout-modal',
-  submitLabel:first?'Finish setup':'Save layout',cancelLabel:first?'Later':'Cancel',
-  body:`${first?onboardingProgress(2):''}<p class="st-p">Choose a layout. You can change it later.</p><div class="workspace-layouts" role="group" aria-label="Workspace layout">${layouts.map(([key,title,note])=>`<button type="button" data-layout-choice="${key}" aria-pressed="${selected===key}"><span class="workspace-layout-diagram" data-diagram="${key}" aria-hidden="true"><i></i><i></i></span><strong>${title}</strong><small>${note}</small></button>`).join('')}</div>`,
+  submitLabel:more?'Continue':first?'Finish setup':'Save layout',cancelLabel:first?'Later':'Cancel',
+  body:`${first?onboardingProgress(2,more?3:2):''}<div class="workspace-layouts" role="group" aria-label="Workspace layout">${layouts.map(([key,title,note])=>`<button type="button" data-layout-choice="${key}" aria-pressed="${selected===key}"><span class="workspace-layout-diagram" data-diagram="${key}" aria-hidden="true"><i></i><i></i></span><strong>${title}</strong><small>${note}</small></button>`).join('')}</div>`,
   onSubmit:async(form,close)=>{
    saving=true;
    const choices=form.querySelectorAll<HTMLButtonElement>('[data-layout-choice]');
@@ -41,7 +42,7 @@ export async function editLayout(first=false) {
     state.members=state.members.map(m=>m.user_id===member.user_id?member:m);
     root.dataset.layout=member.workspace_layout || selected;
     try{localStorage.removeItem('xr-suits-layout');}catch{}
-    saved=true;close();toast(first?'Your workspace is ready.':'Layout saved.');
+    saved=true;close();if(!more)toast(first?'Your workspace is ready':'Layout saved');
    } finally {
     saving=false;choices.forEach(button=>button.disabled=false);
    }

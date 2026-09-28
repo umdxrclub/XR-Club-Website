@@ -85,7 +85,7 @@ Confirm that the deployed origin and development callback addresses are allowed 
 
 Before publishing, verify Google login with a UMD account and exercise one task, meeting RSVP, and document upload in an appropriate test environment. Check both member and manager permissions. The application shell uses full-page navigation and initializes the original controllers once on each load; the public scrolling homepage retains its existing navigation system.
 
-If Google Drive is not configured in a fresh environment, enable the Drive and Docs APIs for the existing Google project, create a service account, and store its JSON as the server-side `SUITS_GOOGLE_SERVICE_ACCOUNT` Supabase secret. A team lead can then share a Drive folder with the service account and paste its link in Documents. Existing deployments retain their current integration configuration.
+If Google Drive is not configured in a fresh environment, enable the Drive and Docs APIs for the existing Google project, create a service account, and store its JSON as the server-side `SUITS_GOOGLE_SERVICE_ACCOUNT` Supabase secret. A team lead can then share a Drive folder with the service account and paste its link in Documents. Share it as an **Editor** and leave "Editors can change permissions and share" on (Share → gear icon); the scheduled `cron` job then shares the folder with every approved member, so Drive links open without an access request. Existing deployments retain their current integration configuration.
 
 ## SUITS calendar workspace
 

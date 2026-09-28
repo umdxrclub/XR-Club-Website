@@ -30,7 +30,7 @@ export async function bootPreview() {
     const start = wallTimeToIso(days[day], time);
     return { id, title, starts_at: start, ends_at: new Date(Date.parse(start) + minutes * 60000).toISOString(), audience, subteam, attendee_ids: audience === 'check_in' ? ['preview-1'] : [], timezone: TEAM_ZONE, location: 'SUITS voice room', agenda: 'Example event for the design preview.', ping: [], created_by: 'preview-0', created_at: new Date().toISOString(), reminder_minutes: [60,10], notify_discord: true, discord_channel_id: '123456789012345678', announcement_channel_id: null };
   };
-  let rows = [sample('sample-1','Weekly team sync',1,'10:00',60,'team'),sample('sample-2','Systems working session',2,'13:00',90,'subteam','technical'),sample('sample-3','Design review',3,'11:00',60,'subteam','uiux'),sample('sample-4','Check-in with Sam',4,'14:00',30,'check_in'),sample('sample-5','Mission planning',5,'10:30',60,'team'),sample('sample-6','AI / ML standup',5,'14:00',45,'subteam','aiml'),sample('sample-7','Saturday check-in',6,'12:00',30,'check_in')];
+  let rows = [sample('sample-1','Weekly team sync',1,'10:00',60,'team'),sample('sample-2','Systems working session',2,'13:00',90,'subteam','technical'),sample('sample-3','Design review',3,'11:00',60,'subteam','uiux'),sample('sample-4','1:1 with Sam',4,'14:00',30,'check_in'),sample('sample-5','Mission planning',5,'10:30',60,'team'),sample('sample-6','AI/ML standup',5,'14:00',45,'subteam','aiml'),sample('sample-7','Saturday 1:1',6,'12:00',30,'check_in')];
   let rsvps: Rsvp[] = [];
   let advisorSlots:AdvisorAvailability[]=[{id:'sample-availability',advisor_id:advisorFixture.user_id,starts_at:wallTimeToIso(days[2],'14:00'),ends_at:wallTimeToIso(days[2],'16:00'),created_at:new Date().toISOString()}];
   api.advisorAvailability=async()=>structuredClone(advisorSlots);
@@ -78,7 +78,7 @@ export async function bootPreview() {
   api.meetingDeliveries = async () => new URLSearchParams(location.search).has('deliveries') ? [
     {recipient_id:null,kind:'update',status:'sent',last_error:null},
     {recipient_id:'preview-1',kind:'reminder',status:'pending',last_error:null},
-    {recipient_id:'preview-2',kind:'reminder',status:'failed',last_error:'Example delivery failure: this participant has direct messages disabled.'},
+    {recipient_id:'preview-2',kind:'reminder',status:'failed',last_error:'This participant has direct messages turned off.'},
   ] : [];
   api.discord = async <T>() => ({ configured: true, guildId: '123456789012345679', meetingChannelId: '123456789012345678', announcementChannelId: '123456789012345677', remindersChannelId: '123456789012345676', channels: [{ id: '123456789012345678', name: 'SUITS voice room', type: 2 }, { id: '123456789012345677', name: 'announcements', type: 0 }, { id: '123456789012345676', name: 'reminders', type: 0 }, { id: '123456789012345675', name: 'ai-ml', type: 0 }] } as T);
   // These fixtures exercise the real layouts without writing to the team backend.
@@ -104,7 +104,7 @@ export async function bootPreview() {
     us_citizen_or_pr: 'Yes', interview_slots: ['2026-09-25 14:00'], anything_else: null, reviewer_notes: null,
   }));
   api.review = async <T>(action: string, params: Record<string, unknown> = {}): Promise<T> => {
-    if (!canReviewApplications()) throw new Error('Application reviews are available only to the SUITS owner account.');
+    if (!canReviewApplications()) throw new Error('Only the team owner and advisor can review applications.');
     if (action === 'list') return { applications: structuredClone(applications) } as T;
     if (action === 'update') applications = applications.map(a => a.id === params.id ? { ...a, ...params } as SuitsApplication : a);
     else if (action === 'delete') applications = applications.filter(a => a.id !== params.id);

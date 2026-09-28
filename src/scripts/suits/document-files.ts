@@ -30,7 +30,7 @@ export async function documentUrl(path: string): Promise<string> {
   const request = (async () => {
     const { data, error } = await db.storage.from('suits-docs').createSignedUrl(path, 3600);
     current(userId, version);
-    if (error || !data) throw error || new Error('Could not open the file.');
+    if (error || !data) throw error || new Error('Couldn’t open the file. Try again.');
     urls.set(path, { url: data.signedUrl, until: Date.now() + 50 * 60 * 1000 });
     return data.signedUrl;
   })().finally(() => { if (pending.get(path) === request) pending.delete(path); });
@@ -51,7 +51,7 @@ export async function warmDocumentFiles(paths: string[]) {
   const jobs = missing.map(path => {
     const job = batch.then(() => {
       const url = cached(path);
-      if (!url) throw new Error('Could not open the file.');
+      if (!url) throw new Error('Couldn’t open the file. Try again.');
       return url;
     }).finally(() => { if (pending.get(path) === job) pending.delete(path); });
     pending.set(path, job);

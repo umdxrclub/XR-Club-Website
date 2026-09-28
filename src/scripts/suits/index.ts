@@ -2,7 +2,7 @@
 // roster, then hand off to the section views.
 import type { User } from '@supabase/supabase-js';
 import { googleCallbackError, prepareGoogleReturn } from '../../lib/oauthRedirect';
-import { db, api, state, isManager, isLead, isAdvisor, canReviewApplications, type MembershipRequest } from './api';
+import { db, api, state, isManager, isLead, canReviewApplications, type MembershipRequest } from './api';
 import { workspaceData } from '../../lib/workspaceCache';
 import { preloadWorkspace } from './preload';
 import { toast, esc } from './ui';
@@ -20,6 +20,7 @@ import * as access from './access';
 
 const TEAM_EMAIL = /@(terpmail\.)?umd\.edu$/i;
 const THEME_KEY = 'xr-suits-theme';
+const GATE_TEXT = 'Use your umd.edu or terpmail.umd.edu Google account';
 let googleButtonReady = false;
 
 interface View {
@@ -113,10 +114,10 @@ export async function boot() {
         },
       });
       if (error) throw error;
-      if (!data.url) throw new Error('Google did not return a sign-in address. Please try again.');
+      if (!data.url) throw new Error('Google did not return a sign in link. Try again.');
       location.assign(data.url);
     } catch (err) {
-      showGateError(`Google sign-in did not start: ${err instanceof Error ? err.message : 'Please try again.'}`);
+      showGateError(`Could not start Google sign in: ${err instanceof Error ? err.message : 'Try again.'}`);
       btn.disabled = false;
       label.textContent = 'Continue with Google';
     }
@@ -153,7 +154,7 @@ export async function boot() {
     if (session) await authorize(session.user);
     else showGate(googleCallbackError(location.search, location.hash) || undefined);
   } catch (err) {
-    showGate(`Could not restore your sign-in: ${err instanceof Error ? err.message : 'Please try again.'}`);
+    showGate(`Could not restore your session: ${err instanceof Error ? err.message : 'Sign in again.'}`);
   }
 }
 
@@ -225,7 +226,8 @@ function showGate(message?: string) {
   document.getElementById('st-app')!.hidden = true;
   document.getElementById('st-gate')!.hidden = false;
   document.getElementById('st-access-status')!.hidden = true;
-  document.getElementById('st-gate-note')!.hidden = false;
+  document.getElementById('st-welcome')!.textContent = 'Sign in';
+  document.getElementById('st-gate-text')!.textContent = GATE_TEXT;
   setSignInVisible(true);
   if (message) showGateError(message);
 }
@@ -236,10 +238,9 @@ export function showMembershipGate(request: MembershipRequest | null, retry: () 
   document.getElementById('st-gate')!.hidden = false;
   setSignInVisible(false);
   document.getElementById('st-gate-error')!.hidden = true;
-  document.getElementById('st-gate-note')!.hidden = true;
   const declined = request?.status === 'rejected';
   document.getElementById('st-welcome')!.textContent = declined ? 'Access not approved' : 'Awaiting approval';
-  document.getElementById('st-gate-text')!.textContent = declined ? 'The team owner has declined your request. Contact them if you think this was a mistake.' : 'Your request is with the team owner. Once approved, you can enter the NASA SUITS workspace.';
+  document.getElementById('st-gate-text')!.textContent = declined ? 'The team owner declined your request. Contact them if you think this is a mistake.' : 'The team owner will review your request.';
   const host = document.getElementById('st-access-status')!;
   host.hidden = false;
   host.innerHTML = `<p class="sw-gate-email">${esc(request?.email || '')}</p><div class="sw-actions"><button type="button" class="st-btn st-btn--primary" data-check-access>Check status</button><button type="button" class="st-btn" data-gate-signout>Sign out</button></div><p class="sw-footnote" role="status" data-access-message></p>`;
@@ -276,7 +277,7 @@ async function authorizeUser(user: User) {
   const version=pageVersion;
   setSignInVisible(false);
   document.getElementById('st-gate-error')!.hidden = true;
-  document.getElementById('st-gate-text')!.textContent = 'One moment.';
+  document.getElementById('st-gate-text')!.textContent = 'Checking your account…';
 
   try {
     const email = user.email || '';
@@ -284,7 +285,6 @@ async function authorizeUser(user: User) {
       await db.auth.signOut();
       authorizing = false;
       showGate(`${email || 'That account'} is not a UMD account. Sign in with your umd.edu or terpmail.umd.edu Google account.`);
-      document.getElementById('st-gate-text')!.textContent = 'Sign in with your UMD account.';
       return;
     }
 
@@ -327,7 +327,7 @@ async function authorizeUser(user: User) {
     if(version!==pageVersion)return;
     state.me = null;
     authorizing = false;
-    showGate(`Could not open the dashboard: ${(err as Error).message}`);
+    showGate(`Could not open the workspace: ${(err as Error).message}`);
   }
 }
 
@@ -344,13 +344,12 @@ function viewFromLocation() {
   if (!rest && location.hash && VIEWS[location.hash.slice(1)]) rest = location.hash.slice(1); // older links
   const requested = new URLSearchParams(location.search).get('view') || '';
   const view=VIEWS[rest] ? rest : VIEWS[requested] ? requested : 'meetings';
-  return isAdvisor()&&view==='meetings'?'documents':view;
+  return view;
 }
 
 export async function go(view: string, push = true) {
   if (!state.me) return;
   if (!VIEWS[view]) view = 'meetings';
-  if(isAdvisor()&&view==='meetings')view='documents';
   if (current && VIEWS[current].leave) VIEWS[current].leave!();
   current = view;
   document.querySelectorAll<HTMLElement>('.st-nav__btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === view));
@@ -368,7 +367,7 @@ export async function go(view: string, push = true) {
 /** Counts on the nav: your open tasks, upcoming meetings. */
 export async function refreshBadges() {
   try {
-    const [allTasks, allMeetings] = await Promise.all([api.tasks(), isAdvisor()?Promise.resolve([]):api.meetings()]);
+    const [allTasks, allMeetings] = await Promise.all([api.tasks(), api.meetings()]);
     const mine = allTasks.filter(t => t.assignee_id === state.me?.user_id && t.status !== 'done').length;
     const upcoming = allMeetings.filter(m => new Date(m.ends_at).getTime() > Date.now()).length;
     setBadge('tasks', mine);

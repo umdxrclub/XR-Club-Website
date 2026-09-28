@@ -40,12 +40,12 @@ export async function openViewer(d: TeamDocument, extras: { subtitle?: string } 
         ${extras.subtitle ? `<span class="st-viewer__sub">${esc(extras.subtitle)}</span>` : ''}
       </div>
       <div class="st-viewer__actions">
-        ${d.drive_url ? `<a class="st-btn st-btn--small" data-team-drive href="${esc(d.drive_url)}" target="_blank" rel="noopener">In Drive</a>` : ''}
-        <a class="st-btn st-btn--small" id="st-viewer-open" ${d.kind === 'link' && isGoogleDriveUrl(d.url || '') ? 'data-team-drive' : ''} href="${esc(d.kind === 'link' ? d.url || '#' : '#')}" target="_blank" rel="noopener">Open in new tab</a>
+        ${d.drive_url ? `<a class="st-btn st-btn--small" data-team-drive href="${esc(d.drive_url)}" target="_blank" rel="noopener" title="Open in Google Drive">Open Drive</a>` : ''}
+        <a class="st-btn st-btn--small" id="st-viewer-open" ${d.kind === 'link' && isGoogleDriveUrl(d.url || '') ? 'data-team-drive' : ''} href="${esc(d.kind === 'link' ? d.url || '#' : '#')}" target="_blank" rel="noopener" title="Open in new tab">Open</a>
         <button type="button" class="st-btn st-btn--small st-btn--primary" id="st-viewer-close">Close</button>
       </div>
     </div>
-    <div class="st-viewer__body" id="st-viewer-body"><p class="st-viewer__note">Loading.</p></div>`;
+    <div class="st-viewer__body" id="st-viewer-body"><p class="st-viewer__note">Loading</p></div>`;
   document.body.appendChild(overlay);
   bindDriveLinks(overlay);
   document.body.style.overflow = 'hidden';
@@ -102,10 +102,10 @@ async function renderFile(body: HTMLElement, d: TeamDocument, url: string) {
   if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
     // Office files render through Microsoft's document viewer from the signed link
     const src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-    body.innerHTML = `<iframe class="st-viewer__frame" src="${esc(src)}" allowfullscreen></iframe><p class="st-viewer__hint">Rendered by the Office viewer. If it stays blank, use Open in new tab.</p>`;
+    body.innerHTML = `<iframe class="st-viewer__frame" src="${esc(src)}" allowfullscreen></iframe><p class="st-viewer__hint">If this stays blank, open it in a new tab.</p>`;
     return;
   }
-  body.innerHTML = `<div class="st-viewer__center"><div class="st-viewer__card"><p class="st-viewer__note">No preview for this file type.</p><a class="st-btn st-btn--primary" href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a></div></div>`;
+  body.innerHTML = `<div class="st-viewer__center"><div class="st-viewer__card"><p class="st-viewer__note">No preview for this file type</p><a class="st-btn st-btn--primary" href="${esc(url)}" target="_blank" rel="noopener" title="Open in new tab">Open</a></div></div>`;
 }
 
 async function renderPdf(body: HTMLElement, url: string) {
@@ -177,7 +177,7 @@ function csvTable(text: string, sep: string) {
   }
   if (cell || row.length) { row.push(cell); rows.push(row); }
   const [head, ...rest] = rows;
-  if (!head) return '<p class="st-viewer__note">Empty file.</p>';
+  if (!head) return '<p class="st-viewer__note">Empty file</p>';
   return `<table class="st-table"><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rest.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
@@ -194,10 +194,10 @@ function renderLink(body: HTMLElement, d: TeamDocument) {
   body.innerHTML = `
     <div class="st-viewer__center">
       <div class="st-viewer__card">
-        <p class="st-viewer__note" style="margin-bottom:0.4rem;">This site does not allow itself to be shown inside another page.</p>
+        <p class="st-viewer__note" style="margin-bottom:0.4rem;">This site can’t be previewed here.</p>
         <p class="st-viewer__url">${esc(url)}</p>
         ${d.notes ? `<p class="st-viewer__note">${esc(d.notes)}</p>` : ''}
-        <a class="st-btn st-btn--primary" ${isGoogleDriveUrl(url) ? 'data-team-drive' : ''} href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a>
+        <a class="st-btn st-btn--primary" ${isGoogleDriveUrl(url) ? 'data-team-drive' : ''} href="${esc(url)}" target="_blank" rel="noopener" title="Open in new tab">Open</a>
       </div>
     </div>`;
 }
@@ -206,7 +206,7 @@ function embedFor(url: string): { src: string; hint: string } | null {
   let u: URL;
   try { u = new URL(url); } catch { return null; }
   const host = u.hostname.replace(/^www\./, '');
-  const drivePreview = 'Shown with your Google account. If it asks you to sign in, use Open in new tab.';
+  const drivePreview = 'If Google asks you to sign in, open it in a new tab.';
   let m: RegExpMatchArray | null;
   if (host === 'docs.google.com' && (m = u.pathname.match(/^\/(document|spreadsheets|presentation|forms)\/d\/([A-Za-z0-9_-]+)/))) {
     return { src: `https://docs.google.com/${m[1]}/d/${m[2]}/preview`, hint: drivePreview };
@@ -218,7 +218,7 @@ function embedFor(url: string): { src: string; hint: string } | null {
     return { src: `https://drive.google.com/embeddedfolderview?id=${m[1]}#list`, hint: drivePreview };
   }
   if (host === 'figma.com' && /^\/(file|design|proto|board|slides|deck)\//.test(u.pathname)) {
-    return { src: `https://www.figma.com/embed?embed_host=xrclub&url=${encodeURIComponent(url)}`, hint: 'Figma viewer. Anyone with the file link can pan and zoom here.' };
+    return { src: `https://www.figma.com/embed?embed_host=xrclub&url=${encodeURIComponent(url)}`, hint: '' };
   }
   if ((host === 'youtube.com' || host === 'm.youtube.com') && u.searchParams.get('v')) {
     return { src: `https://www.youtube.com/embed/${u.searchParams.get('v')}`, hint: '' };
@@ -226,8 +226,8 @@ function embedFor(url: string): { src: string; hint: string } | null {
   if (host === 'youtu.be') return { src: `https://www.youtube.com/embed/${u.pathname.slice(1)}`, hint: '' };
   if (host === 'vimeo.com' && (m = u.pathname.match(/^\/(\d+)/))) return { src: `https://player.vimeo.com/video/${m[1]}`, hint: '' };
   if (host === 'loom.com' && (m = u.pathname.match(/^\/share\/([A-Za-z0-9]+)/))) return { src: `https://www.loom.com/embed/${m[1]}`, hint: '' };
-  if (host === 'canva.com' && /\/design\//.test(u.pathname)) return { src: url.replace(/\/(edit|view).*$/, '/view?embed'), hint: 'Canva viewer.' };
-  if (host === 'miro.com' && (m = u.pathname.match(/\/app\/board\/([A-Za-z0-9_=-]+)/))) return { src: `https://miro.com/app/live-embed/${m[1]}/`, hint: 'Miro board.' };
+  if (host === 'canva.com' && /\/design\//.test(u.pathname)) return { src: url.replace(/\/(edit|view).*$/, '/view?embed'), hint: '' };
+  if (host === 'miro.com' && (m = u.pathname.match(/\/app\/board\/([A-Za-z0-9_=-]+)/))) return { src: `https://miro.com/app/live-embed/${m[1]}/`, hint: '' };
   if (/\.pdf($|\?)/i.test(url)) return { src: url, hint: '' };
   return null;
 }

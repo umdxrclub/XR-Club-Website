@@ -35,8 +35,10 @@ return async (req: Request): Promise<Response> => {
   } catch {
     return json({ error: 'Could not verify your sign-in.' }, 401);
   }
-  if (user.email?.toLowerCase() !== 'kcyle@terpmail.umd.edu' || !user.email_confirmed_at) {
-    return json({ error: 'Application reviews are available only to the SUITS owner account.' }, 403);
+  // The database decides who reviews: the owner and the approved advisor.
+  const { data: canReview, error: reviewError } = await client.rpc('suits_can_review_applications');
+  if (reviewError || canReview !== true || !user.email_confirmed_at) {
+    return json({ error: 'Application reviews are available only to the SUITS owner and advisor.' }, 403);
   }
   let body: Record<string, unknown>;
   try {

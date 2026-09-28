@@ -16,7 +16,7 @@ export function notificationChannel(m: CalendarMeeting, settings: CalendarSettin
   let channel: string | null | undefined;
   if (m.audience === 'check_in') {
     channel = settings.reminders_channel_id;
-    if (!channel || channel === settings.channel_id) throw new DiscordDeliveryError('Configure a separate reminders channel with /setup for 1:1 check-ins.', 400);
+    if (!channel || channel === settings.channel_id) throw new DiscordDeliveryError('Configure a separate reminders channel with /setup for 1:1s.', 400);
   } else if (m.audience === 'subteam') {
     // Old events may explicitly store the former announcements default.
     const override = m.announcement_channel_id;
@@ -24,7 +24,7 @@ export function notificationChannel(m: CalendarMeeting, settings: CalendarSettin
     if (!channel || channel === settings.channel_id || channel === settings.reminders_channel_id) throw new DiscordDeliveryError('Choose the subteam meeting channel or its own updates channel.', 400);
   } else if (!m.audience || m.audience === 'team') {
     channel = settings.channel_id;
-    if (!channel) throw new DiscordDeliveryError('No all-team announcements channel is configured.', 400);
+    if (!channel) throw new DiscordDeliveryError('No announcements channel is set up.', 400);
   } else throw new DiscordDeliveryError('Unknown meeting audience.', 400);
   if (!/^\d{17,20}$/.test(channel)) throw new DiscordDeliveryError('The meeting notification channel is invalid.', 400);
   return channel;
@@ -37,11 +37,11 @@ export function checkInMentions(m: CalendarMeeting, members: CalendarMember[], d
 export function deliveryPayload(job: CalendarJob, settings: CalendarSettings, member?: CalendarMember, mentions: string[] = []) {
   const m = job.snapshot;
   const checkIn = m.audience === 'check_in';
-  const verb = job.kind === 'cancelled' ? 'Meeting cancelled' : job.kind === 'updated' ? 'Meeting updated' : job.kind === 'reminder' ? 'Meeting reminder' : checkIn ? 'Check-in scheduled' : 'Meeting scheduled';
+  const verb = job.kind === 'cancelled' ? 'Meeting cancelled' : job.kind === 'updated' ? 'Meeting updated' : job.kind === 'reminder' ? 'Meeting reminder' : checkIn ? '1:1 scheduled' : 'Meeting scheduled';
   // The server gets scheduling details, never personal check-in notes or titles.
-  const title = checkIn && !member ? '1:1 check-in' : clean(m.title).slice(0, 256);
+  const title = checkIn && !member ? '1:1' : clean(m.title).slice(0, 256);
   const channel = settings.guild_id && m.discord_channel_id ? `https://discord.com/channels/${settings.guild_id}/${m.discord_channel_id}` : null;
-  const lines = [`<t:${stamp(m.starts_at)}:F> · <t:${stamp(m.starts_at)}:R>`];
+  const lines = [`<t:${stamp(m.starts_at)}:F> (<t:${stamp(m.starts_at)}:R>)`];
   if (channel) lines.push(`[Join meeting channel](${channel})`);
   else if (m.location && (!checkIn || member)) lines.push(clean(m.location).slice(0, 500));
   if (m.agenda && (!checkIn || member) && job.kind !== 'cancelled') lines.push(clean(m.agenda).slice(0, 1500));
@@ -49,7 +49,7 @@ export function deliveryPayload(job: CalendarJob, settings: CalendarSettings, me
   return { content: [users.map(id => `<@${id}>`).join(' '), verb].filter(Boolean).join(' '), allowed_mentions: users.length ? { parse: [], users, roles: [] } : NO_MENTIONS,
     // Discord deduplicates retries using a stable message nonce.
     nonce: job.id.replace(/-/g, '').slice(0, 24), enforce_nonce: true,
-    embeds: [{ title, description: lines.join('\n\n'), color: job.kind === 'cancelled' ? 0x9aa4b2 : 0x356fe6, footer: { text: 'SUITS · XR Labs' } }],
+    embeds: [{ title, description: lines.join('\n\n'), color: job.kind === 'cancelled' ? 0x9aa4b2 : 0x356fe6, footer: { text: 'XR Labs SUITS' } }],
     components: job.kind === 'cancelled' ? [] : [{ type: 1, components: [{ type: 2, style: 5, label: channel ? 'Join channel' : 'Open calendar', url: channel || 'https://xr.umd.edu/suits/workspace/meetings/' }] }],
   };
 }

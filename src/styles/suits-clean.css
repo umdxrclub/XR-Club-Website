@@ -1,0 +1,192 @@
+/*
+ * Final visual layer for the signed in workspace. Loaded last so every view
+ * shares one surface, one header, and one set of controls.
+ */
+
+/* Tokens */
+.st[data-mode="workspace"] {
+  --surface: #ffffff;
+  --page: #f5f7fb;
+  --fill: #f1f4f9;
+  --fill-hover: #e8edf5;
+  --hair: #e4e9f1;
+  --line: #d4dbe6;
+  --ink: #141c2b;
+  --ink-2: #5a6477;
+  --ink-3: #6b7486;
+  --accent: #2f5bd3;
+  --accent-soft: #eaf0fd;
+}
+.st[data-mode="workspace"].is-dark {
+  --surface: #182234;
+  --page: #121a28;
+  --fill: #ffffff0d;
+  --fill-hover: #ffffff17;
+  --hair: #ffffff17;
+  --line: #ffffff26;
+  --ink: #eef2f9;
+  --ink-2: #a9b4c7;
+  --ink-3: #93a0b6;
+  --accent: #9db8ff;
+  --accent-soft: #9db8ff1f;
+}
+
+/* Clear tinted glass for every view: the sky shows through sharp, with no blur. */
+.st[data-mode="workspace"] .st-view,
+.st[data-mode="workspace"] .st-view:is([data-view="tasks"],[data-view="access"]) {
+  background: #f2f6ff80;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #ffffff59;
+  box-shadow: none;
+  padding: 28px 32px;
+  /* Everything inside the glass is translucent too: controls, cards, tiles, dividers. */
+  --surface: #ffffff8c;
+  --fill: #ffffff4d;
+  --fill-hover: #ffffff80;
+  --hair: #1b2f5429;
+  --line: #1b2f543d;
+  /* Secondary text a step darker so it holds up over the sky. */
+  --ink-2: #3a4458;
+  --ink-3: #4a5468;
+}
+.st[data-mode="workspace"].is-dark .st-view,
+.st[data-mode="workspace"].is-dark .st-view:is([data-view="tasks"],[data-view="access"]) {
+  background: #111f3999;
+  border-color: #bfd7ff26;
+  --surface: #0f1a2e8c;
+  --fill: #c4ddff14;
+  --fill-hover: #c4ddff24;
+  --hair: #cbdfff24;
+  --line: #cbdfff38;
+  --ink-2: #bcc7da;
+  --ink-3: #a8b4c9;
+}
+/* The sidebar is clear glass too. */
+.st[data-mode="workspace"] .st-side { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* Menus that open over the panel stay solid so they read clearly. */
+.st[data-mode="workspace"] .st-view :is(.st-dd__list,.st-datepick__pop,.st-menu) { --surface: #ffffff; }
+.st[data-mode="workspace"].is-dark .st-view :is(.st-dd__list,.st-datepick__pop,.st-menu) { --surface: #182234; }
+.st[data-mode="workspace"] .st-view option { background: #ffffff; color: #141c2b; }
+.st[data-mode="workspace"].is-dark .st-view option { background: #182234; color: #eef2f9; }
+.st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
+.st[data-mode="workspace"] .st-view[data-view="proposal"] { padding: 20px; }
+
+/* Page header */
+.st .st-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; margin: 0 0 24px; }
+.st .st-page-title,
+.st[data-mode="workspace"] .st-view .st-page-title,
+.st[data-mode="workspace"] .sc-toolbar h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; color: var(--ink); }
+.st .st-page-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.st .st-page-actions .st-select { width: auto; min-width: 200px; }
+
+/* Buttons */
+.st[data-mode="workspace"] .st-view .st-btn,
+.st[data-mode="workspace"] .st-modal .st-btn {
+  min-height: 36px; padding: 0 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: none;
+}
+.st[data-mode="workspace"] .st-view .st-btn:hover,
+.st[data-mode="workspace"] .st-modal .st-btn:hover { background: var(--fill); }
+.st[data-mode="workspace"] .st-view .st-btn--small,
+.st[data-mode="workspace"] .st-modal .st-btn--small { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) .st-btn--primary,
+.st[data-mode="workspace"] :is(.st-view,.st-modal) .sc-create {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.st[data-mode="workspace"].is-dark :is(.st-view,.st-modal) :is(.st-btn--primary,.sc-create) { color: #0f1729; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) :is(.st-btn--primary,.sc-create):hover { background: var(--accent); filter: brightness(1.08); opacity: 1; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) .st-btn--danger { color: #c93636; border-color: var(--line); background: var(--surface); }
+.st[data-mode="workspace"].is-dark :is(.st-view,.st-modal) .st-btn--danger { color: #ff9b9b; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) .st-btn--danger:hover { background: #fdecec; }
+.st[data-mode="workspace"].is-dark :is(.st-view,.st-modal) .st-btn--danger:hover { background: #ff9b9b1a; }
+
+/* Fields */
+.st[data-mode="workspace"] :is(.st-view,.st-modal) :is(.st-input,.st-select,.st-textarea,.st-dd__btn),
+.st[data-mode="workspace"] :is(.st-view,.st-modal) :is(.sd__search,.sd__select,.sw-search) {
+  min-height: 38px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--surface); color: var(--ink); font-size: 14px;
+}
+.st[data-mode="workspace"] :is(.st-view,.st-modal) .st-textarea { min-height: 96px; padding: 10px 12px; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) :is(.st-input,.st-select,.st-dd__btn) { padding-left: 12px; }
+.st[data-mode="workspace"] .st-label { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+.st[data-mode="workspace"] .st-field { margin-bottom: 16px; }
+.st[data-mode="workspace"] :is(.st-view,.st-modal) ::placeholder { color: var(--ink-3); opacity: 1; }
+
+/* Search boxes with an icon keep the border on the wrapper. */
+.st[data-mode="workspace"] .crew-directory .crew-search { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.st[data-mode="workspace"] .crew-directory .crew-search input { min-height: 36px; border: 0; background: none; font-size: 14px; }
+.st[data-mode="workspace"] .crew-directory .crew-search:focus-within { border-color: var(--accent); }
+.xr-app-page .st .crew-search input:focus-visible { outline: none; }
+
+/* Cards and tiles */
+.st[data-mode="workspace"] :is(.st-card,.st-doccard,.crew-card) {
+  background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; box-shadow: none;
+}
+.st[data-mode="workspace"] :is(.st-doccard,.crew-card):hover { border-color: var(--line); }
+.st[data-mode="workspace"] .st-doccard__cover { background: var(--fill); }
+
+/* Section headings inside views */
+.st[data-mode="workspace"] .st-view :is(h2,h3) { letter-spacing: -0.01em; }
+.st[data-mode="workspace"] .st-muted { color: var(--ink-2); }
+
+/* Modals */
+.st[data-mode="workspace"] .st-modal__card { background: var(--surface); border: 1px solid var(--hair); box-shadow: 0 24px 64px #0b163033; border-radius: 16px; }
+.st[data-mode="workspace"] .st-modal__title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* Every native select uses the same chevron. */
+.st[data-mode="workspace"] :is(.st-view,.st-modal) :is(.sd__select,.sw-native) {
+  appearance: none; -webkit-appearance: none; padding: 0 32px 0 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7486' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;
+}
+.st[data-mode="workspace"] .sw-native { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background-color: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+
+/* Tasks subteam picker sits inline, no panel around a single control. */
+.st[data-mode="workspace"] .sw-context { padding: 0; margin-bottom: 16px; border: 0; background: none; }
+.st[data-mode="workspace"] .sw-team-select { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+
+/* Segmented switches: Proposal documents, application status, task filters */
+.st[data-mode="workspace"] :is(.st-segment,.sd__segment,.sw-filters) { display: inline-flex; gap: 2px; padding: 3px; border: 0; border-radius: 10px; background: var(--fill); }
+.st[data-mode="workspace"] :is(.st-segment button,.sd__seg,.sw-filters button) {
+  min-height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-2);
+  font: inherit; font-size: 13px; font-weight: 500; box-shadow: none;
+}
+.st[data-mode="workspace"] :is(.st-segment button,.sd__seg,.sw-filters button):hover { color: var(--ink); }
+.st[data-mode="workspace"] :is(.st-segment button.is-active,.sd__seg.is-active,.sw-filters button[aria-pressed="true"]) {
+  background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px #0b16301f, 0 0 0 1px var(--hair);
+}
+.st[data-mode="workspace"].is-dark :is(.st-segment button.is-active,.sd__seg.is-active,.sw-filters button[aria-pressed="true"]) { background: #ffffff1f; }
+.st[data-mode="workspace"] .st-reader__tools .st-segment { display: flex; }
+.st[data-mode="workspace"] .st-reader__tools .st-segment button { padding: 8px 12px; font-size: 13px; text-align: left; }
+
+/* Applications keeps its split layout, so its header carries its own padding. */
+.st .sd > .sd__head { margin: 0; padding: 24px 24px 16px; }
+.st[data-mode="workspace"] .sd__filters { padding: 0 24px 16px; gap: 12px; }
+.st[data-mode="workspace"] .sd__tools { flex-wrap: nowrap; }
+.st[data-mode="workspace"] .sd__tools .sd__search { flex: 1 1 200px; }
+.st[data-mode="workspace"] .sd__tools .sd__select { flex: 0 1 auto; min-width: 0; }
+@media (max-width: 1100px) { .st[data-mode="workspace"] .sd__tools { flex-wrap: wrap; } }
+
+/* Calendar */
+.st[data-mode="workspace"] .sc-toolbar { padding: 24px 28px 16px; }
+.st[data-mode="workspace"] .sc-filters { padding-inline: 28px; }
+.st[data-mode="workspace"] :is(.sc-mode,.sc-subteam,.sc-today) { background-color: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.st[data-mode="workspace"] :is(.sc-mode,.sc-subteam) { background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.st[data-mode="workspace"] .sc-event { box-shadow: none; }
+
+@media (max-width: 760px) {
+  .st[data-mode="workspace"] .st-view,
+  .st[data-mode="workspace"] .st-view:is([data-view="tasks"],[data-view="access"]) { padding: 18px; }
+  .st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
+  .st .st-page-head { flex-wrap: wrap; margin-bottom: 18px; }
+  .st .st-page-title,
+  .st[data-mode="workspace"] .st-view .st-page-title,
+  .st[data-mode="workspace"] .sc-toolbar h1 { font-size: 21px; }
+  .st[data-mode="workspace"] .sc-toolbar { padding: 16px 16px 12px; }
+  .st[data-mode="workspace"] .sc-filters { padding-inline: 16px; }
+}
+
+/* Solid white application cards keep a visible New badge on the glass panel. */
+.st[data-mode="workspace"] .sd__pill--new { background: #e9edf4; color: var(--ink-2); }
+.st[data-mode="workspace"].is-dark .sd__pill--new { background: #ffffff1a; }

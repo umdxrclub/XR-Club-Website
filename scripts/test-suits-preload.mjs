@@ -26,12 +26,12 @@ for(const role of ['owner','advisor','member']){
  const requests=[],state={me:{user_id:role},members:[]};let release,finished=false;
  const api=Object.fromEntries(['members','tasks','workingRoles','workingRoleAssignments','meetings','rsvps','membershipRequests','advisorAvailability'].map(name=>[name,async()=>{requests.push(name);return[];}]));
  api.review=async()=>{requests.push('applications');return{};};
- const {preloadWorkspace}=await load('src/scripts/suits/preload.ts',{require:()=>({api,state,isAdvisor:()=>role==='advisor',isLead:()=>role==='owner',canReviewApplications:()=>role==='owner'})});
+ const {preloadWorkspace}=await load('src/scripts/suits/preload.ts',{require:()=>({api,state,isAdvisor:()=>role==='advisor',isLead:()=>role!=='member',canReviewApplications:()=>role!=='member'})});
  const ready=preloadWorkspace([new Promise(r=>{release=r;})]).then(()=>{finished=true;});
  await new Promise(r=>setImmediate(r));assert.equal(finished,false,'The loading screen waits for the accessible tab data');
  release();await ready;
  for(const name of ['members','tasks','workingRoles','workingRoleAssignments','advisorAvailability'])assert.ok(requests.includes(name));
- assert.equal(requests.includes('applications'),role==='owner');assert.equal(requests.includes('membershipRequests'),role==='owner');
- assert.equal(requests.includes('meetings'),role!=='advisor');assert.equal(requests.includes('rsvps'),role!=='advisor');
+ assert.equal(requests.includes('applications'),role!=='member');assert.equal(requests.includes('membershipRequests'),role!=='member');
+ assert.ok(requests.includes('meetings'));assert.ok(requests.includes('rsvps'));
 }
-console.log('PASS: preloaded tabs, request coalescing, immediate cached paint, background refresh, edit invalidation, session isolation, retry, owner-only application preload and no advisor schedule fetch.');
+console.log('PASS: preloaded tabs, request coalescing, immediate cached paint, background refresh, edit invalidation, session isolation, retry, owner and advisor application preload, and calendar for everyone.');

@@ -21,11 +21,6 @@ function esc(s: string | null | undefined) {
   return d.innerHTML;
 }
 
-function words(s: string) {
-  const t = s.trim();
-  return t ? t.split(/\s+/).length : 0;
-}
-
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
@@ -38,8 +33,8 @@ function fmtSlot(slot: string) {
 // Eligibility flags drive the warning badges and the "Has a flag" filter.
 function flagsFor(a: SuitsApplication) {
   const flags: Array<{ text: string; bad: boolean }> = [];
-  if (a.us_citizen_or_pr !== 'Yes') flags.push({ text: 'Not a citizen or PR: cannot travel for test week', bad: false });
-  if (a.required_dates === 'No') flags.push({ text: 'Cannot attend required dates', bad: true });
+  if (a.us_citizen_or_pr !== 'Yes') flags.push({ text: 'Can’t travel for test week', bad: false });
+  if (a.required_dates === 'No') flags.push({ text: 'Can’t attend required dates', bad: true });
   if (a.required_dates.startsWith('Unsure')) flags.push({ text: 'Unsure about required dates', bad: false });
   if (a.hours_per_week === 'Less than 3 hours') flags.push({ text: 'Under 3 hours a week', bad: false });
   return flags;
@@ -51,7 +46,7 @@ export function leave() { cleanup?.(); cleanup = null; }
 export async function render(host: HTMLElement) {
   leave();
   if (!canReviewApplications()) {
-    host.innerHTML = '<div class="sd__error"><h1 class="st-h1">Applications</h1><p>Application reviews are available only to the SUITS owner account.</p></div>';
+    host.innerHTML = '<div class="sd__error"><header class="st-page-head"><h1 class="st-page-title">Applications</h1></header><p>Only the team owner and advisors can review applications.</p></div>';
     return;
   }
   const controller = new AbortController();
@@ -62,7 +57,6 @@ export async function render(host: HTMLElement) {
   const emptyEl = document.getElementById('sd-empty')!;
   const detailEl = document.getElementById('sd-detail-content')!;
   const placeholder = document.getElementById('sd-placeholder')!;
-  const countEl = document.getElementById('sd-count')!;
   const search = document.getElementById('sd-search') as HTMLInputElement;
   const yearSel = document.getElementById('sd-year') as HTMLSelectElement;
   const interestSel = document.getElementById('sd-interest') as HTMLSelectElement;
@@ -77,7 +71,7 @@ export async function render(host: HTMLElement) {
   cleanup = () => { controller.abort(); all = []; visible = []; host.replaceChildren(); };
   root.hidden = true;
   const loading = document.createElement('p');
-  loading.className = 'sd__error'; loading.textContent = 'Loading applications…'; host.prepend(loading);
+  loading.className = 'sd__error'; loading.textContent = 'Loading applications'; host.prepend(loading);
   try {
     const result = await review<{ applications: SuitsApplication[] }>('list');
     if (signal.aborted) return;
@@ -85,7 +79,7 @@ export async function render(host: HTMLElement) {
     loading.remove(); root.hidden = false;
   } catch (err) {
     if (signal.aborted) return;
-    host.innerHTML = '<div class="sd__error" role="alert"><h1 class="st-h1">Applications</h1><p>' + esc((err as Error).message) + '</p><button type="button" class="st-btn">Try again</button></div>';
+    host.innerHTML = '<div class="sd__error"><header class="st-page-head"><h1 class="st-page-title">Applications</h1></header><p role="alert">' + esc((err as Error).message) + '</p><button type="button" class="st-btn">Try again</button></div>';
     host.querySelector('button')!.addEventListener('click', () => void render(host), { signal });
     return;
   }
@@ -121,11 +115,6 @@ export async function render(host: HTMLElement) {
     if (signal.aborted) return;
     applyFilters();
 
-    const counts: Record<string, number> = { all: all.length, new: 0, interview: 0, accepted: 0, rejected: 0 };
-    all.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
-    document.querySelectorAll<HTMLElement>('[data-count]').forEach(el => { el.textContent = String(counts[el.dataset.count!] ?? 0); });
-    countEl.textContent = `${visible.length} of ${all.length}`;
-
     listEl.innerHTML = visible.map(a => {
       const flags = flagsFor(a);
       const interests = a.interest_areas.slice(0, 3).map(i => `<span class="sd__tag">${esc(i)}</span>`).join('');
@@ -136,7 +125,7 @@ export async function render(host: HTMLElement) {
             <span class="sd__card-name">${esc(a.full_name)}</span>
             <span class="sd__pill sd__pill--${a.status}">${STATUS_LABEL[a.status]}</span>
           </div>
-          <div class="sd__card-meta">${esc(a.year)} · ${esc(a.majors)}</div>
+          <div class="sd__card-meta">${esc(a.year)}, ${esc(a.majors)}</div>
           <div class="sd__card-foot">
             ${interests}${more}
           </div>
@@ -203,7 +192,7 @@ export async function render(host: HTMLElement) {
       <div class="sd__head">
         <div>
           <h2 class="sd__name">${esc(a.full_name)}</h2>
-          <p class="sd__sub">${esc(a.year)} · ${esc(a.majors)}${a.minors ? ` · Minor: ${esc(a.minors)}` : ''} · Submitted ${fmtDate(a.created_at)}</p>
+          <p class="sd__sub">${esc(a.year)}, ${esc(a.majors)}${a.minors ? `, minor in ${esc(a.minors)}` : ''}. Submitted ${fmtDate(a.created_at)}</p>
         </div>
         <div class="sd__nav">
           <button type="button" class="sd__btn" id="sd-prev" ${idx <= 0 ? 'disabled' : ''}>Previous</button>
@@ -216,10 +205,10 @@ export async function render(host: HTMLElement) {
         <div class="sd__status" id="sd-status">
           ${(['new', 'interview', 'accepted', 'rejected'] as SuitsStatus[]).map(s => `<button type="button" data-status="${s}" class="${a.status === s ? 'is-active' : ''}">${STATUS_LABEL[s]}</button>`).join('')}
         </div>
-        ${a.resume_path ? '<button type="button" class="sd__btn sd__btn--primary" id="sd-resume">Open resume</button>' : '<span class="sd__btn sd__btn--quiet">No resume attached</span>'}
+        ${a.resume_path ? '<button type="button" class="sd__btn sd__btn--primary" id="sd-resume">Open resume</button>' : '<span class="sd__btn sd__btn--quiet">No resume</span>'}
         <a class="sd__btn" href="mailto:${esc(a.email)}">Email</a>
         <button type="button" class="sd__btn" id="sd-copy-discord">Copy Discord</button>
-        ${a.portfolio_url ? `<a class="sd__btn" href="${esc(/^https?:\/\//i.test(a.portfolio_url) ? a.portfolio_url : 'https://' + a.portfolio_url)}" target="_blank" rel="noopener">Portfolio</a>` : ''}
+        ${a.portfolio_url ? `<a class="sd__btn" href="${esc(/^https?:\/\//i.test(a.portfolio_url) ? a.portfolio_url : 'https://' + a.portfolio_url)}" target="_blank" rel="noopener">Open portfolio</a>` : ''}
       </div>
 
       <div class="sd__grid">
@@ -243,12 +232,12 @@ export async function render(host: HTMLElement) {
       </div>
 
       <div class="sd__panel">
-        <p class="sd__panel-title">Interested in</p>
+        <p class="sd__panel-title">Interests</p>
         <div class="sd__chips">${a.interest_areas.map(i => `<span class="sd__tag">${esc(i === 'Other' && a.interest_other ? `Other: ${a.interest_other}` : i)}</span>`).join('')}</div>
       </div>
 
       <div class="sd__panel">
-        <p class="sd__panel-title">Interview availability (Eastern, over Zoom)</p>
+        <p class="sd__panel-title">Interview availability (Eastern time, Zoom)</p>
         <div class="sd__cal">
           ${Object.keys(DAY_LABEL).map(d => `
             <div class="sd__cal-day">
@@ -267,17 +256,16 @@ export async function render(host: HTMLElement) {
         <div class="sd__panel">
           <p class="sd__q">${esc(q)}</p>
           <p class="sd__a">${esc(a[key] as string)}</p>
-          <p class="sd__words">${words(a[key] as string)} words</p>
         </div>`).join('')}
 
       <div class="sd__panel">
         <p class="sd__panel-title">Anything else</p>
-        <p class="sd__a${a.anything_else ? '' : ' sd__a--muted'}">${a.anything_else ? esc(a.anything_else) : 'Nothing added.'}</p>
+        <p class="sd__a${a.anything_else ? '' : ' sd__a--muted'}">${a.anything_else ? esc(a.anything_else) : 'Nothing added'}</p>
       </div>
 
       <div class="sd__panel">
         <p class="sd__panel-title">Reviewer notes</p>
-        <textarea class="sd__notes" id="sd-notes" aria-label="Private reviewer notes" placeholder="Private notes. Saved when you click away.">${esc(a.reviewer_notes)}</textarea>
+        <textarea class="sd__notes" id="sd-notes" aria-label="Reviewer notes" placeholder="Private. Saves when you click away">${esc(a.reviewer_notes)}</textarea>
         <p class="sd__notes-status" id="sd-notes-status"></p>
       </div>
 
@@ -299,7 +287,7 @@ export async function render(host: HTMLElement) {
         const { url } = await review<{ url: string }>('resume', { resume_path: a.resume_path });
         if (!signal.aborted) window.open(url, '_blank', 'noopener');
       } catch (err) {
-        alert(`Could not open the resume: ${(err as Error).message}`);
+        alert(`Couldn’t open the resume. ${(err as Error).message}`);
       }
     });
 
@@ -313,22 +301,22 @@ export async function render(host: HTMLElement) {
     notes.addEventListener('blur', async () => {
       const value = notes.value.trim() || null;
       if (value === (a.reviewer_notes || null)) return;
-      notesStatus.textContent = 'Saving…';
+      notesStatus.textContent = 'Saving';
       try {
         await review('update', { id: a.id, reviewer_notes: value });
         a.reviewer_notes = value;
-        notesStatus.textContent = 'Saved.';
+        notesStatus.textContent = 'Saved';
       } catch (err) {
-        notesStatus.textContent = `Not saved: ${(err as Error).message}`;
+        notesStatus.textContent = `Not saved. ${(err as Error).message}`;
       }
     });
 
     document.getElementById('sd-delete')!.addEventListener('click', async () => {
-      if (!confirm(`Delete ${a.full_name}’s application? This also removes their resume and cannot be undone.`)) return;
+      if (!confirm(`Delete ${a.full_name}’s application and resume? This can’t be undone.`)) return;
       try {
         await review('delete', { id: a.id });
       } catch (err) {
-        alert(`Could not delete: ${(err as Error).message}`);
+        alert(`Couldn’t delete the application. ${(err as Error).message}`);
         return;
       }
       all = all.filter(x => x.id !== a.id);
@@ -348,7 +336,7 @@ export async function render(host: HTMLElement) {
     } catch (err) {
       a.status = previous;
       renderList();
-      alert(`Could not update status: ${(err as Error).message}`);
+      alert(`Couldn’t update the status. ${(err as Error).message}`);
     }
   }
 

@@ -1,5 +1,18 @@
 [
   {
+    "name": "Immersive Installations",
+    "summary": "Immersive Installations turns physical spaces into interactive experiences using interactive visuals, projections, and set design. The team explores how techniques such as projection mapping, body tracking, and audio-reactivity can build art people can physically step into; whether an interactive light show or audiovisual DJ set, create artworks that step outside of the digital.\n\nThe team focuses on gathering resources and materials to help our members create their individual projects, organize/discover events, and host workshops. Projects range from using TouchDesigner, live coding (P5Live), and physical set making (w/ Blender) to connect digital media with the environment.\n\nPreviously, we've showcased at Maryland Day and NextNOW Fest with New Works Incubator; we already have plans to showcase independently at Fall 2027's NextNOW Fest! Creators with any amount of TouchDesigner/coding experience are welcome to contribute and learn through making an installation together!",
+    "tier": "Intermediate",
+    "equipment": "Projectors",
+    "estimated_completion": "2 years",
+    "people": [
+      "Dean Haynes"
+    ],
+    "contact_name": "Xael Shan",
+    "contact_email": "xaelshan@umd.edu",
+    "website": null
+  },
+  {
     "name": "Meta Reality Labs - Project ARIA",
     "summary": "We are working with Meta Reality Labs and Professor Ming Lin to study what everyday social interactions can tell us about a person's emotions. Using Meta ARIA Gen 2 research glasses, we record the world from the wearer's point of view. We look at how other people respond to them, rather than relying on body measurements or asking the wearer to describe how they feel. The focus is on the social context around the wearer and how it changes during an interaction.\n\nThe team is building a dataset of these interactions and developing computer vision and machine learning models to study the patterns. We use Meta's Project Aria tools and Machine Perception Services to process the recordings. The work brings together data collection, careful analysis, and model testing. It is an ongoing research project, with the aim of sharing a dataset that other researchers can use.",
     "tier": "Advanced",
@@ -229,18 +242,5 @@
     "contact_name": "Thejitha Rajapakshe",
     "contact_email": "trajapa2@umd.edu",
     "website": "https://augmental.world/"
-  },
-  {
-    "name": "Immersive Installations",
-    "summary": "Immersive Installations turns physical spaces into interactive experiences using projection, sound, and responsive visuals. The team explores how a room can change around the people inside it, whether through an interactive light show or an audiovisual piece for an event. These experiences can be shared without everyone needing to wear a headset. The room itself becomes part of the work, with media arranged around the people experiencing it together.\n\nThe project uses TouchDesigner, creative coding, and physical computing to connect digital media with the environment. Members can help develop a concept, build the visuals and interactions, or work on how the installation is arranged in the space. Projection mapping and spatial audio are part of the approach. TouchDesigner creators with any amount of experience are welcome to contribute and learn through making an installation together.",
-    "tier": "Intermediate",
-    "equipment": "Projectors",
-    "estimated_completion": "2 years",
-    "people": [
-      "Dean Haynes"
-    ],
-    "contact_name": "Xael Shan",
-    "contact_email": "xaelshan@umd.edu",
-    "website": null
   }
 ]

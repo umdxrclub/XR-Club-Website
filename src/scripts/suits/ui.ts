@@ -74,8 +74,9 @@ export interface ModalOptions {
   onSubmit?: (form: HTMLFormElement, close: () => void) => Promise<void> | void;
 }
 
-export function onboardingProgress(step: 1 | 2) {
-  return `<ol class="st-onboarding-steps" aria-label="Setup progress"><li${step===1?' aria-current="step"':''}>1. Avatar</li><li${step===2?' aria-current="step"':''}>2. Layout</li></ol>`;
+export function onboardingProgress(step: 1 | 2 | 3, total: 2 | 3 = 2) {
+  const names = ['Avatar', 'Layout', 'Availability'].slice(0, total);
+  return `<ol class="st-onboarding-steps" style="--steps:${total}" aria-label="Setup progress">${names.map((name, i) => `<li${step === i + 1 ? ' aria-current="step"' : ''}>${name}</li>`).join('')}</ol>`;
 }
 
 /** Opens a modal with a form. Resolves when it closes. */

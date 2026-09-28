@@ -21,13 +21,12 @@ export async function enterWorkspace(render:()=>Promise<void>){
   applyMemberLayout(root);
   const advisor=isAdvisor();
   document.getElementById('st-availability')!.hidden=!advisor;
-  document.querySelector<HTMLElement>('[data-nav="meetings"]')!.hidden=advisor;
-  const order=advisor?['documents','proposal','team','tasks','overview']:['meetings','overview','tasks','proposal','documents','team','applications','access'];
+  const order=['meetings','overview','tasks','proposal','documents','team','applications','access'];
   const nav=document.getElementById('st-nav')!;
   for(const view of order){const button=nav.querySelector(`[data-nav="${view}"]`);if(button)nav.appendChild(button);}
   const brand=document.querySelector<HTMLAnchorElement>('.st-workspace-brand')!;
-  brand.href=`${state.base}suits/workspace/${advisor?'documents/':''}`;
-  brand.setAttribute('aria-label',advisor?'Dreamers documents':'Dreamers calendar');
+  brand.href=`${state.base}suits/workspace/`;
+  brand.setAttribute('aria-label','Dreamers calendar');
   document.getElementById('st-gate')!.hidden=true;
   document.getElementById('st-app')!.hidden=false;
   root.dataset.ready='true';
@@ -46,5 +45,8 @@ async function onboardWorkspace(root: HTMLElement) {
  if(!me.avatar_set_at) {
   if(!await editAvatar(true))return;
  } else if(me.workspace_layout)return;
- if(root.isConnected&&state.me?.user_id===me.user_id)await editLayout(true);
+ if(!root.isConnected||state.me?.user_id!==me.user_id)return;
+ const laidOut=await editLayout(true);
+ // Advisors finish setup by adding when they are free to meet.
+ if(laidOut&&isAdvisor()&&root.isConnected&&state.me?.user_id===me.user_id)await openAdvisorAvailability(state.me,undefined,{first:true});
 }
