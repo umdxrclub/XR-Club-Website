@@ -190,3 +190,19 @@
 /* Solid white application cards keep a visible New badge on the glass panel. */
 .st[data-mode="workspace"] .sd__pill--new { background: #e9edf4; color: var(--ink-2); }
 .st[data-mode="workspace"].is-dark .sd__pill--new { background: #ffffff1a; }
+
+/* Avatar: the neck ring sits inside the helmet's curve instead of crossing its outline. */
+.crew-avatar__collar { bottom: 6%; left: 25%; width: 50%; height: 8%; border-radius: 999px; }
+
+/* Phones: still clear glass with no blur, but a stronger tint so small text stays calm over the sky. */
+@media (max-width: 760px) {
+  .st[data-mode="workspace"] .st-view,
+  .st[data-mode="workspace"] .st-view:is([data-view="tasks"],[data-view="access"]) { background: #f2f6ffcc; }
+  .st[data-mode="workspace"].is-dark .st-view,
+  .st[data-mode="workspace"].is-dark .st-view:is([data-view="tasks"],[data-view="access"]) { background: #111f39d9; }
+  .st[data-mode="workspace"] .st-side { background: #112446c7; }
+  /* Switches stay on one line and scroll sideways instead of wrapping. */
+  .st[data-mode="workspace"] :is(.sw-filters,.sd__segment) { flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .st[data-mode="workspace"] :is(.sw-filters,.sd__segment)::-webkit-scrollbar { display: none; }
+  .st[data-mode="workspace"] :is(.sw-filters button,.sd__seg) { flex: none; white-space: nowrap; }
+}
