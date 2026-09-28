@@ -3,9 +3,39 @@ import { esc, onboardingProgress, openModal, toast } from './ui';
 
 const colors = ['blue','orange','violet','mint'] as const;
 export function avatarUrl(seed:string) { return `https://api.dicebear.com/10.x/bottts-neutral/svg?seed=${encodeURIComponent(seed)}`; }
+let helmetId = 0;
+/**
+ * Front view of an EMU style helmet as flat vector shapes: the white shell, the
+ * visor frame, the face behind blue glass with hard edged reflections, and the
+ * metal neck ring over the suit, all clipped to the helmet outline.
+ */
 export function crewAvatar(m:Pick<Member,'avatar_seed'|'avatar_color'|'display_name'>, size='') {
  const seed=m.avatar_seed || 'suits-explorer';
- return `<span class="crew-avatar ${size}" data-color="${colors.includes(m.avatar_color as typeof colors[number])?m.avatar_color:'blue'}"><span class="crew-avatar__visor"><img src="${esc(avatarUrl(seed))}" alt="${esc(m.display_name)} avatar" referrerpolicy="no-referrer" loading="lazy" /></span><span class="crew-avatar__collar" aria-hidden="true"></span></span>`;
+ const id=`helmet-${++helmetId}`;
+ const color=colors.includes(m.avatar_color as typeof colors[number])?m.avatar_color:'blue';
+ const outline='M50 2C77 2 97 21 97 48C97 76 78 98 50 98C22 98 3 76 3 48C3 21 23 2 50 2Z';
+ const visor='M50 16C71 16 84 28 84 47C84 64 71 74 50 74C29 74 16 64 16 47C16 28 29 16 50 16Z';
+ return `<span class="crew-avatar ${size}" data-color="${color}"><svg class="crew-avatar__svg" viewBox="0 0 100 100" role="img" aria-label="${esc(m.display_name)} avatar">
+ <defs><clipPath id="${id}-o"><path d="${outline}"/></clipPath><clipPath id="${id}-v"><path d="${visor}"/></clipPath></defs>
+ <g clip-path="url(#${id}-o)">
+  <rect width="100" height="100" fill="#d6dde5"/>
+  <circle cx="45" cy="42" r="54" fill="#f7f8fa"/>
+  <rect y="86" width="100" height="14" style="fill:var(--suit)"/>
+  <ellipse cx="50" cy="86.5" rx="44" ry="5.5" fill="#8995a3"/>
+  <ellipse cx="50" cy="84.2" rx="44" ry="4.6" fill="#d2d9e1"/>
+  <path d="M6 84.2C14 87.4 31 89.2 50 89.2C69 89.2 86 87.4 94 84.2" fill="none" stroke="#6f7b88" stroke-width=".8"/>
+ </g>
+ <path d="M50 12C74 12 88 26 88 47C88 67 73 78 50 78C27 78 12 67 12 47C12 26 26 12 50 12Z" fill="#2a3139"/>
+ <g clip-path="url(#${id}-v)">
+  <rect x="16" y="16" width="68" height="58" fill="#1a2630"/>
+  <image href="${esc(avatarUrl(seed))}" x="16" y="13" width="68" height="64" preserveAspectRatio="xMidYMid slice"/>
+  <rect x="16" y="16" width="68" height="58" fill="#3d86ff" opacity=".28"/>
+  <path d="M19 44C19 29 30 19 47 18C33 22 25 32 24 45Z" fill="#fff" opacity=".85"/>
+  <path d="M72 62C76 58 79 53 80 48C81 55 78 62 74 66Z" fill="#fff" opacity=".6"/>
+  <rect x="59" y="22" width="11" height="4" rx="2" transform="rotate(18 64.5 24)" fill="#fff" opacity=".7"/>
+ </g>
+ <path d="${visor}" fill="none" stroke="#b9dcff" stroke-width="1.2" opacity=".75"/>
+</svg></span>`;
 }
 export function updateIdentity() {
  if(!state.me) return;

@@ -191,9 +191,9 @@
 .st[data-mode="workspace"] .sd__pill--new { background: #e9edf4; color: var(--ink-2); }
 .st[data-mode="workspace"].is-dark .sd__pill--new { background: #ffffff1a; }
 
-/* Avatar: the neck ring stays at the base and is cut off by the helmet outline, so nothing pokes past the curve. */
-.crew-avatar { clip-path: inset(0 round 49% 49% 43% 43%); }
-.crew-avatar__collar { left: -14%; bottom: -19%; width: 128%; height: 34%; border: 0; border-radius: 50%; background: radial-gradient(ellipse closest-side at 50% 50%, var(--suit) 0 74%, var(--suit-dark) 76% 85%, #eff3f7 87% 95%, #8b98a6 96% 100%, transparent 100%); }
+/* Avatar: the helmet is one vector drawing (see crewAvatar), so the frame only sizes it. */
+.crew-avatar { border: 0; background: none; box-shadow: none; clip-path: none; }
+.crew-avatar__svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
 /* Phones: still clear glass with no blur, but a stronger tint so small text stays calm over the sky. */
 @media (max-width: 760px) {
@@ -267,21 +267,3 @@
 .st-workspace-brand { display: inline-flex; align-items: center; line-height: 0; }
 .st-workspace-logo { display: block; width: auto; height: 34px; }
 @media (max-width: 760px) { .st-workspace-logo { height: 28px; } }
-
-/* Avatar visor: a clear blue glass cover over the face, with a glossy shine and reflections along the rim. */
-.crew-avatar__visor::after {
-  z-index: 2;
-  background:
-    radial-gradient(ellipse 46% 26% at 34% 20%, #ffffffe6, #ffffff8c 38%, #ffffff00 72%),
-    radial-gradient(ellipse at 50% 42%, #6fb4ff00 48%, #6fb4ff80 86%, #c4e4ffd9 100%),
-    linear-gradient(165deg, #7cc0ff73 0%, #3f86f266 45%, #1d4bb599 100%);
-  box-shadow: inset 0 0 0 1.5px #d6ecffb3, inset 0 -4px 8px #06205a66;
-}
-.crew-avatar__visor::before {
-  content: ''; position: absolute; z-index: 3; pointer-events: none;
-  inset: 4%; border-radius: inherit;
-  background:
-    radial-gradient(closest-side, #ffffff00 72%, #fffffff2 80%, #fffffff2 88%, #ffffff00 96%);
-  -webkit-mask-image: linear-gradient(135deg, #000 0 30%, #0000 50%, #0000 78%, #000c 86%, #0000 94%);
-  mask-image: linear-gradient(135deg, #000 0 30%, #0000 50%, #0000 78%, #000c 86%, #0000 94%);
-}

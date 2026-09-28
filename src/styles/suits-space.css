@@ -51,10 +51,6 @@ html[data-suits-workspace] .st-bg__astronaut { visibility:hidden; }
 /* A continuous EVA shell and pressure visor around the original DiceBear face. */
 .crew-avatar { --suit:#d7e6fb; --suit-dark:#8ba9d5; --helmet-seam:1px; display:inline-block; position:relative; width:48px; height:48px; flex:none; isolation:isolate; border:var(--helmet-seam) solid #d8dfe6; border-radius:49% 49% 43% 43%; background:radial-gradient(ellipse at 35% 16%,#fff 15%,#f4f5f4 49%,#d5dce3 88%); box-shadow:inset 0 1px 0 #fff,inset 0 -2px 2px #7e8b9b38; }
 .crew-avatar[data-color="orange"] { --suit:#f8d3ae; --suit-dark:#cf9167; }.crew-avatar[data-color="violet"] { --suit:#e1d4f7; --suit-dark:#a798d2; }.crew-avatar[data-color="mint"] { --suit:#c5e8df; --suit-dark:#7aa99d; }
-.crew-avatar__visor { position:absolute; inset:12% 9% 19%; display:block; border:calc(var(--helmet-seam) * 2) solid #30383f; border-radius:48% 48% 44% 44%; background:#1a2630; overflow:hidden; box-shadow:0 0 0 var(--helmet-seam) #9a8b6f,0 2px 3px #1a263033; }
-.crew-avatar__visor img { display:block; width:100%; height:100%; object-fit:cover; }
-.crew-avatar__visor::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit; background:radial-gradient(ellipse at 28% 12%,#ffffff5c,transparent 46%),radial-gradient(ellipse at 50% 40%,transparent 46%,#101c3370 100%); box-shadow:inset 0 1px 1px #ffffff70; }
-.crew-avatar__collar { position:absolute; bottom:1%; left:21%; width:58%; height:9%; border:var(--helmet-seam) solid #8b98a6; border-radius:18% 18% 35% 35%; background:linear-gradient(#eff3f7 0 30%,var(--suit-dark) 32% 57%,var(--suit) 59%); }
 .crew-avatar--large { width:76px; height:76px; }.crew-avatar--hero { width:148px; height:148px; --helmet-seam:2px; }
 .avatar-picker { text-align:center; }.avatar-picker>p { font-size:15px; color:var(--ink-2); margin:10px 0 18px; }.avatar-picker__hero { padding:12px 0 26px; }
 .avatar-picker__choices { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; }
