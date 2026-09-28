@@ -7,6 +7,7 @@ import { db, api, state, isManager, isLead, type TeamDocument } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';
 import { openViewer } from './viewer';
+import { repoSectionHtml, bindRepoCards, parseRepoUrl, openRepo } from './repos';
 import { bindDriveLinks, getDriveStatus, isGoogleDriveUrl, openTeamDrive, resetDriveAccess, driveAccountUrl, type DriveStatus } from './drive-access';
 import { documentUrl as signedUrl, warmDocumentFiles, resetDocumentFiles } from './document-files';
 
@@ -121,21 +122,30 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
       <button type="button" class="st-btn st-btn--primary" id="st-doc-add">Add</button>
     </div></header>
     <div id="st-drive-card"></div>
+    ${repoSectionHtml()}
     ${groupsHtml(order, docs)}`;
 
   host.querySelector<HTMLSelectElement>('#st-doc-filter')!.addEventListener('change', e => { filter = (e.target as HTMLSelectElement).value; paint(host, docsCache || docs); });
   host.querySelector('#st-doc-add')!.addEventListener('click', () => addDocument(host));
   host.querySelectorAll<HTMLElement>('[data-view-doc]').forEach(card => {
-    const open = () => { const d = docs.find(x => x.id === card.dataset.viewDoc)!; void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` }); };
+    const open = () => { const d = docs.find(x => x.id === card.dataset.viewDoc)!; viewDocument(d); };
     card.addEventListener('click', e => { if ((e.target as HTMLElement).closest('[data-doc-menu]')) return; open(); });
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
   host.querySelectorAll<HTMLElement>('[data-doc-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openMenu(host, b, docs.find(x => x.id === b.dataset.docMenu)!); }));
 
+  bindRepoCards(host);
   void fillCovers(host, docs);
   paintDriveBits(host);
   bindDriveLinks(host);
   if (scrollY) window.scrollTo({ top: scrollY });
+}
+
+/** GitHub repository links open the in-dashboard repository view; everything else uses the document viewer. */
+function viewDocument(d: TeamDocument) {
+  const repo = d.kind === 'link' ? parseRepoUrl(d.url) : null;
+  if (repo) { void openRepo(repo); return; }
+  void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
 }
 
 /** The All view lists only subteams that have documents; a single subteam always shows. */
@@ -291,7 +301,7 @@ function openMenu(host: HTMLElement, button: HTMLElement, d: TeamDocument) {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (!act) return;
     close();
-    if (act === 'view') void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
+    if (act === 'view') viewDocument(d);
     if (act === 'drive' && d.drive_url) void openTeamDrive(d.drive_url);
     if (act === 'tab') {
       if (d.kind === 'link') { if (isGoogleDriveUrl(d.url || '')) void openTeamDrive(d.url!); else window.open(d.url || '#', '_blank', 'noopener'); return; }
