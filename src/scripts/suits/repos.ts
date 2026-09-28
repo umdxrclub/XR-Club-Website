@@ -12,7 +12,7 @@ export const TEAM_REPOS: RepoRef[] = [
   { owner: 'umdxrclub', repo: 'TerpVISIOInterface-NASASUITS2023' },
 ];
 
-interface RepoInfo { full_name: string; description: string | null; language: string | null; pushed_at: string; default_branch: string; html_url: string }
+interface RepoInfo { full_name: string; description: string | null; pushed_at: string; default_branch: string; html_url: string }
 interface RepoEntry { name: string; path: string; type: 'file' | 'dir' | 'symlink' | 'submodule'; size: number; download_url: string | null; html_url: string }
 interface RepoCommit { sha: string; html_url: string; commit: { message: string; author: { name: string; date: string } | null }; author: { login: string } | null }
 
@@ -65,8 +65,6 @@ const FOLDER = 'M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5
 const FILE = 'M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z';
 const COMMIT = 'M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z';
 
-const LANG_COLORS: Record<string, string> = { C: '#555555', 'C#': '#178600', 'C++': '#f34b7d', ShaderLab: '#222c37', TypeScript: '#3178c6', JavaScript: '#f1e05a', Python: '#3572a5', HTML: '#e34c26', CSS: '#663399', Rust: '#dea584', Go: '#00add8' };
-
 // ---------------------------------------------------------------------------
 // Documents page cards
 // ---------------------------------------------------------------------------
@@ -93,7 +91,7 @@ export function bindRepoCards(host: HTMLElement) {
     repoInfo({ owner, repo }).then(info => {
       if (!card.isConnected) return;
       card.querySelector('[data-repo-desc]')!.textContent = info.description || 'No description';
-      card.querySelector('[data-repo-meta]')!.innerHTML = `${info.language ? `<span class="st-repocard__lang" style="--lang:${LANG_COLORS[info.language] || '#8b949e'}">${esc(info.language)}</span>` : ''}<span>Updated ${esc(when(info.pushed_at))}</span>`;
+      card.querySelector('[data-repo-meta]')!.textContent = `Updated ${when(info.pushed_at)}`;
     }).catch(() => {
       if (card.isConnected) card.querySelector('[data-repo-desc]')!.textContent = 'Open to view on GitHub';
     });

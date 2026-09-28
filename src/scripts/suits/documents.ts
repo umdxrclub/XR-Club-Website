@@ -6,7 +6,7 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { db, api, state, isManager, isLead, type TeamDocument } from './api';
 import { esc, toast, openModal, confirmModal, field, input, textarea, select, formValue, fmtRelative } from './ui';
 import { READER_ROLES } from './reader-content';
-import { openViewer } from './viewer';
+import { openViewer, preparePreviews, disposePreviews } from './viewer';
 import { repoSectionHtml, bindRepoCards, parseRepoUrl, openRepo } from './repos';
 import { bindDriveLinks, getDriveStatus, isGoogleDriveUrl, openTeamDrive, resetDriveAccess, driveAccountUrl, type DriveStatus } from './drive-access';
 import { documentUrl as signedUrl, warmDocumentFiles, resetDocumentFiles } from './document-files';
@@ -25,6 +25,7 @@ let lastPull = 0;
 let docsCache: TeamDocument[] | null = null;
 let docsKey = '';
 let refreshing: Promise<boolean> | null = null;
+let previewing = false;
 const thumbCache = new Map<string, string>();
 
 // Remembered on this device so the page paints before the network answers
@@ -67,8 +68,17 @@ export async function warm() {
   await Promise.all([refreshDocs(null).then(() => warmDocumentFiles((docsCache || []).flatMap(d => d.storage_path ? [d.storage_path] : []))),loadDrive(null)]);
 }
 
+/** Once the dashboard is interactive, build every preview in the background, your subteam's first, so each opens instantly. */
+export function warmPreviews() {
+  previewing = true;
+  if (!docsCache) return;
+  const mine = state.me?.proposal_role;
+  const rank = (d: TeamDocument) => d.role === mine ? 0 : d.role === 'team' ? 1 : 2;
+  preparePreviews(docsCache.filter(d => !(d.kind === 'link' && parseRepoUrl(d.url))).sort((a, b) => rank(a) - rank(b)));
+}
+
 export function reset(){
-  docsCache=null;docsKey='';driveStatus=null;roleFolders={};refreshing=null;resetDriveAccess();resetDocumentFiles();thumbCache.clear();lastPull=0;
+  docsCache=null;docsKey='';driveStatus=null;roleFolders={};refreshing=null;previewing=false;disposePreviews();resetDriveAccess();resetDocumentFiles();thumbCache.clear();lastPull=0;
   try{for(const key of [LS_DOCS,LS_DRIVE,LS_THUMBS])localStorage.removeItem(key);}catch{}
 }
 
@@ -83,6 +93,7 @@ function refreshDocs(host: HTMLElement | null): Promise<boolean> {
       docsCache = docs;
       docsKey = key;
       remember();
+      if (previewing) warmPreviews();
       if (host && host.isConnected && !host.closest('.st-view')?.hasAttribute('hidden')) paint(host, docs);
       return true;
     } catch (err) {
@@ -105,6 +116,7 @@ export async function render(host: HTMLElement) {
     if (!docsCache) return;
     if (!host.querySelector('.st-doccard, .st-group')) paint(host, docsCache);
   }
+  if (previewing) warmPreviews();
   void loadDrive(host);
   void pullFromDrive(host);
 }
@@ -145,7 +157,7 @@ function paint(host: HTMLElement, docs: TeamDocument[]) {
 function viewDocument(d: TeamDocument) {
   const repo = d.kind === 'link' ? parseRepoUrl(d.url) : null;
   if (repo) { void openRepo(repo); return; }
-  void openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
+  openViewer(d, { subtitle: `${groupName(d.role)}${d.notes ? `. ${d.notes}` : ''}` });
 }
 
 /** The All view lists only subteams that have documents; a single subteam always shows. */

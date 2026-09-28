@@ -321,6 +321,7 @@ async function authorizeUser(user: User) {
     const initial = viewFromLocation();
     if (location.hash) history.replaceState(null, '', pathFor(initial));
     await enterWorkspace(() => go(initial, false));
+    if (version === pageVersion) documents.warmPreviews();
     authorizing = false;
     window.clearInterval(accessTimer);
     accessTimer = window.setInterval(async () => {

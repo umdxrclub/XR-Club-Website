@@ -131,4 +131,5 @@ export async function bootPreview() {
   const [documentView,reader]=await Promise.all([import('./documents'),import('./reader')]);
   await preloadWorkspace([documentView.warm(),reader.warm(),...(new URLSearchParams(location.search).has('loading')?[new Promise(resolve=>setTimeout(resolve,1800))]:[])]);
   await enterWorkspace(() => go(new URLSearchParams(location.search).get('view') || (isAdvisor()?'documents':'meetings'), false));
+  documentView.warmPreviews();
 }

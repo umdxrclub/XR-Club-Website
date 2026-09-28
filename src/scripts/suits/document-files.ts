@@ -19,6 +19,8 @@ function cached(path: string) {
   const hit = urls.get(path);
   return hit && hit.until > Date.now() ? hit.url : null;
 }
+/** When a handed out link stops being reused, so previews that keep reading from it can sign again. */
+export function documentUrlUntil(path: string) { return urls.get(path)?.until ?? 0; }
 
 /** Shared by the document cards and viewer, so opening does not sign a file twice. */
 export async function documentUrl(path: string): Promise<string> {

@@ -2645,6 +2645,31 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Documents keep one viewer with a prepared pane per document. Closed, or not
+   the open one, they stay laid out at full size but unseen, so frames load and
+   pages draw at their real size before anyone opens them. */
+.st-viewer.is-idle {
+  visibility: hidden;
+}
+
+.st-viewer__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #f5f5f7;
+}
+
+.st-viewer__pane {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.st-viewer__pane:not(.is-shown) {
+  visibility: hidden;
+}
+
 .st-viewer__pages {
   display: flex;
   flex-direction: column;
