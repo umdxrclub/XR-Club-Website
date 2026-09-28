@@ -16,19 +16,18 @@ export function crewAvatar(m:Pick<Member,'avatar_seed'|'avatar_color'|'display_n
  // Rounded square with a slightly flatter base.
  const outline='M49 .5H51A48.5 48.5 0 0 1 99.5 49V57A42.5 42.5 0 0 1 57 99.5H43A42.5 42.5 0 0 1 .5 57V49A48.5 48.5 0 0 1 49 .5Z';
  const visor='M50 16C71 16 84 28 84 47C84 64 71 74 50 74C29 74 16 64 16 47C16 28 29 16 50 16Z';
- // Collar rings, outermost first, as flat concentric ellipses below the helmet; inside them the neck opening is left empty.
- const rings:Array<[string,number]>=[['#8b98a6',1],['#eff3f7',.955],['var(--suit-dark)',.86]];
+ // Collar rings, outermost first, as flat concentric ellipses below the helmet.
+ const rings:Array<[string,number]>=[['#8b98a6',1],['#eff3f7',.955],['var(--suit-dark)',.86],['var(--suit)',.75]];
  return `<span class="crew-avatar ${size}" data-color="${color}"><svg class="crew-avatar__svg" viewBox="0 0 100 100" role="img" aria-label="${esc(m.display_name)} avatar">
  <defs>
   <clipPath id="${id}-o"><path d="${outline}"/></clipPath><clipPath id="${id}-v"><path d="${visor}"/></clipPath>
-  <mask id="${id}-n" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><ellipse cx="50" cy="102" rx="48" ry="12.75" fill="#000"/></mask>
   <radialGradient id="${id}-s" cx=".35" cy=".16" r=".95"><stop offset=".15" stop-color="#fff"/><stop offset=".49" stop-color="#f4f5f4"/><stop offset=".88" stop-color="#d5dce3"/></radialGradient>
  </defs>
- <g mask="url(#${id}-n)"><g clip-path="url(#${id}-o)">
+ <g clip-path="url(#${id}-o)">
   <rect width="100" height="100" fill="url(#${id}-s)"/>
   ${rings.map(([fill,k])=>`<ellipse cx="50" cy="102" rx="${64*k}" ry="${17*k}" style="fill:${fill}"/>`).join('')}
  </g>
- <path d="${outline}" fill="none" stroke="#d8dfe6" stroke-width="1"/></g>
+ <path d="${outline}" fill="none" stroke="#d8dfe6" stroke-width="1"/>
  <path d="M50 11C75 11 89 25.5 89 47C89 68 73.5 79 50 79C26.5 79 11 68 11 47C11 25.5 25 11 50 11Z" fill="#9a8b6f"/>
  <path d="M50 12C74 12 88 26 88 47C88 67 73 78 50 78C27 78 12 67 12 47C12 26 26 12 50 12Z" fill="#2a3139"/>
  <g clip-path="url(#${id}-v)">
