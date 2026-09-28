@@ -267,3 +267,21 @@
 .st-workspace-brand { display: inline-flex; align-items: center; line-height: 0; }
 .st-workspace-logo { display: block; width: auto; height: 34px; }
 @media (max-width: 760px) { .st-workspace-logo { height: 28px; } }
+
+/* Avatar visor: a clear blue glass cover over the face, with a curved reflection along its rim. */
+.crew-avatar__visor::after {
+  z-index: 2;
+  background:
+    radial-gradient(ellipse 30% 18% at 30% 19%, #ffffffc2, #ffffff00 70%),
+    linear-gradient(150deg, #ffffff59 0%, #ffffff14 28%, #ffffff00 44%),
+    radial-gradient(ellipse at 50% 44%, #5fa8ff00 52%, #5fa8ff52 88%, #a8d4ffa6 100%),
+    linear-gradient(180deg, #4d9bff42, #2f6fe02b 60%, #1b3f9e3d);
+  box-shadow: inset 0 0 0 1px #bfe0ff66, inset 0 -3px 6px #0a2a6b40;
+}
+.crew-avatar__visor::before {
+  content: ''; position: absolute; z-index: 3; pointer-events: none;
+  inset: 5%; border-radius: inherit;
+  background: radial-gradient(closest-side, #ffffff00 79%, #ffffffb8 85%, #ffffffb8 89%, #ffffff00 95%);
+  -webkit-mask-image: linear-gradient(135deg, #000 0 26%, #0000 46%);
+  mask-image: linear-gradient(135deg, #000 0 26%, #0000 46%);
+}
