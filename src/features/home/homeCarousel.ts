@@ -22,6 +22,7 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   let current = 0, photoWidth = 0, timer = 0, layoutFrame = 0;
   let layoutReady = false;
   let imagesReady = false;
+  let warming = false;
   let changing = false, disposed = false, hovered = false, focused = false, visible = true, suspended = gallery.inert;
   let chatOpen = Boolean(document.querySelector('.chat__panel--open'));
   let previousOverflow: string | undefined;
@@ -62,9 +63,21 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   }
   const observer = new ResizeObserver(() => { if (!changing && !layoutFrame) layoutFrame = requestAnimationFrame(() => layout()); });
   const visibility = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; schedule(); });
+  async function warmSlides() {
+    // After the opening frame is visible, fetch the remaining slides one at a
+    // time in slideshow order so none of them competes with that first frame.
+    for (const slide of slides.slice(1)) {
+      if (disposed) return;
+      const image = slide.querySelector('img')!;
+      // Hidden lazy images need promotion before decode can start their request.
+      image.loading = 'eager';
+      await image.decode().catch(() => undefined);
+    }
+  }
   function schedule() {
     window.clearTimeout(timer);
     const revealed = !document.documentElement.hasAttribute('data-home-loading');
+    if (revealed && imagesReady && !warming && !disposed) { warming = true; void warmSlides(); }
     tilt.setEnabled(revealed && layoutReady && !disposed && !suspended && !changing && !chatOpen && visible && !viewer.open);
     if (revealed && layoutReady && imagesReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
       timer = window.setTimeout(() => void show(current + 1), 1600);
@@ -185,8 +198,8 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   document.addEventListener('xr:home-visible', schedule, options);
   reduced.addEventListener('change', () => { if (reduced.matches) animations.forEach(animation => animation.finish()); schedule(); }, options);
   // Fonts affect the title width and therefore the photo's safe area. Decode
-  // every carousel image before revealing that final, measured opening frame.
-  const images = [...slides.map(slide => slide.querySelector('img')!), ...header.querySelectorAll('img')];
+  // the opening photo and logo before revealing that final, measured frame.
+  const images = [slides[0].querySelector('img')!, ...header.querySelectorAll('img')];
   void Promise.all([document.fonts.ready, ...images.map(image => image.decode().catch(() => undefined))]).then(() => {
     if (disposed) return;
     imagesReady = true; layout();

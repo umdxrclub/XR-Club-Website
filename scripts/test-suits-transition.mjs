@@ -43,7 +43,7 @@ const navCode=ts.transpileModule(fs.readFileSync('src/scripts/suits/navigation.t
 for(const [signedIn,status] of [[false,null],[true,'pending'],[true,'rejected'],[true,'approved']]){
  const window={},boot=async()=>{};
  const supabase={auth:{getSession:async()=>({data:{session:signedIn?{}:null}})}};
- vm.runInNewContext(navCode,{exports:{},window,location:{origin:'http://local'},URL,require:name=>{
+ vm.runInNewContext(navCode,{exports:{},window,location:{origin:'http://local',search:'',hash:''},document:{readyState:'loading'},addEventListener(){},URL,require:name=>{
   if(name.includes('supabase'))return{supabase};if(name.includes('suitsNavigation'))return routing;
   if(name==='./api')return{api:{membership:async()=>({status})}};if(name==='./index')return{boot};throw new Error(name);
  }});
@@ -53,3 +53,14 @@ for(const [signedIn,status] of [[false,null],[true,'pending'],[true,'rejected'],
  assert.equal(await window.xrSuitsPrepare(new URL('http://local/suits/team/'),cancelled.signal),null);
 }
 console.log('PASS: approved return preserves the requested section, shows a plain loading screen, then reveals the dashboard once; approval checks and reduced motion remain enforced.');
+
+// The auth client stays off a page's opening load, except when a sign-in link returns with tokens.
+for(const [search,hash,expected] of [['','',0],['','#access_token=a&refresh_token=b',1],['?code=abc','',1],['?view=tasks','#documents',0]]){
+ let loads=0,onLoad;
+ vm.runInNewContext(navCode,{exports:{},window:{},location:{origin:'http://local',search,hash},document:{readyState:'loading'},
+  addEventListener:(type,listener)=>{if(type==='load')onLoad=listener;},URL,require:name=>{if(name.includes('supabase')){loads++;return{supabase:{}};}return routing;}});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(loads,expected,`${search}${hash} loads the auth client ${expected?'immediately':'later'}`);
+ assert.equal(typeof onLoad,expected?'undefined':'function','Other pages warm the auth client after loading');
+}
+console.log('PASS: the auth client loads after the page, or immediately to finish a returning sign-in.');

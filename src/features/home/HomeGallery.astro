@@ -30,7 +30,7 @@ const photos = await Promise.all([
   <div class="home-gallery__carousel" data-home-carousel aria-describedby="home-photo-instructions" style={`--photo-mask: ${photoMask}; --photo-ratio: ${photos[0].image.width / photos[0].image.height}`}>
     {photos.map((photo, index) => (
       <a class="home-gallery__slide" href={photo.full.src} data-gallery-photo data-photo-ratio={photo.image.width / photo.image.height} hidden={index !== 0} tabindex={index === 0 ? 0 : -1} aria-label={`View ${photo.name.toLowerCase()} photo, ${index + 1} of ${photos.length}`}>
-        <Image src={photo.image} alt={photo.alt} width={1600} widths={homePhotoWidths} sizes={index === 0 ? firstHomePhotoSizes : '(max-width: 900px) calc(100vw - 48px), 58vw'} format="webp" quality={86} loading="eager" fetchpriority={index === 0 ? "high" : "auto"} decoding="async" />
+        <Image src={photo.image} alt={photo.alt} width={1600} widths={homePhotoWidths} sizes={index === 0 ? firstHomePhotoSizes : '(max-width: 900px) calc(100vw - 48px), 58vw'} format="webp" quality={86} loading={index === 0 ? "eager" : "lazy"} fetchpriority={index === 0 ? "high" : "auto"} decoding="async" />
       </a>
     ))}
     <svg class="home-gallery__contour" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">

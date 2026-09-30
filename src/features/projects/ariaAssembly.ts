@@ -1,5 +1,6 @@
 import masks from '../../data/aria-parts.json';
 import type { AriaAssemblyWorkerResult } from './ariaAssemblyWorker';
+import { homeVisible } from '../home/homeReady';
 
 type Layer = { id: string; canvas: HTMLCanvasElement; x: number; y: number; width: number; height: number };
 const crop = masks.crop;
@@ -89,7 +90,8 @@ export function mountAriaAssembly() {
     }
     function setProgress(value: number) { progress = clamp(value); render(); }
     const size = new ResizeObserver(measure); size.observe(slot);
-    prepare(slot.dataset.ariaSource!).then(({ full, layers }) => {
+    // The glasses appear only after scrolling; prepare them once the opening frame is shown.
+    homeVisible().then(() => prepare(slot.dataset.ariaSource!)).then(({ full, layers }) => {
       if (disposed) return;
       const entries = mode === 'complete' ? [{ id: 'complete', canvas: full, x: 0, y: 0, width: crop.width, height: crop.height }] : layers;
       // Mirroring puts larger source X farther left on screen. Rank along the

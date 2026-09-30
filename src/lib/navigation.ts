@@ -1,6 +1,7 @@
 import { homeSectionStops, isHomeSection, sectionAtTravel, type HomeSection } from './homeSections';
 import { morphHomeScene } from './homeSceneTransition';
 import { siteLinks } from '../config/site';
+import { markHomeReady } from '../features/home/homeReady';
 
 export function mountHomeNavigation(header: HTMLElement) {
   const candidate = document.querySelector<HTMLElement>('[data-home-waves]');
@@ -161,7 +162,7 @@ export function mountHomeNavigation(header: HTMLElement) {
     if (!section) return;
     // Existing shared hash links still work, then become clean section URLs.
     if (isHomeSection(legacySection)) history.replaceState(history.state, '', siteLinks[section] + location.search);
-    void go(section, animate);
+    return go(section, animate);
   };
   window.addEventListener('hashchange', () => followLocation(), options);
   window.addEventListener('popstate', event => {
@@ -187,7 +188,10 @@ export function mountHomeNavigation(header: HTMLElement) {
     animation?.abort(); void go(section, false);
   }, options);
   current();
-  const initialFrame = requestAnimationFrame(() => followLocation(false));
+  // A section address stays hidden until its scene is in place, so the home scene never flashes first.
+  const initialFrame = requestAnimationFrame(() => {
+    void Promise.resolve(followLocation(false)).catch(() => undefined).then(() => { if (!disposed) markHomeReady(root, 'section'); });
+  });
   return () => {
     disposed = true; queued = undefined; animation?.abort(); controller.abort(); cancelAnimationFrame(initialFrame);
     history.scrollRestoration = previousRestoration;

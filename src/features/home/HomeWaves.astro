@@ -8,9 +8,7 @@ import { SKY_PROJECT_HOLD, SKY_TRANSITION_DISTANCE } from '../sky/skyTimeline';
 import { SKY_STORY_DISTANCE } from '../sky/skyStoryMotion';
 const base = import.meta.env.BASE_URL;
 ---
-<link rel="preload" as="image" href={`${base}scenes/clean-waves.webp`} />
 <link rel="preload" as="image" href={`${base}scenes/orange/orange-waves-shaded.svg`} />
-<link rel="preload" as="image" href={`${base}scenes/aria/aria-render-original.webp`} />
 <div class="home-waves" data-home-waves style={`--home-story-length: ${2.8 + SKY_PROJECT_HOLD + SKY_TRANSITION_DISTANCE + SKY_STORY_DISTANCE + EQUIPMENT_DISTANCE}; --home-story-length-reduced: ${2.8 + SKY_STORY_DISTANCE + EQUIPMENT_DISTANCE}`}>
   <div class="home-waves__stage" data-home-waves-stage>
     <div class="home-waves__still" aria-hidden="true"><AngledWaves muted /></div>
@@ -49,7 +47,7 @@ const base = import.meta.env.BASE_URL;
   @media(prefers-reduced-motion:reduce) { .home-waves.has-project-story { height: calc(var(--home-stage-height) * 1.9); } .home-waves.has-project-story.has-sky-journey { height: calc(var(--home-stage-height) * var(--home-story-length-reduced)); } }
 </style>
 <script>
-  import { markHomeReady } from './homeReady';
+  import { homeVisible, markHomeReady } from './homeReady';
   let dispose: (() => void) | undefined;
   let generation = 0;
   async function mount() {
@@ -57,6 +55,13 @@ const base = import.meta.env.BASE_URL;
     const current = ++generation;
     const root = document.querySelector<HTMLElement>('[data-home-waves]');
     if (!root) return;
+    // The still matches the shader's first frame, so WebGL starts once the page is
+    // shown. Reduced motion draws the full spectrum instead, so the page waits for it.
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      markHomeReady(root, 'background');
+      await homeVisible();
+      if (current !== generation || !root.isConnected) return;
+    }
     try {
       const { mountHomeWaves } = await import('./homeWaves');
       if (current !== generation || !root.isConnected) return;
