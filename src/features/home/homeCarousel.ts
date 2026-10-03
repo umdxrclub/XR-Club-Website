@@ -76,7 +76,8 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   }
   function schedule() {
     window.clearTimeout(timer);
-    const revealed = !document.documentElement.hasAttribute('data-home-loading');
+    // Hold autoplay and tilt until HomeIntro's folder has turned into the opening photo.
+    const revealed = !document.documentElement.hasAttribute('data-home-loading') && !document.documentElement.hasAttribute('data-home-intro-on');
     if (revealed && imagesReady && !warming && !disposed) { warming = true; void warmSlides(); }
     tilt.setEnabled(revealed && layoutReady && !disposed && !suspended && !changing && !chatOpen && visible && !viewer.open);
     if (revealed && layoutReady && imagesReady && !disposed && !suspended && !changing && !chatOpen && !hovered && !focused && visible && !viewer.open && !document.hidden && !reduced.matches) {
@@ -196,6 +197,7 @@ export function mountHomeCarousel(gallery: HTMLElement) {
   viewer.addEventListener('close', restoreScroll, options);
   document.addEventListener('visibilitychange', schedule, options);
   document.addEventListener('xr:home-visible', schedule, options);
+  document.addEventListener('xr:home-settled', schedule, options);
   reduced.addEventListener('change', () => { if (reduced.matches) animations.forEach(animation => animation.finish()); schedule(); }, options);
   // Fonts affect the title width and therefore the photo's safe area. Decode
   // the opening photo and logo before revealing that final, measured frame.

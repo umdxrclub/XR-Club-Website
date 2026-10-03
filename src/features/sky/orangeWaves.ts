@@ -1,5 +1,5 @@
 import type { OrthographicCamera, Scene, Texture, Vector2, WebGLRenderer } from 'three';
-import { homeVisible } from '../home/homeReady';
+import { homeSettled } from '../home/homeReady';
 
 // Keep the original orange palette and broad rolling motion. Contact shadows
 // follow the warped artwork, so each seam reads as a raised, shaded layer.
@@ -55,8 +55,8 @@ export function mountOrangeWaves(host: HTMLElement) {
     let texture: Texture | undefined;
     try {
       // This scene starts well below the opening frame. Load 3D and rasterize
-      // its large artwork only after the page is shown and the browser is idle.
-      await homeVisible();
+      // its large artwork only after the page has settled and the browser is idle.
+      await homeSettled();
       await new Promise<void>(resolve => typeof requestIdleCallback === 'function' ? requestIdleCallback(() => resolve(), { timeout: 2000 }) : setTimeout(resolve, 250));
       if (disposed) return;
       const { Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, TextureLoader, Vector2, WebGLRenderer } = await import('three');

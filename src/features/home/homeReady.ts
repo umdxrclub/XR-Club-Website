@@ -11,10 +11,18 @@ export function markHomeReady(root: HTMLElement, part: keyof typeof parts) {
   }));
 }
 
-/** Resolves once the opening frame is shown, or immediately on pages without one. */
-export function homeVisible() {
+/** Resolves once the opening frame is shown and the HomeIntro folder has finished, or immediately on pages without them. */
+export function homeSettled() {
+  const root = document.documentElement;
   return new Promise<void>(resolve => {
-    if (!document.documentElement.hasAttribute('data-home-loading')) resolve();
-    else document.addEventListener('xr:home-visible', () => resolve(), { once: true });
+    const check = () => {
+      if (root.hasAttribute('data-home-loading') || root.hasAttribute('data-home-intro-on')) return;
+      document.removeEventListener('xr:home-visible', check);
+      document.removeEventListener('xr:home-settled', check);
+      resolve();
+    };
+    document.addEventListener('xr:home-visible', check);
+    document.addEventListener('xr:home-settled', check);
+    check();
   });
 }

@@ -7,30 +7,68 @@ import HomeWaves from '../features/home/HomeWaves.astro';
 import HomeGallery from '../features/home/HomeGallery.astro';
 import HomeStatement from '../features/home/HomeStatement.astro';
 import HomeProjectStory from '../features/projects/HomeProjectStory.astro';
+import HomeIntro from '../features/home/HomeIntro.astro';
 const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: homePhotoWidths, format: 'webp', quality: 86 });
 ---
 
 <BaseLayout title="XR Club">
   <script slot="head" is:inline data-astro-rerun>
     (() => {
-      document.documentElement.setAttribute('data-home-loading', '');
-      const finish = () => {
-        document.documentElement.removeAttribute('data-home-loading');
-        clearTimeout(fallback);
-        document.removeEventListener('xr:home-ready', finish);
-        document.removeEventListener('astro:before-swap', finish);
-        document.dispatchEvent(new CustomEvent('xr:home-visible'));
+      const root = document.documentElement;
+      // Only a fresh load shows the HomeIntro folder. In-site arrivals keep the previous page on screen until this one is ready.
+      let intro = document.readyState === 'loading';
+      // Deferred homepage work waits for xr:home-settled so it never stalls the folder's flip.
+      const dismiss = () => {
+        intro = false;
+        document.querySelector('[data-home-intro]')?.remove();
+        if (!root.hasAttribute('data-home-intro-on')) return;
+        root.removeAttribute('data-home-intro-on');
+        document.dispatchEvent(new CustomEvent('xr:home-settled'));
       };
+      if (intro) root.setAttribute('data-home-intro-on', ''); else dismiss();
+      document.addEventListener('xr:home-intro-done', dismiss, { once: true });
+      // Chromium's full-page arrivals hold the previous page instead (PageTransitions marks those first).
+      addEventListener('pagereveal', () => { if (root.hasAttribute('data-home-arrival')) dismiss(); }, { once: true });
+      root.setAttribute('data-home-loading', '');
+      const shown = performance.now();
+      let timer = 0, revealed = false;
+      const reveal = () => {
+        if (revealed) return;
+        revealed = true;
+        clearTimeout(fallback); clearTimeout(timer);
+        document.removeEventListener('xr:home-ready', ready);
+        document.removeEventListener('astro:before-swap', leave);
+        if (!intro) dismiss();
+        root.removeAttribute('data-home-loading'); root.removeAttribute('data-home-painting');
+        document.dispatchEvent(new CustomEvent('xr:home-visible'));
+        // HomeIntro turns the paper into the page; never leave it on screen if that script fails.
+        if (intro) setTimeout(dismiss, 3000);
+      };
+      const ready = () => {
+        if (!intro) { reveal(); return; }
+        // Paint the page under the paper first, so the shrink starts on an idle frame.
+        root.setAttribute('data-home-painting', '');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (revealed) return;
+          // Let the mark register before the paper turns into the page, even when loading is instant.
+          const wait = 750 - (performance.now() - shown);
+          if (wait > 0) timer = setTimeout(reveal, wait); else reveal();
+        }));
+      };
+      const leave = () => { dismiss(); reveal(); };
       // Keep the server-rendered page usable if a script or image request fails.
-      const fallback = setTimeout(finish, 10000);
-      document.addEventListener('xr:home-ready', finish);
-      document.addEventListener('astro:before-swap', finish);
+      const fallback = setTimeout(reveal, 10000);
+      document.addEventListener('xr:home-ready', ready, { once: true });
+      document.addEventListener('astro:before-swap', leave);
     })();
   </script>
   <style slot="head" is:global>
-    html[data-home-loading] body { opacity: 0; pointer-events: none; }
+    html[data-home-loading] body { pointer-events: none; }
+    /* Unpainted while loading. With HomeIntro, the ready page paints once under its cover before the reveal. */
+    html[data-home-loading]:not([data-home-painting]) body > :not([data-home-intro]) { opacity: 0; }
   </style>
   <link slot="head" rel="preload" as="image" href={openingPhoto.src} imagesrcset={openingPhoto.srcSet.attribute} imagesizes={firstHomePhotoSizes} fetchpriority="high" />
+  <HomeIntro />
   <Header />
   <main id="home">
     <h1 class="visually-hidden">XR Club at the University of Maryland</h1>

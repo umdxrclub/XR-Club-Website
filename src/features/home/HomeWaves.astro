@@ -47,7 +47,7 @@ const base = import.meta.env.BASE_URL;
   @media(prefers-reduced-motion:reduce) { .home-waves.has-project-story { height: calc(var(--home-stage-height) * 1.9); } .home-waves.has-project-story.has-sky-journey { height: calc(var(--home-stage-height) * var(--home-story-length-reduced)); } }
 </style>
 <script>
-  import { homeVisible, markHomeReady } from './homeReady';
+  import { homeSettled, markHomeReady } from './homeReady';
   let dispose: (() => void) | undefined;
   let generation = 0;
   async function mount() {
@@ -55,11 +55,11 @@ const base = import.meta.env.BASE_URL;
     const current = ++generation;
     const root = document.querySelector<HTMLElement>('[data-home-waves]');
     if (!root) return;
-    // The still matches the shader's first frame, so WebGL starts once the page is
-    // shown. Reduced motion draws the full spectrum instead, so the page waits for it.
+    // The still matches the shader's first frame, so WebGL starts once the page has
+    // settled. Reduced motion draws the full spectrum instead, so the page waits for it.
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
       markHomeReady(root, 'background');
-      await homeVisible();
+      await homeSettled();
       if (current !== generation || !root.isConnected) return;
     }
     try {
