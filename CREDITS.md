@@ -17,6 +17,8 @@
 
 - **Recognition marks:** Official Reality Hack at MIT, NASA, and Amazon logos; sources and ownership are recorded in [recognition sources](public/brand/recognition/SOURCES.md).
 
+- **Dreamers logo:** Designed by Earl, NASA SUITS team member. His original `Logo_final.png` is kept unchanged in `src/assets/suits/dreamers-logo-earl.png`. The workspace top bar shows it cropped to the artwork, with the black “REAMERS” letters turned white for the dark sky; the red D, rocket and texture are unchanged. Rebuild with `node scripts/prepare-dreamers-logo.mjs`.
+
 - **SUITS background:** Full-resolution Earth-view image extracted from the user-supplied Looking Out scene (Workshop 3699765486). The supplied project credits NASA. The website uses the image only.
 
 Third-party assets retain their respective ownership and license terms.

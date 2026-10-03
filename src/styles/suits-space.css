@@ -212,7 +212,7 @@ html[data-suits-workspace] .st-sky-motion { visibility:visible; }
 .st .st-dd__list { max-width:calc(100vw - 16px); scrollbar-width:thin; }
 .st .st-dd__list button { min-height:38px; padding:8px 12px; font-size:14px; line-height:1.4; }
 @media(max-width:760px) {
- .st[data-mode="workspace"] .st-top { height:88px; display:flex; flex-direction:column; align-items:stretch; justify-content:center; padding:8px 4px; gap:8px; margin-bottom:0; }
+ .st[data-mode="workspace"] .st-top { height:94px; display:flex; flex-direction:column; align-items:stretch; justify-content:center; padding:8px 4px 8px 0; gap:8px; margin-bottom:0; }
  .st[data-mode="workspace"] .st-workspace-brand { font-size:23px; width:fit-content; }
  .st[data-mode="workspace"] .st-top__actions { justify-content:space-between; gap:6px; }
  .st[data-mode="workspace"] .st-top__actions .st-btn,.st[data-mode="workspace"] .st-workspace-home { padding:7px 9px; min-height:34px; font-size:12px; }

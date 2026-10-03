@@ -262,7 +262,9 @@
   .st-repo .st-viewer__sub { display: none; }
 }
 
-/* Dreamers wordmark in the workspace top bar. */
+/* Dreamers logo (designed by Earl) in the workspace top bar. */
 .st-workspace-brand { display: inline-flex; align-items: center; line-height: 0; }
-.st-workspace-logo { display: block; width: auto; height: 32px; }
-@media (max-width: 760px) { .st-workspace-logo { height: 26px; } }
+.st-workspace-logo { display: block; width: auto; height: 56px; }
+@media (max-height: 650px) { .st-workspace-logo { height: 40px; } }
+/* The phone bar stacks the logo above its actions within 94px. */
+@media (max-width: 760px) { .st-workspace-logo { height: 36px; } }

@@ -113,7 +113,7 @@
 
 /* Keep the frame inside the viewport, with the centered artwork visible around it. */
 .st[data-mode="workspace"] { height:100dvh; min-height:0; display:flex; align-items:center; overflow:hidden; }
-.st[data-mode="workspace"] .st-top { padding-inline:4px; }
+.st[data-mode="workspace"] .st-top { padding-inline:0 4px; }
 .st[data-mode="workspace"] .st-side { padding-top:6px; }
 .st[data-mode="workspace"] .st-nav__btn { min-height:38px; padding-inline:12px; font-size:13px; }
 .st[data-mode="workspace"] .st-view>* { min-width:0; }
