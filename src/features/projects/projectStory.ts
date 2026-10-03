@@ -35,15 +35,38 @@ export function mountProjectStory(root: HTMLElement) {
   let pendingEntry: (() => void) | null = null;
   root.classList.add('has-project-story');
   const skyJourney = mountSkyJourney(root);
-  let flightPose: { x: number; y: number; rotateY: number; rotateZ: number; progress: number } | undefined;
+  let flightPose: { x: number; y: number; width: number; height: number; rotateY: number; rotateZ: number; progress: number } | undefined;
+  let galleryPerspective: number | undefined;
   // Follow the pointer before takeoff, so freezing the slideshow only hands
   // its cursor pose to the moving card instead of cancelling the interaction.
   const flightTilt = mountPointerTilt(drawFlight, true);
   function drawFlight() {
     if (!flightPose) return;
-    const { x, y, rotateY, rotateZ, progress: p } = flightPose;
+    const { x, y, width: cardWidth, height: cardHeight, rotateY, rotateZ, progress: p } = flightPose;
     const tilt = pointerTiltTransform(flightTilt.value, mix(5, 3.5, p), mix(7, 4.5, p), mix(1400, 1800, p));
-    style(flight, 'transform', `translate3d(${x}px, ${y}px, 0) ${tilt} rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`);
+    const transform = `translate3d(${x}px, ${y}px, 0) ${tilt} rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+    style(flight, 'transform', transform);
+    // Firefox and WebKit can still draw a face turned away from the viewer. Hide whichever face is
+    // clearly mirrored on screen; within about a degree of edge-on the browser's own test decides.
+    const facing = projectedFacing(transform, cardWidth, cardHeight);
+    style(carousel, 'visibility', facing < -.02 ? 'hidden' : '');
+    style(reverse, 'visibility', facing > .02 ? 'hidden' : '');
+  }
+  // On-screen area of the flying card through the gallery's real perspective, relative to its flat
+  // area. It is negative once the card appears mirrored, the same test browsers use for backfaces.
+  function projectedFacing(transform: string, cardWidth: number, cardHeight: number) {
+    galleryPerspective ||= parseFloat(getComputedStyle(gallery).perspective) || 0;
+    const perspective = new DOMMatrix();
+    if (galleryPerspective) perspective.m34 = -1 / galleryPerspective;
+    const matrix = new DOMMatrix().translate(width / 2, height / 2).multiply(perspective).translate(-width / 2, -height / 2)
+      .translate(cardWidth / 2, cardHeight / 2).multiply(new DOMMatrix(transform)).translate(-cardWidth / 2, -cardHeight / 2);
+    const corners = [[0, 0], [cardWidth, 0], [cardWidth, cardHeight], [0, cardHeight]].map(([cx, cy]) => {
+      const point = matrix.transformPoint(new DOMPoint(cx, cy, 0, 1));
+      return [point.x / point.w, point.y / point.w];
+    });
+    let area = 0;
+    corners.forEach(([ax, ay], i) => { const [bx, by] = corners[(i + 1) % 4]; area += ax * by - bx * ay; });
+    return area / (2 * cardWidth * cardHeight);
   }
 
   function style(element: HTMLElement, property: string, value: string) {
@@ -138,8 +161,8 @@ export function mountProjectStory(root: HTMLElement) {
     const background = state.background, finished = p >= .999;
     attribute(scene, 'data-arrived', finished);
     morphDot(p, background);
-    // The browser evaluates both faces in the real perspective transform.
-    // A numeric 90-degree cutoff can disagree with that projected handoff.
+    // Faces hide by their projected orientation (drawFlight), never by a numeric
+    // 90-degree cutoff, which can disagree with the perspective handoff.
     style(carousel, 'visibility', ''); style(reverse, 'visibility', '');
     if (!isReduced && p > .0001 && !finished) {
       attribute(gallery, 'data-flight', true);

@@ -54,7 +54,8 @@ const photos = await Promise.all([
   .home-gallery__reverse { display: none; }
   .home-gallery[data-flight] { z-index: 4; perspective: 1600px; }
   .home-gallery[data-flight] .home-gallery__flight { display: block; position: absolute; left: 0; top: 0; transform-origin: 50% 50%; transform-style: preserve-3d; will-change: transform; }
-  .home-gallery[data-flight] .home-gallery__carousel { left: 0; top: 0; width: 100%; height: 100% !important; transition: none; pointer-events: none; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  /* Firefox only hides a turned-away face that has its own 3D transform; translateZ(0) changes nothing visually. */
+  .home-gallery[data-flight] .home-gallery__carousel { left: 0; top: 0; width: 100%; height: 100% !important; transition: none; pointer-events: none; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(0); }
   .home-gallery[data-flight] .home-gallery__reverse { display: block; position: absolute; inset: 0; pointer-events: none; transform: rotateY(180deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
   .home-gallery__carousel {
     position: absolute;
