@@ -33,6 +33,78 @@ for(const reducedMotion of [false,true]){
  assert.equal(rendered,true);assert.equal(loading.frames.length,reducedMotion?0:1,'The completed dashboard gets one liquid reveal');
 }
 
+// Arriving at the homepage keeps the previous page on screen until its opening frame is shown.
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+function arrival(reducedMotion=false,chromium=true){
+ const events=new Map(),attrs=new Map(),animations=[];let skipped=0,finish;
+ const html={setAttribute:(k,v)=>attrs.set(k,v),removeAttribute:k=>attrs.delete(k),hasAttribute:k=>attrs.has(k),animate:(keyframes,options)=>{const animation={keyframes,options,finished:Promise.resolve(),cancel(){}};animations.push(animation);return animation;}};
+ const transition={ready:Promise.resolve(),finished:new Promise(resolve=>{finish=resolve;}),skipTransition(){skipped++;finish();}};
+ const document={documentElement:html,querySelector:()=>null,addEventListener:(k,v)=>events.set(k,v),removeEventListener:k=>events.delete(k),startViewTransition:fn=>{fn();return transition}};
+ const window={addEventListener:(k,v)=>events.set(k,v)};
+ vm.runInNewContext(source,{window,document,navigator:chromium?{userAgentData:{}}:{},location:{href:'http://local/login/'},matchMedia:q=>({matches:q.includes('reduced-motion')&&reducedMotion}),innerWidth:1440,innerHeight:900,URL,Math,Promise,setTimeout,clearTimeout});
+ // end() stands in for the CSS cross-fade finishing, which ends the view transition.
+ return{events,attrs,animations,transition,skips:()=>skipped,end:()=>finish()};
+}
+const homeDocument={documentElement:{setAttribute(){}},querySelector:selector=>selector==='[data-home-waves]'?{}:null};
+const swapTo=(page,from,to)=>page.events.get('astro:before-swap')({from:new URL(from),to:new URL(to),newDocument:homeDocument,viewTransition:page.transition});
+const arrivalCss=fs.readFileSync('src/components/PageTransitions.astro','utf8');
+assert.ok(arrivalCss.includes('html[data-home-arrival]::view-transition-old(root) { animation:home-arrival-hold'),'CSS holds the outgoing snapshot');
+assert.ok(arrivalCss.includes("html[data-home-arrival='ready']::view-transition-new(root) { animation:home-arrival-in"),'CSS cross-fades once ready');
+{
+ const page=arrival();swapTo(page,'http://local/login/','http://local/');
+ assert.equal(page.attrs.get('data-home-arrival'),'','The outgoing page is held');await tick();
+ page.events.get('astro:after-swap')();await tick();
+ assert.equal(page.attrs.get('data-home-arrival'),'','Nothing is revealed while the homepage loads');
+ page.events.get('xr:home-visible')();await tick();
+ assert.equal(page.attrs.get('data-home-arrival'),'ready','Cross-fade only once the homepage is ready');
+ assert.equal(page.animations.length,0,'The hold and cross-fade are CSS only');
+ page.end();await tick();assert.ok(!page.attrs.has('data-home-arrival'));assert.equal(page.skips(),0);
+}
+{
+ const page=arrival();swapTo(page,'http://local/suits/team/','http://local/about/');
+ assert.ok(page.attrs.has('data-suits-navigation'));assert.equal(page.attrs.get('data-home-arrival'),'');
+ await tick();page.events.get('astro:after-swap')();await tick();
+ assert.equal(page.animations.length,0,'The liquid reveal waits for the homepage');
+ page.events.get('xr:home-visible')();await tick();await tick();
+ assert.equal(page.animations.length,1);assert.equal(page.animations[0].options.pseudoElement,'::view-transition-new(root)');
+ assert.ok(!page.attrs.has('data-home-arrival'),'The hold ends as the reveal starts');
+}
+{
+ const page=arrival();page.attrs.set('data-home-loading','');
+ page.events.get('pagereveal')({viewTransition:page.transition});await tick();
+ assert.equal(page.attrs.get('data-home-arrival'),'','A full-page arrival holds the previous page as well');
+ page.events.get('xr:home-visible')();await tick();assert.equal(page.attrs.get('data-home-arrival'),'ready');
+ page.end();await tick();assert.ok(!page.attrs.has('data-home-arrival'));
+}
+{
+ const page=arrival(true);swapTo(page,'http://local/login/','http://local/');await tick();
+ page.events.get('astro:after-swap')();page.events.get('xr:home-visible')();await tick();await tick();
+ assert.equal(page.attrs.get('data-home-arrival'),'ready','Reduced motion keeps the hold; CSS then switches without a cross-fade');
+ assert.equal(page.animations.length,0);page.end();await tick();assert.ok(!page.attrs.has('data-home-arrival'));
+}
+{
+ const page=arrival();swapTo(page,'http://local/login/','http://local/');await tick();
+ page.transition.skipTransition();await tick();await tick();
+ assert.ok(!page.attrs.has('data-home-arrival'),'Another navigation releases the hold');
+}
+{
+ const page=arrival();let skipped=false;const swap=url=>page.events.get('pageswap')({viewTransition:{skipTransition(){skipped=true;},finished:Promise.resolve()},activation:{entry:{url}}});
+ swap('http://local/about/');assert.equal(skipped,false,'Leaving for the homepage keeps the snapshot');
+ swap('http://local/signup/');assert.equal(skipped,true,'Other pages keep the existing instant switch');
+ const other=arrival();other.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/login/'),newDocument:{documentElement:{setAttribute(){}},querySelector:()=>null},viewTransition:other.transition});
+ await tick();assert.equal(other.animations.length,0);assert.equal(other.attrs.size,0);
+}
+{
+ // Outside Chromium, full-page arrivals keep the previous instant switch; in-page router arrivals still hold.
+ const page=arrival(false,false);let skipped=false;
+ page.events.get('pageswap')({viewTransition:{skipTransition(){skipped=true;},finished:Promise.resolve()},activation:{entry:{url:'http://local/'}}});
+ assert.equal(skipped,true);
+ page.attrs.set('data-home-loading','');page.events.get('pagereveal')({viewTransition:page.transition});await tick();
+ assert.ok(!page.attrs.has('data-home-arrival'));assert.equal(page.skips(),1);
+ const router=arrival(false,false);swapTo(router,'http://local/login/','http://local/');assert.equal(router.attrs.get('data-home-arrival'),'');
+}
+console.log('PASS: arriving at the homepage keeps the previous page on screen until the opening frame is shown, then cross-fades or reveals.');
+
 const routeCode=ts.transpileModule(fs.readFileSync('src/lib/suitsNavigation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const routing={};vm.runInNewContext(routeCode,{exports:routing,URL,Set});
 for(const [path,expected] of [['/suits/team/','/suits/workspace/'],['/suits/team/?view=tasks','/suits/workspace/tasks/'],['/suits/team/#documents','/suits/workspace/documents/'],['/suits/dashboard/','/suits/workspace/applications/'],['/suits/workspace/team/','/suits/workspace/team/'],['/club/suits/team/?view=bad','/club/suits/workspace/']])assert.equal(routing.workspaceDestination(new URL('http://local'+path)).pathname,expected);
