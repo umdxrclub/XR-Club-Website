@@ -17,6 +17,8 @@
   const documentHold = () => !!globalThis.navigator?.userAgentData;
   const cleanup = () => { html.removeAttribute('data-suits-navigation'); html.removeAttribute('data-home-arrival'); };
   let active = Promise.resolve();
+  // Ends a held dashboard entry (see astro:before-swap); unset when nothing is held.
+  let held;
   const smooth = t => t * t * t * (t * (t * 6 - 15) + 10);
   // Match projectStoryMotion's liquid edge and the existing scene transition timing.
   function frames(width, height, compact) {
@@ -112,14 +114,23 @@
     }
   });
   document.addEventListener('astro:before-swap', event => {
+    const mark=name=>{html.setAttribute(name,'');event.newDocument.documentElement.setAttribute(name,'');};
     if(event.newDocument.querySelector?.('#st[data-mode="workspace"]')){
-      event.viewTransition.skipTransition();cleanup();return;
+      if(!document.startViewTransition||document.querySelector('#st[data-mode="workspace"]')){event.viewTransition.skipTransition();cleanup();return;}
+      // Entering the dashboard from another page keeps that page on screen while the dashboard is built underneath;
+      // xrSuitsReveal then reveals the finished dashboard, so its loading screen never shows. A gate ends the hold early.
+      const ready=new Promise(resolve=>{const timer=setTimeout(resolve,8000);held=()=>{clearTimeout(timer);resolve();};});
+      const release=held;
+      mark('data-home-arrival');
+      if(reduced())active=arrive(event.viewTransition,ready);
+      else{mark('data-suits-navigation');active=animate(event.viewTransition,ready);}
+      void active.finally(()=>{if(held===release)held=undefined;});
+      return;
     }
     if (!document.startViewTransition) return;
     // Listen for the arriving page only after the swap, so this page's own events are ignored.
     const arriving=scene(event.to?.href)&&!!event.newDocument.querySelector?.('[data-home-waves]');
     const ready=arriving?new Promise(resolve=>document.addEventListener('astro:after-swap',()=>resolve(arrival()),{once:true})):undefined;
-    const mark=name=>{html.setAttribute(name,'');event.newDocument.documentElement.setAttribute(name,'');};
     if (connected(event.from?.href,event.to?.href) && !reduced()) {
       mark('data-suits-navigation');
       if(arriving)mark('data-home-arrival');
@@ -130,6 +141,12 @@
     }
   });
   window.xrSuitsReveal=async update=>{
+    // A held entry still shows the previous page: draw the dashboard beneath it, then let that transition reveal it.
+    if(held){
+      const release=held;held=undefined;
+      try{await update();}finally{release();}
+      await active;return;
+    }
     await active;
     if(reduced() || !document.startViewTransition) { await update(); return; }
     html.setAttribute('data-suits-navigation','');
@@ -137,6 +154,8 @@
     active=animate(transition);
     await active;
   };
+  // A sign-in or approval gate shown instead of the dashboard reveals the page as it is.
+  window.xrSuitsRelease=()=>{const release=held;held=undefined;release?.();};
   // Native snapshots also cover direct same-origin navigations such as auth callbacks.
   window.addEventListener('pageswap', event=>{
     const transition=event.viewTransition;if(!transition)return;

@@ -20,19 +20,6 @@ assert.ok(!source.includes('data-suits-arrival'),'No blank arrival layer');
 const css=fs.readFileSync('src/components/PageTransitions.astro','utf8');assert.ok(!css.includes('visibility: hidden'));assert.ok(css.includes('opacity:1'),'Outgoing page stays visible throughout reveal');
 console.log('PASS: liquid transitions retain the outgoing page, cover Astro navigation and workspace entry, and respect reduced motion.');
 
-// The loading screen swaps in immediately; only the ready dashboard gets a liquid reveal.
-for(const reducedMotion of [false,true]){
- const loading=setup(reducedMotion);let skipped=0,rendered=false;
- loading.window.xrSuitsPrepare=async()=>({to:new URL('http://local/suits/workspace/tasks/')});
- const preparation={from:new URL('http://local/'),to:new URL('http://local/suits/team/?view=tasks'),signal:new AbortController().signal,newDocument:{querySelector:()=>null,documentElement:loading.html},loader:async()=>{}};
- loading.events.get('astro:before-preparation')(preparation);await preparation.loader();
- assert.equal(preparation.to.pathname,'/suits/workspace/tasks/');
- loading.events.get('astro:before-swap')({...preparation,newDocument:{querySelector:()=>({}),documentElement:loading.html},viewTransition:{...loading.transition,skipTransition(){skipped++;}}});
- assert.equal(skipped,1);assert.equal(loading.frames.length,0,'Opening workspace is shown without an animation');
- await loading.window.xrSuitsReveal(async()=>{rendered=true;});
- assert.equal(rendered,true);assert.equal(loading.frames.length,reducedMotion?0:1,'The completed dashboard gets one liquid reveal');
-}
-
 // Arriving at the homepage keeps the previous page on screen until its opening frame is shown.
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function arrival(reducedMotion=false,chromium=true){
@@ -43,7 +30,7 @@ function arrival(reducedMotion=false,chromium=true){
  const window={addEventListener:(k,v)=>events.set(k,v)};
  vm.runInNewContext(source,{window,document,navigator:chromium?{userAgentData:{}}:{},location:{href:'http://local/login/'},matchMedia:q=>({matches:q.includes('reduced-motion')&&reducedMotion}),innerWidth:1440,innerHeight:900,URL,Math,Promise,setTimeout,clearTimeout});
  // end() stands in for the CSS cross-fade finishing, which ends the view transition.
- return{events,attrs,animations,transition,skips:()=>skipped,end:()=>finish()};
+ return{events,attrs,animations,transition,window,document,skips:()=>skipped,end:()=>finish()};
 }
 const homeDocument={documentElement:{setAttribute(){}},querySelector:selector=>selector==='[data-home-waves]'?{}:null};
 const swapTo=(page,from,to)=>page.events.get('astro:before-swap')({from:new URL(from),to:new URL(to),newDocument:homeDocument,viewTransition:page.transition});
@@ -106,30 +93,66 @@ assert.ok(arrivalCss.includes("html[data-home-arrival='ready']::view-transition-
 console.log('PASS: arriving at the homepage keeps the previous page on screen until the opening frame is shown, then cross-fades or reveals.');
 
 const routeCode=ts.transpileModule(fs.readFileSync('src/lib/suitsNavigation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+// Entering the dashboard from another page holds that page while the dashboard is built beneath it, then reveals it once.
+const workspaceDocument={documentElement:{setAttribute(){}},querySelector:selector=>selector.includes('workspace')?{}:null};
+for(const reducedMotion of [false,true]){
+ const page=arrival(reducedMotion);let rendered=false;
+ page.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/suits/workspace/'),newDocument:workspaceDocument,viewTransition:page.transition});
+ await tick();
+ assert.equal(page.skips(),0,'The previous page is held, not skipped');
+ assert.equal(page.attrs.get('data-home-arrival'),'','The hold keeps the previous page on screen');
+ assert.equal(page.attrs.has('data-suits-navigation'),!reducedMotion,'The liquid reveal is prepared unless motion is reduced');
+ const revealed=page.window.xrSuitsReveal(async()=>{rendered=true;assert.equal(page.animations.length,0,'The dashboard is drawn before anything is revealed');});
+ await tick();await tick();
+ assert.equal(rendered,true);
+ if(reducedMotion){assert.equal(page.attrs.get('data-home-arrival'),'ready','Reduced motion switches straight to the dashboard');page.end();}
+ else{assert.equal(page.animations.length,1,'The finished dashboard gets one liquid reveal');assert.equal(page.animations[0].options.pseudoElement,'::view-transition-new(root)');}
+ await revealed;await tick();
+ assert.ok(!page.attrs.has('data-home-arrival')&&!page.attrs.has('data-suits-navigation'));
+}
+{
+ // A sign-in or approval gate ends the hold, and the next reveal is an ordinary one.
+ const page=arrival();
+ page.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/suits/workspace/'),newDocument:workspaceDocument,viewTransition:page.transition});
+ await tick();page.window.xrSuitsRelease();await tick();await tick();
+ assert.equal(page.animations.length,1,'Releasing reveals the page as it is');
+ assert.ok(!page.attrs.has('data-home-arrival'));
+}
+{
+ // Moving within the dashboard, or without view transitions, keeps the instant switch.
+ const page=arrival();page.document.querySelector=selector=>selector.includes('workspace')?{}:null;
+ page.events.get('astro:before-swap')({from:new URL('http://local/suits/workspace/'),to:new URL('http://local/suits/workspace/tasks/'),newDocument:workspaceDocument,viewTransition:page.transition});
+ assert.equal(page.skips(),1);assert.equal(page.attrs.size,0);
+}
+console.log('PASS: entering the dashboard holds the previous page, draws the dashboard beneath it, then gives one liquid reveal (or a plain switch with reduced motion); gates release the hold.');
+
 const routing={};vm.runInNewContext(routeCode,{exports:routing,URL,Set});
 for(const [path,expected] of [['/suits/team/','/suits/workspace/'],['/suits/team/?view=tasks','/suits/workspace/tasks/'],['/suits/team/#documents','/suits/workspace/documents/'],['/suits/dashboard/','/suits/workspace/applications/'],['/suits/workspace/team/','/suits/workspace/team/'],['/club/suits/team/?view=bad','/club/suits/workspace/']])assert.equal(routing.workspaceDestination(new URL('http://local'+path)).pathname,expected);
 assert.equal(routing.workspaceDestination(new URL('http://local/about')),null);
 
 // Session and approval checks gate the shortcut; navigation never treats a cache flag as access.
-const navCode=ts.transpileModule(fs.readFileSync('src/scripts/suits/navigation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText.replaceAll('import.meta.env.DEV','false');
+const navCode=ts.transpileModule(fs.readFileSync('src/scripts/suits/navigation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText.replaceAll('import.meta.env.DEV','false').replaceAll('import.meta.env.BASE_URL',"'/'");
 for(const [signedIn,status] of [[false,null],[true,'pending'],[true,'rejected'],[true,'approved']]){
- const window={},boot=async()=>{};
- const supabase={auth:{getSession:async()=>({data:{session:signedIn?{}:null}})}};
- vm.runInNewContext(navCode,{exports:{},window,location:{origin:'http://local',search:'',hash:''},document:{readyState:'loading'},addEventListener(){},URL,require:name=>{
+ const window={},boot=async()=>{};let checks=0;
+ const supabase={auth:{getSession:async()=>({data:{session:signedIn?{user:{id:'member'}}:null}})}};
+ vm.runInNewContext(navCode,{exports:{},window,location:{origin:'http://local',search:'',hash:''},document:{readyState:'loading',addEventListener(){},getElementById:()=>null},addEventListener(){},URL,require:name=>{
   if(name.includes('supabase'))return{supabase};if(name.includes('suitsNavigation'))return routing;
-  if(name==='./api')return{api:{membership:async()=>({status})}};if(name==='./index')return{boot};throw new Error(name);
+  if(name.includes('homeReady'))return{homeSettled:async()=>{}};
+  if(name==='./api')return{api:{membership:async()=>{checks++;return{status};}}};if(name==='./index')return{boot};throw new Error(name);
  }});
  const prepared=await window.xrSuitsPrepare(new URL('http://local/suits/team/?view=tasks'),new AbortController().signal);
  assert.equal(!!prepared,signedIn&&status==='approved');
  const cancelled=new AbortController();cancelled.abort();
  assert.equal(await window.xrSuitsPrepare(new URL('http://local/suits/team/'),cancelled.signal),null);
+ // An approval is reused for a minute, so opening the dashboard after warming it makes no second request.
+ if(status==='approved')assert.equal(checks,1,'The approval check runs once');
 }
-console.log('PASS: approved return preserves the requested section, shows a plain loading screen, then reveals the dashboard once; approval checks and reduced motion remain enforced.');
+console.log('PASS: approved return preserves the requested section and reuses a fresh approval; approval checks remain enforced.');
 
 // The auth client stays off a page's opening load, except when a sign-in link returns with tokens.
 for(const [search,hash,expected] of [['','',0],['','#access_token=a&refresh_token=b',1],['?code=abc','',1],['?view=tasks','#documents',0]]){
  let loads=0,onLoad;
- vm.runInNewContext(navCode,{exports:{},window:{},location:{origin:'http://local',search,hash},document:{readyState:'loading'},
+ vm.runInNewContext(navCode,{exports:{},window:{},location:{origin:'http://local',search,hash},document:{readyState:'loading',addEventListener(){}},
   addEventListener:(type,listener)=>{if(type==='load')onLoad=listener;},URL,require:name=>{if(name.includes('supabase')){loads++;return{supabase:{}};}return routing;}});
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(loads,expected,`${search}${hash} loads the auth client ${expected?'immediately':'later'}`);

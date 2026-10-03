@@ -2,7 +2,7 @@
 // roster, then hand off to the section views.
 import type { User } from '@supabase/supabase-js';
 import { googleCallbackError, prepareGoogleReturn } from '../../lib/oauthRedirect';
-import { db, api, state, isManager, isLead, canReviewApplications, type MembershipRequest } from './api';
+import { db, api, state, isManager, isLead, canReviewApplications, type Member, type MembershipRequest } from './api';
 import { workspaceData } from '../../lib/workspaceCache';
 import { preloadWorkspace } from './preload';
 import { toast, esc } from './ui';
@@ -46,21 +46,42 @@ let bootAbort: AbortController | null = null;
 let authSubscription: { unsubscribe(): void } | null = null;
 let pageVersion = 0;
 let accessTimer = 0;
-function clearWorkspace() {
-  workspaceData.clear();documents.reset();
+// An approved member's roster entry, joined ahead of opening the dashboard (warmWorkspace, or the sign-in page).
+let warmed: { userId: string; member: Member; at: number } | null = null;
+const warmFor = (userId: string, maxAge: number) => !!warmed && warmed.userId === userId && Date.now() - warmed.at < maxAge;
+/** A held entry (suitsPageTransition) waits for the dashboard; any gate shown instead must end the hold. */
+const releaseHold = () => (window as unknown as { xrSuitsRelease?: () => void }).xrSuitsRelease?.();
+function clearWorkspace(keepData = false) {
+  if (!keepData) { workspaceData.clear(); documents.reset(); state.me = null; state.members = []; warmed = null; }
   stopSky();
   window.clearInterval(accessTimer);
   reader.leave(); meetings.leave(); team.leave(); applications.leave(); tasks.leave(); access.leave();
-  current = ''; state.me = null; state.members = [];
+  current = '';
   document.getElementById('st-app')?.setAttribute('hidden', '');
   document.querySelectorAll('.st-view > div').forEach(el => { el.replaceChildren(); });
   document.getElementById('st-modal-host')?.replaceChildren();
 }
-document.addEventListener('astro:before-swap', () => {
+document.addEventListener('astro:before-swap', event => {
   stopSky();
   pageVersion++; bootAbort?.abort(); authSubscription?.unsubscribe(); authSubscription=null;
-  clearWorkspace(); authorizing=false;authorization=null;
+  // A recent warm-up for the current member (memory only) carries across pages, so the dashboard stays ready to open;
+  // the sign-in page, another member or an old warm-up start clean.
+  const toSignIn = !!(event as TransitionBeforeSwapEvent).newDocument.querySelector('#st[data-mode="login"]');
+  const fresh = !!warmed && state.me?.user_id === warmed.member.user_id && warmFor(warmed.userId, 120000);
+  clearWorkspace(fresh && !toSignIn);
+  authorizing=false;authorization=null;
 });
+
+/** Ready an approved member's dashboard in memory before they open it, so entering it needs no loading screen. */
+export async function warmWorkspace(userId: string) {
+  // SUITS pages sign in and load the dashboard themselves.
+  if (document.getElementById('st') || warmFor(userId, 50000)) return;
+  const member = await api.join();
+  if (!member?.user_id || document.getElementById('st')) return;
+  state.me = member;
+  warmed = { userId, member, at: Date.now() };
+  await preloadWorkspace([documents.warm(), reader.warm()]);
+}
 // Google adds its button CSS to <head> once per page load, and Astro drops head styles the next
 // page lacks. Carry it over or the re-rendered button flashes its logo unstyled at full width.
 document.addEventListener('astro:before-swap', event => {
@@ -226,6 +247,7 @@ function setSignInVisible(visible: boolean) {
   button.querySelector('span')!.textContent = 'Continue with Google';
 }
 function showGate(message?: string) {
+  releaseHold();
   if (document.getElementById('st')?.dataset.mode === 'workspace') {
     void navigate(`${state.base}suits/team/?view=${encodeURIComponent(viewFromLocation())}`, { history: 'replace' });
     return;
@@ -241,6 +263,7 @@ function showGate(message?: string) {
 
 /** Signed-in accounts wait here without loading any workspace data. */
 export function showMembershipGate(request: MembershipRequest | null, retry: () => Promise<void>, signOut?: () => Promise<void>) {
+  releaseHold();
   clearWorkspace();
   document.getElementById('st-gate')!.hidden = false;
   setSignInVisible(false);
@@ -265,6 +288,7 @@ export function showMembershipGate(request: MembershipRequest | null, retry: () 
 }
 
 function showGateError(message: string) {
+  releaseHold();
   const el = document.getElementById('st-gate-error')!;
   el.textContent = message;
   el.hidden = false;
@@ -295,7 +319,8 @@ async function authorizeUser(user: User) {
       return;
     }
 
-    const joined=await api.join();
+    // A roster entry joined in the last minute (warmWorkspace, or the sign-in page) is reused.
+    const joined=warmFor(user.id,60000)?warmed!.member:await api.join();
     if(version!==pageVersion)return;
     if (!joined?.user_id) {
       const request = await api.membership();
@@ -306,6 +331,7 @@ async function authorizeUser(user: User) {
     }
     state.me = joined;
     if (document.getElementById('st')?.dataset.mode !== 'workspace') {
+      warmed = { userId: user.id, member: joined, at: Date.now() };
       const initial = viewFromLocation();
       await navigate(`${state.base}suits/workspace/${initial === 'meetings' ? '' : initial + '/'}`, { history: 'replace' });
       return;
