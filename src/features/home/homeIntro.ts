@@ -15,6 +15,7 @@ export function mountHomeIntro() {
     const card = intro.querySelector<HTMLElement>('[data-home-intro-card]')!;
     const back = intro.querySelector<HTMLElement>('[data-home-intro-back]')!;
     const logo = intro.querySelector<SVGSVGElement>('[data-home-intro-logo]')!;
+    const sheet = intro.querySelector<HTMLElement>('[data-home-intro-sheet]')!;
     const gallery = document.querySelector<HTMLElement>('[data-home-gallery]');
     const carousel = document.querySelector<HTMLElement>('[data-home-carousel]');
     const photo = carousel?.querySelector('img');
@@ -38,6 +39,8 @@ export function mountHomeIntro() {
     const screen = intro.getBoundingClientRect();
     const frame = (box: Box) => ({ left: `${box.left - screen.left}px`, top: `${box.top - screen.top}px`, width: `${box.width}px`, height: `${box.height}px` });
     const timing = { duration: shrink, easing: glide, fill: 'forwards' as const };
+    // The white sheet gives way to the folder's paper, fold and corner cut as the morph gets going.
+    sheet.animate([{ opacity: 1, offset: 0 }, { opacity: 0, offset: .45 }, { opacity: 0, offset: 1 }], timing);
     const paperFrom = card.getBoundingClientRect();
     const to = carousel?.getBoundingClientRect();
     // Section addresses and early scrolling open away from the photo, so there is nothing for the folder to become there.
@@ -59,14 +62,14 @@ export function mountHomeIntro() {
       intro.append(logo);
       Object.assign(logo.style, frame(start), { position: 'absolute', translate: 'none', animation: 'none' });
       finishes.push(logo.animate([frame(start), frame(target)], timing).finished);
-      // Its ink turns white exactly while it crosses the paper's top edge, so it reads dark on the paper and white over the
+      // Its ink turns white exactly while it crosses the paper's top edge, so it reads black on the paper and white over the
       // page. Every edge moves in a straight line through the eased progress, so each crossing is where a difference hits zero.
       const crossing = (atStart: number, atEnd: number) => atStart > 0 && atEnd < 0 ? atStart / (atStart - atEnd) : NaN;
       let enter = crossing(start.top - paperFrom.top, target.top - paperTo.top);
       let exit = crossing(start.bottom - paperFrom.top, target.top + target.height - paperTo.top);
       if (!(enter < exit)) { enter = .7; exit = 1; }
       const ink = (selector: string, property: 'fill' | 'stroke') =>
-        logo.querySelector(selector)!.animate([{ [property]: '#24252a', offset: 0 }, { [property]: '#24252a', offset: enter }, { [property]: '#ffffff', offset: exit }, { [property]: '#ffffff', offset: 1 }], timing);
+        logo.querySelector(selector)!.animate([{ [property]: '#000000', offset: 0 }, { [property]: '#000000', offset: enter }, { [property]: '#ffffff', offset: exit }, { [property]: '#ffffff', offset: 1 }], timing);
       ink('[data-badge]', 'fill');
       ink('[data-word]', 'stroke');
       cover(brand);

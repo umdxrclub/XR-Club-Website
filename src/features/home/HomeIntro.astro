@@ -9,11 +9,13 @@ import { portraitPhotoContour, portraitPhotoMask } from '../../lib/folderShape';
         <path d={portraitPhotoContour} fill="#eeede9" />
         <path d="M.008 .956H.052Q.060 .956 .060 .968V1Q.046 1 .038 .990Z" fill="#e0dfda" />
       </svg>
-      {/* The header's logo (public/brand/xr-labs-header.svg), large and drawn in the paper's ink; it glides into the header when the page is ready.
-          The letters are cut out of the badge, so they show the paper here and the dark page at the header without a colour change of their own. */}
+      {/* A plain white sheet covers the folder's paper, fold and corner cut until the morph begins (homeIntro.ts fades it). */}
+      <div class="home-intro__sheet" data-home-intro-sheet></div>
+      {/* The header's logo (public/brand/xr-labs-header.svg), large and black; it glides into the header when the page is ready.
+          The letters are cut out of the badge, so they show the sheet here and the dark page at the header without a colour change of their own. */}
       <svg class="home-intro__logo" viewBox="-16 -6 1014 266" data-home-intro-logo>
-        <path data-badge fill-rule="evenodd" fill="#24252a" d="M224 13C176 13 76-3 35 24C2 46-10 90-5 140C0 192 14 232 56 246C100 261 157 247 191 232C205 226 215 222 224 222C233 222 243 226 257 232C291 247 348 261 392 246C434 232 448 192 453 140C458 90 446 46 413 24C372-3 272 13 224 13ZM66 44H109L143 89L178 44H222L168 116L227 193H181L142 143L105 193H60L117 117ZM242 44H321C361 44 382 63 382 94C382 118 368 134 346 141L389 193H342L301 144H282V193H242ZM282 78V111H317C333 111 342 106 342 94C342 82 333 78 317 78Z" />
-        <g data-word fill="none" stroke="#24252a" stroke-width="27" stroke-linecap="butt" stroke-linejoin="round">
+        <path data-badge fill-rule="evenodd" fill="#000000" d="M224 13C176 13 76-3 35 24C2 46-10 90-5 140C0 192 14 232 56 246C100 261 157 247 191 232C205 226 215 222 224 222C233 222 243 226 257 232C291 247 348 261 392 246C434 232 448 192 453 140C458 90 446 46 413 24C372-3 272 13 224 13ZM66 44H109L143 89L178 44H222L168 116L227 193H181L142 143L105 193H60L117 117ZM242 44H321C361 44 382 63 382 94C382 118 368 134 346 141L389 193H342L301 144H282V193H242ZM282 78V111H317C333 111 342 106 342 94C342 82 333 78 317 78Z" />
+        <g data-word fill="none" stroke="#000000" stroke-width="27" stroke-linecap="butt" stroke-linejoin="round">
           <path d="M500 23V184Q500 201 518 201" />
           <path d="M658 82V201M658 141C658 106 638 81 607 81C576 81 555 107 555 142C555 177 576 202 607 202C638 202 658 177 658 141Z" />
           <path d="M706 23V201M706 142C706 107 727 81 758 81C789 81 810 107 810 142C810 177 789 202 758 202C727 202 706 177 706 142Z" />
@@ -37,6 +39,7 @@ import { portraitPhotoContour, portraitPhotoMask } from '../../lib/folderShape';
   .home-intro__back { transform: rotateY(180deg); overflow: hidden; mask-image: var(--photo-mask); mask-size: 100% 100%; mask-repeat: no-repeat; -webkit-mask-image: var(--photo-mask); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; }
   .home-intro__back :global(img) { display: block; width: 100%; height: auto; }
   .home-intro__paper { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .home-intro__sheet { position: absolute; inset: 0; background: #fff; }
   /* Half the paper's width on a laptop, most of it on a phone. While gliding to the header it is placed directly on the screen (homeIntro.ts). */
   .home-intro__logo { position: absolute; left: 50%; top: 50%; width: min(80vw, 760px); aspect-ratio: 1014 / 266; translate: -50% -50%; animation: home-intro-in .6s cubic-bezier(.2, .7, .2, 1) both; }
   @supports (width: 1cqw) { .home-intro__logo { width: max(min(80cqw, 340px), 50cqw); } }
