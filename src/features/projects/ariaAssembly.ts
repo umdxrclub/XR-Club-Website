@@ -1,6 +1,6 @@
 import masks from '../../data/aria-parts.json';
 import type { AriaAssemblyWorkerResult } from './ariaAssemblyWorker';
-import { homeSettled } from '../home/homeReady';
+import { homePainted, markHomePrepared } from '../home/homeReady';
 
 type Layer = { id: string; canvas: HTMLCanvasElement; x: number; y: number; width: number; height: number };
 const crop = masks.crop;
@@ -90,8 +90,11 @@ export function mountAriaAssembly() {
     }
     function setProgress(value: number) { progress = clamp(value); render(); }
     const size = new ResizeObserver(measure); size.observe(slot);
-    // The glasses appear only after scrolling; prepare them once the opening frame has settled.
-    homeSettled().then(() => prepare(slot.dataset.ariaSource!)).then(({ full, layers }) => {
+    // The glasses appear only after scrolling; prepare them once the opening frame has painted
+    // under the intro sheet, so drawing their layers never stutters the shown page.
+    const waves = document.querySelector<HTMLElement>('[data-home-waves]');
+    const report = () => { if (waves) markHomePrepared(waves, 'glasses'); };
+    homePainted().then(() => prepare(slot.dataset.ariaSource!)).then(({ full, layers }) => {
       if (disposed) return;
       const entries = mode === 'complete' ? [{ id: 'complete', canvas: full, x: 0, y: 0, width: crop.width, height: crop.height }] : layers;
       // Mirroring puts larger source X farther left on screen. Rank along the
@@ -113,12 +116,14 @@ export function mountAriaAssembly() {
         complete.dataset.ariaFinal = ''; art.append(complete);
       }
       measure(); slot.setAttribute('data-aria-ready', '');
+      report();
     }).catch(error => {
       if (disposed) return;
       // Keep the original still available without synchronous pixel processing.
       art.replaceChildren(); slot.removeAttribute('data-aria-ready');
       if (fallback) fallback.style.visibility = 'inherit';
       console.warn('Showing the original glasses illustration.', error);
+      report();
     });
     if (story) story.addEventListener('xr:aria-progress', event => setProgress((event as CustomEvent<{ progress: number }>).detail.progress), options);
     reduced.addEventListener('change', render, options);

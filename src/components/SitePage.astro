@@ -15,8 +15,13 @@ const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: 
   <script slot="head" is:inline data-astro-rerun>
     (() => {
       const root = document.documentElement;
-      // Only a fresh load shows the HomeIntro folder. In-site arrivals keep the previous page on screen until this one is ready.
+      // Only a fresh load shows the HomeIntro sheet, and only on a browser's first visit: later loads come from cache and
+      // open at once. (?intro in the address plays it again.) In-site arrivals keep the previous page on screen instead.
       let intro = document.readyState === 'loading';
+      try {
+        if (intro && localStorage.getItem('xr:home-intro') && !/[?&]intro\b/.test(location.search)) intro = false;
+        if (intro) localStorage.setItem('xr:home-intro', String(Date.now()));
+      } catch { /* Blocked storage behaves like a first visit. */ }
       // Deferred homepage work waits for xr:home-settled so it never stalls the folder's flip.
       const dismiss = () => {
         intro = false;
@@ -30,12 +35,13 @@ const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: 
       // Chromium's full-page arrivals hold the previous page instead (PageTransitions marks those first).
       addEventListener('pagereveal', () => { if (root.hasAttribute('data-home-arrival')) dismiss(); }, { once: true });
       root.setAttribute('data-home-loading', '');
+      root.removeAttribute('data-home-prepared');
       const shown = performance.now();
-      let timer = 0, revealed = false;
+      let timer = 0, cap = 0, revealed = false;
       const reveal = () => {
         if (revealed) return;
         revealed = true;
-        clearTimeout(fallback); clearTimeout(timer);
+        clearTimeout(fallback); clearTimeout(timer); clearTimeout(cap);
         document.removeEventListener('xr:home-ready', ready);
         document.removeEventListener('astro:before-swap', leave);
         if (!intro) dismiss();
@@ -46,14 +52,22 @@ const openingPhoto = await getImage({ src: firstHomePhoto, width: 1600, widths: 
       };
       const ready = () => {
         if (!intro) { reveal(); return; }
-        // Paint the page under the paper first, so the shrink starts on an idle frame.
+        // Paint the page under the sheet first, and let the setup that would stutter it afterwards (the WebGL waves,
+        // the glasses layers) run there too; the morph starts once that reports done (homeReady's markHomePrepared).
         root.setAttribute('data-home-painting', '');
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          if (revealed) return;
-          // Let the mark register before the paper turns into the page, even when loading is instant.
-          const wait = 750 - (performance.now() - shown);
-          if (wait > 0) timer = setTimeout(reveal, wait); else reveal();
-        }));
+        document.dispatchEvent(new CustomEvent('xr:home-painting'));
+        const go = () => {
+          clearTimeout(cap); document.removeEventListener('xr:home-prepared', go);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (revealed) return;
+            // Let the logo register before the sheet turns into the page, even when loading is instant.
+            const wait = 750 - (performance.now() - shown);
+            if (wait > 0) timer = setTimeout(reveal, wait); else reveal();
+          }));
+        };
+        // A slow device still gets its page: the morph starts after 3 s even if setup is unfinished.
+        cap = setTimeout(go, 3000);
+        if (root.hasAttribute('data-home-prepared')) go(); else document.addEventListener('xr:home-prepared', go, { once: true });
       };
       const leave = () => { dismiss(); reveal(); };
       // Keep the server-rendered page usable if a script or image request fails.

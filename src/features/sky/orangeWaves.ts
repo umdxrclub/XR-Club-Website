@@ -1,5 +1,5 @@
 import type { OrthographicCamera, Scene, Texture, Vector2, WebGLRenderer } from 'three';
-import { homeSettled } from '../home/homeReady';
+import { homePainted, markHomePrepared } from '../home/homeReady';
 
 // Keep the original orange palette and broad rolling motion. Contact shadows
 // follow the warped artwork, so each seam reads as a raised, shaded layer.
@@ -41,6 +41,8 @@ export function mountOrangeWaves(host: HTMLElement) {
     draw();
     if (!reduced) frame = requestAnimationFrame(tick);
   }
+  // The homepage's intro morph waits for this setup, so it never stutters the shown page.
+  const report = () => { const root = host.closest<HTMLElement>('[data-home-waves]'); if (root) markHomePrepared(root, 'sky'); };
   function dispose() {
     if (disposed) return;
     disposed = true;
@@ -54,11 +56,13 @@ export function mountOrangeWaves(host: HTMLElement) {
   void (async () => {
     let texture: Texture | undefined;
     try {
-      // This scene starts well below the opening frame. Load 3D and rasterize
-      // its large artwork only after the page has settled and the browser is idle.
-      await homeSettled();
-      await new Promise<void>(resolve => typeof requestIdleCallback === 'function' ? requestIdleCallback(() => resolve(), { timeout: 2000 }) : setTimeout(resolve, 250));
-      if (disposed) return;
+      // This scene starts well below the opening frame. Load 3D and rasterize its large artwork
+      // under the intro sheet, or, when the page is already shown, once the browser is idle.
+      await homePainted();
+      if (!document.documentElement.hasAttribute('data-home-loading')) {
+        await new Promise<void>(resolve => typeof requestIdleCallback === 'function' ? requestIdleCallback(() => resolve(), { timeout: 2000 }) : setTimeout(resolve, 250));
+      }
+      if (disposed) { report(); return; }
       const { Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, TextureLoader, Vector2, WebGLRenderer } = await import('three');
       if (disposed) return;
       texture = await new TextureLoader().loadAsync(`${import.meta.env.BASE_URL}scenes/orange/orange-waves-shaded.svg`);
@@ -103,13 +107,15 @@ export function mountOrangeWaves(host: HTMLElement) {
       compilation = renderer.compileAsync(scene, camera);
       await compilation;
       compilation = undefined;
-      if (disposed) return;
+      if (disposed) { report(); return; }
       ready = true;
       wake();
+      report();
     } catch (error) {
       if (!gl) texture?.dispose();
       dispose();
       console.warn('Showing the still orange background.', error);
+      report();
     }
   })();
   return {
