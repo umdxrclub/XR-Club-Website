@@ -12,7 +12,12 @@
     try { return /^\/(?:(?:about|projects|equipment)\/?)?$/.test(new URL(value, location.href).pathname); }
     catch { return false; }
   };
-  const connected = (from,to) => !!from && !!to && (suits(from) || suits(to));
+  // The funding page shares the liquid reveal.
+  const apply = value => {
+    try { return /\/(?:ideate|apply)\/?$/.test(new URL(value, location.href).pathname); }
+    catch { return false; }
+  };
+  const connected = (from,to) => !!from && !!to && (suits(from) || suits(to) || apply(from) || apply(to));
   // Full-page arrivals hold only in Chromium: WebKit crashed rendering this homepage inside such a transition.
   const documentHold = () => !!globalThis.navigator?.userAgentData;
   const cleanup = () => { html.removeAttribute('data-suits-navigation'); html.removeAttribute('data-home-arrival'); };
@@ -115,10 +120,12 @@
   });
   document.addEventListener('astro:before-swap', event => {
     const mark=name=>{html.setAttribute(name,'');event.newDocument.documentElement.setAttribute(name,'');};
-    if(event.newDocument.querySelector?.('#st[data-mode="workspace"]')){
-      if(!document.startViewTransition||document.querySelector('#st[data-mode="workspace"]')){event.viewTransition.skipTransition();cleanup();return;}
-      // Entering the dashboard from another page keeps that page on screen while the dashboard is built underneath;
-      // xrSuitsReveal then reveals the finished dashboard, so its loading screen never shows. A gate ends the hold early.
+    // Pages that build themselves before showing: the dashboard, and the funding page's background.
+    const builds='#st[data-mode="workspace"], [data-arrival-hold]';
+    if(event.newDocument.querySelector?.(builds)){
+      if(!document.startViewTransition||document.querySelector(builds)){event.viewTransition.skipTransition();cleanup();return;}
+      // Entering such a page from another keeps that page on screen while the new one is built underneath;
+      // xrSuitsReveal then reveals the finished page, so no loading state shows. A gate ends the hold early.
       const ready=new Promise(resolve=>{const timer=setTimeout(resolve,8000);held=()=>{clearTimeout(timer);resolve();};});
       const release=held;
       mark('data-home-arrival');
@@ -156,6 +163,7 @@
   };
   // A sign-in or approval gate shown instead of the dashboard reveals the page as it is.
   window.xrSuitsRelease=()=>{const release=held;held=undefined;release?.();};
+  window.xrSuitsHeld=()=>!!held;
   // Native snapshots also cover direct same-origin navigations such as auth callbacks.
   window.addEventListener('pageswap', event=>{
     const transition=event.viewTransition;if(!transition)return;

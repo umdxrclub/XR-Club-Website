@@ -7,5 +7,5 @@ export const siteLinks = {
   equipment: `${base}equipment`,
   projects: `${base}projects`,
   sponsors: 'https://xr.umd.edu/sponsors',
-  ideate: 'https://xr.umd.edu/ideate',
+  ideate: `${base}ideate/`,
 } as const;

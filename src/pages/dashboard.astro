@@ -22,6 +22,8 @@ const base = import.meta.env.BASE_URL;
         <div class="dash__nav-link dash__nav-link--active" data-tab="applications">Applications</div>
         <div class="dash__nav-link" data-tab="projects">Projects</div>
         <div class="dash__nav-link" data-tab="activity">Activity Log</div>
+        <div class="dash__nav-link" data-tab="pitches">Funding pitches</div>
+        <div class="dash__nav-link" data-tab="team-apps">Team applications</div>
         <a href={`${base}suits/team/`} class="dash__nav-link">SUITS team</a>
         <a href={base} class="dash__nav-link">Back to Site</a>
       </nav>
@@ -101,6 +103,20 @@ const base = import.meta.env.BASE_URL;
         </div>
         <div class="dash__projects-grid" id="dash-projects-grid"></div>
         <div class="dash__empty" id="projects-empty" style="display:none;">No projects yet.</div>
+      </div>
+
+      <div id="pitches-view" class="dash__reviews" style="display:none;">
+        <h1 class="dash__title">Funding pitches</h1>
+        <p class="dash__reviews-intro">Project pitches from the funding page. Open one to read it, set its status, and leave notes for the board.</p>
+        <div data-review-list></div>
+        <div class="dash__empty" data-review-empty style="display:none;">No pitches yet.</div>
+      </div>
+
+      <div id="team-apps-view" class="dash__reviews" style="display:none;">
+        <h1 class="dash__title">Team applications</h1>
+        <p class="dash__reviews-intro">People asking to join Immersive Installations, Niantic Spatial, or the Terrapin Terrarium team. Pass them on to the team contacts.</p>
+        <div data-review-list></div>
+        <div class="dash__empty" data-review-empty style="display:none;">No team applications yet.</div>
       </div>
     </main>
 
@@ -210,6 +226,8 @@ const base = import.meta.env.BASE_URL;
   <script>
     import { supabase } from '../lib/supabase';
     import type { Application, Profile, Project } from '../lib/types';
+    import { mountApplyReviews } from '../scripts/dashboardApply';
+    document.addEventListener('astro:page-load', mountApplyReviews);
 
     const base = import.meta.env.BASE_URL;
     let currentUser: Profile | null = null;
@@ -878,4 +896,18 @@ const base = import.meta.env.BASE_URL;
       });
     });
   </script>
+<style is:global>
+  .dash__reviews-intro { margin: -0.4rem 0 1.2rem; color: rgba(255,255,255,.5); font-size: .9rem; }
+  .dash__review { border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(255,255,255,.025); margin-bottom: .6rem; }
+  .dash__review-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) auto auto; gap: 1rem; align-items: center; padding: .9rem 1.1rem; cursor: pointer; list-style: none; }
+  .dash__review-summary::-webkit-details-marker { display: none; }
+  .dash__review-title { font-weight: 700; color: #fff; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dash__review-sub, .dash__review-when { color: rgba(255,255,255,.5); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dash__review-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid rgba(255,255,255,.06); }
+  .dash__review-saved { margin-left: .6rem; color: #34d399; font-size: .85rem; }
+  .status-badge--new, .status-badge--reviewing, .status-badge--contacted { color: #fbbf24; background: rgba(251,191,36,.1); }
+  .status-badge--chosen, .status-badge--joined { color: #34d399; background: rgba(52,211,153,.1); }
+  .status-badge--declined { color: #f87171; background: rgba(248,113,113,.1); }
+  @media (max-width: 800px) { .dash__review-summary { grid-template-columns: 1fr auto; } .dash__review-sub, .dash__review-when { display: none; } }
+</style>
 </AppLayout>

@@ -124,7 +124,24 @@ for(const reducedMotion of [false,true]){
  page.events.get('astro:before-swap')({from:new URL('http://local/suits/workspace/'),to:new URL('http://local/suits/workspace/tasks/'),newDocument:workspaceDocument,viewTransition:page.transition});
  assert.equal(page.skips(),1);assert.equal(page.attrs.size,0);
 }
-console.log('PASS: entering the dashboard holds the previous page, draws the dashboard beneath it, then gives one liquid reveal (or a plain switch with reduced motion); gates release the hold.');
+{
+ // The funding page arrives the same way: held while its background starts, then one liquid reveal; it reports whether it is held.
+ const page=arrival();
+ const fundingDocument={documentElement:{setAttribute(){}},querySelector:selector=>selector.includes('data-arrival-hold')?{}:null};
+ page.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/ideate/'),newDocument:fundingDocument,viewTransition:page.transition});
+ await tick();
+ assert.equal(page.window.xrSuitsHeld(),true,'The funding page can tell it is held');
+ assert.equal(page.attrs.has('data-suits-navigation'),true,'The liquid reveal is prepared');
+ await page.window.xrSuitsReveal(async()=>{});await tick();await tick();
+ assert.equal(page.animations.length,1,'One liquid reveal onto the finished page');
+ assert.equal(page.window.xrSuitsHeld(),false);
+ // Leaving it for the homepage is a connected navigation with the homepage hold.
+ const leaving=arrival();
+ leaving.events.get('astro:before-swap')({from:new URL('http://local/ideate/'),to:new URL('http://local/'),newDocument:homeDocument,viewTransition:leaving.transition});
+ await tick();
+ assert.equal(leaving.attrs.has('data-suits-navigation'),true);assert.equal(leaving.attrs.get('data-home-arrival'),'');
+}
+console.log('PASS: entering the dashboard or the funding page holds the previous page, draws the dashboard beneath it, then gives one liquid reveal (or a plain switch with reduced motion); gates release the hold.');
 
 const routing={};vm.runInNewContext(routeCode,{exports:routing,URL,Set});
 for(const [path,expected] of [['/suits/team/','/suits/workspace/'],['/suits/team/?view=tasks','/suits/workspace/tasks/'],['/suits/team/#documents','/suits/workspace/documents/'],['/suits/dashboard/','/suits/workspace/applications/'],['/suits/workspace/team/','/suits/workspace/team/'],['/club/suits/team/?view=bad','/club/suits/workspace/']])assert.equal(routing.workspaceDestination(new URL('http://local'+path)).pathname,expected);

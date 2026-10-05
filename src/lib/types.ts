@@ -132,6 +132,50 @@ export interface SuitsApplication {
   reviewer_notes: string | null;
 }
 
+export type FundingPitchStatus = 'new' | 'reviewing' | 'chosen' | 'waitlisted' | 'declined';
+export interface FundingPitch {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  status: FundingPitchStatus;
+  project_title: string;
+  idea: string;
+  topic: string | null;
+  lead_name: string;
+  lead_email: string;
+  lead_discord: string;
+  members: { name: string; detail: string }[];
+  outline: string;
+  zero_dollar_plan: string;
+  timeline: string;
+  deliverable: string;
+  lab_equipment: string | null;
+  budget_items: { name: string; cost: number; priority: 'must' | 'nice'; link: string }[];
+  requested_total: number;
+  agreed_to_rules: boolean;
+  reviewer_notes: string | null;
+}
+
+export type TeamApplicationStatus = 'new' | 'contacted' | 'joined' | 'declined';
+export interface TeamApplication {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  status: TeamApplicationStatus;
+  team: string;
+  full_name: string;
+  email: string;
+  discord_username: string;
+  year: string;
+  major: string;
+  pitch: string;
+  tools: string[];
+  link: string | null;
+  availability: string;
+  anything_else: string | null;
+  reviewer_notes: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -187,6 +231,18 @@ export interface Database {
         Row: { [K in keyof SuitsApplication]: SuitsApplication[K] };
         Insert: Omit<SuitsApplication, 'created_at' | 'updated_at' | 'status' | 'reviewer_notes'> & { status?: SuitsStatus };
         Update: Partial<SuitsApplication>;
+        Relationships: [];
+      };
+      funding_pitches: {
+        Row: { [K in keyof FundingPitch]: FundingPitch[K] };
+        Insert: Omit<FundingPitch, 'id' | 'created_at' | 'updated_at' | 'status' | 'reviewer_notes'>;
+        Update: Partial<FundingPitch>;
+        Relationships: [];
+      };
+      team_applications: {
+        Row: { [K in keyof TeamApplication]: TeamApplication[K] };
+        Insert: Omit<TeamApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'reviewer_notes'>;
+        Update: Partial<TeamApplication>;
         Relationships: [];
       };
     };

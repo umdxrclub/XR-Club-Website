@@ -1,0 +1,417 @@
+---
+import { Image } from 'astro:assets';
+import FolderButtonShape from '../../components/FolderButtonShape.astro';
+import { availabilityOptions, fundingFacts, fundingRules, teams, whatHappensNext, years } from './applyContent';
+import poster1 from '../../assets/apply/immersive-installations-poster-1.png';
+import poster2 from '../../assets/apply/immersive-installations-poster-2.png';
+const base = import.meta.env.BASE_URL;
+const posters = [poster1, poster2];
+---
+<main class="apply" data-apply data-arrival-hold>
+  <canvas class="apply__fluid" data-apply-fluid aria-hidden="true"></canvas>
+  <canvas class="apply__swimmer" data-apply-swimmer aria-hidden="true"></canvas>
+  <div class="apply__shade" aria-hidden="true"></div>
+
+  <div class="apply__scroller" data-apply-scroller>
+    {/* Every step sits on one stage pinned to the screen; the scroller behind it only supplies the position that drives the morph. */}
+    <div class="apply__deck" data-apply-deck>
+      <div class="apply__stage" data-apply-stage>
+        <section class="apply__step apply__step--intro" data-step="intro" data-flow="start" data-shown>
+          <div class="apply__panel">
+            <p class="apply__kicker">XR Club · Fall 2026</p>
+            <h1 class="apply__title">Get your project funded.</h1>
+            <p class="apply__lead">Pitch an XR project. The board picks the strongest pitches, and once SGA funding lands, chosen teams hear from us. Or join a team that is already building.</p>
+            <div class="apply__actions">
+              <button type="button" class="apply__button" data-next><FolderButtonShape /><span>Pitch a project</span></button>
+              <button type="button" class="apply__link" data-jump="teams">Join a team instead</button>
+            </div>
+            <dl class="apply__facts">
+              {fundingFacts.map(fact => <div><dt>{fact.value}</dt><dd>{fact.label}</dd></div>)}
+            </dl>
+          </div>
+        </section>
+
+        <form class="apply__form" data-apply-form="pitch" novalidate autocomplete="on">
+          <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <section class="apply__step" data-step="project" data-flow="pitch">
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch · 1 of 6</p>
+              <h2 class="apply__title">What are you building?</h2>
+              <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="A short, memorable name" /></label>
+              <label class="apply__field"><span class="apply__label">The idea, in a sentence or two</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What it is, who it is for, why XR"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Problem topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="One of the board's topics, or your own direction" /></label>
+              <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="team" data-flow="pitch">
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch · 2 of 6</p>
+              <h2 class="apply__title">Who is on the team?</h2>
+              <p class="apply__help">Three to ten people, including you. No solo projects.</p>
+              <div class="apply__row">
+                <label class="apply__field"><span class="apply__label">Your name</span><input class="apply__input" name="lead_name" type="text" required maxlength="120" autocomplete="name" /></label>
+                <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="lead_email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email /></label>
+              </div>
+              <label class="apply__field"><span class="apply__label">Your Discord username</span><input class="apply__input" name="lead_discord" type="text" required maxlength="80" autocomplete="off" /></label>
+              <label class="apply__field"><span class="apply__label">Everyone on the team, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="4" placeholder="Name, year, what they will work on" data-members></textarea><span class="apply__hint" data-members-count></span></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="plan" data-flow="pitch">
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch · 3 of 6</p>
+              <h2 class="apply__title">How will you build it?</h2>
+              <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="4" placeholder="The smallest version that works, and what you build on top of it"></textarea></label>
+              <label class="apply__field"><span class="apply__label">The $0 version</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can still build with lab equipment only, if funding shrinks or falls through"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="3" placeholder="Project checks happen every 2 to 3 weeks. What is done by each one, through the end of the semester?"></textarea></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="budget" data-flow="pitch">
+            <div class="apply__panel apply__panel--wide">
+              <p class="apply__kicker">Pitch · 4 of 6</p>
+              <h2 class="apply__title">What do you need?</h2>
+              <p class="apply__help">Hardware only. Mark each item must-have or nice-to-have, ranked by what matters most. Leave this empty if lab equipment covers it.</p>
+              <div class="apply__budget" data-budget>
+                <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Est. cost</span><span>Priority</span><span>Link</span></div>
+                <div data-budget-rows></div>
+                <template data-budget-row>
+                  <div class="apply__budget-row">
+                    <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="What" aria-label="Item" />
+                    <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
+                    <select class="apply__input" name="budget_priority" aria-label="Priority"><option value="must">Must-have</option><option value="nice">Nice-to-have</option></select>
+                    <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
+                    <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
+                  </div>
+                </template>
+                <div class="apply__budget-foot">
+                  <button type="button" class="apply__link" data-budget-add>+ Add an item</button>
+                  <p class="apply__total">Requested <strong data-budget-total>$0</strong></p>
+                </div>
+              </div>
+              <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill…" /></label>
+              <details class="apply__rules">
+                <summary>Funding rules</summary>
+                <div class="apply__rules-grid">
+                  <div><h3>Funds can buy</h3><ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul></div>
+                  <div><h3>Funds can't buy</h3><ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul></div>
+                </div>
+                <ul class="apply__rules-notes">{fundingRules.notes.map(item => <li>{item}</li>)}</ul>
+              </details>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="deliverable" data-flow="pitch">
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch · 5 of 6</p>
+              <h2 class="apply__title">What will you show?</h2>
+              <label class="apply__field"><span class="apply__label">The deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="3" placeholder="What is on the table at Demo Day at the end of the semester"></textarea></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="pitch-review" data-flow="pitch">
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch · 6 of 6</p>
+              <h2 class="apply__title">Ready to send?</h2>
+              <dl class="apply__summary" data-pitch-summary></dl>
+              <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>We have read the funding rules: hardware only, orders through the Treasurer, no reimbursements, hardware stays with the club, and funds release in stages with project checks.</span></label>
+              <p class="apply__error" data-form-error hidden></p>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Send the pitch</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="pitch-done" data-flow="pitch" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Pitch received</p>
+              <h2 class="apply__title">Thanks. We have it.</h2>
+              <ol class="apply__next">{whatHappensNext.map(item => <li>{item}</li>)}</ol>
+              <div class="apply__actions">
+                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
+                <button type="button" class="apply__link" data-jump="teams">Join a team too</button>
+              </div>
+            </div>
+          </section>
+        </form>
+
+        <section class="apply__step apply__step--teams" data-step="teams" data-flow="team">
+          <div class="apply__panel apply__panel--wide">
+            <p class="apply__kicker">Join a team</p>
+            <h2 class="apply__title">Already building. Room for you.</h2>
+            <div class="apply__teams" role="list">
+              {teams.map(team => (
+                <button type="button" class="apply__team" role="listitem" data-team-pick={team.slug}>
+                  <FolderButtonShape shortTab />
+                  <span class="apply__team-body">
+                    <span class="apply__team-kicker">{team.kicker}</span>
+                    <span class="apply__team-name">{team.name}</span>
+                    <span class="apply__team-tag">{team.tagline}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <form class="apply__form" data-apply-form="team" novalidate autocomplete="on">
+          <input type="hidden" name="team" data-team-field />
+          <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          {/* The team form stays off the deck until a team is picked, so scrolling cannot reach it empty. */}
+          <section class="apply__step" data-step="team-info" data-flow="team" hidden>
+            <div class="apply__panel apply__panel--wide">
+              {teams.map(team => (
+                <article class="apply__team-info" data-team-info={team.slug} hidden>
+                  <p class="apply__kicker">{team.kicker}</p>
+                  <h2 class="apply__title">{team.name}</h2>
+                  <div class="apply__team-columns">
+                    <div class="apply__team-text">
+                      {team.summary.map(paragraph => <p>{paragraph}</p>)}
+                      {team.roles && <p class="apply__team-roles"><strong>Looking for:</strong> {team.roles.join(' · ')}</p>}
+                      {team.people && <p class="apply__team-roles"><strong>On the team:</strong> {team.people.join(', ')}</p>}
+                    </div>
+                    <div class="apply__team-side">
+                      {team.posters && <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations Team poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: Audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520, 780]} sizes="(max-width: 700px) 42vw, 190px" format="webp" quality={82} loading="lazy" />)}</div>}
+                      <dl class="apply__details">{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
+                    </div>
+                  </div>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-jump="teams">Other teams</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Apply to join</span></button></div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="about" data-flow="team" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Join · 1 of 4</p>
+              <h2 class="apply__title">About you</h2>
+              <div class="apply__row">
+                <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
+                <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email /></label>
+              </div>
+              <div class="apply__row">
+                <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
+                <label class="apply__field"><span class="apply__label">Year</span><select class="apply__input" name="year" required><option value="" disabled selected>Choose</option>{years.map(year => <option value={year}>{year}</option>)}</select></label>
+              </div>
+              <label class="apply__field"><span class="apply__label">Major (and minor, if any)</span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="fit" data-flow="team" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Join · 2 of 4</p>
+              <h2 class="apply__title">Why this team?</h2>
+              {teams.map(team => <p class="apply__help" data-team-question={team.slug} hidden>{team.question}</p>)}
+              <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="4" maxlength="2000"></textarea></label>
+              <fieldset class="apply__field apply__fieldset">
+                <legend class="apply__label">Tools you have touched <em>optional</em></legend>
+                {teams.map(team => (
+                  <div class="apply__chips" data-team-tools={team.slug} hidden>
+                    {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
+                  </div>
+                ))}
+              </fieldset>
+              <label class="apply__field"><span class="apply__label">Something to show <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, a video, anything" /></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Next</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="availability" data-flow="team" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Join · 3 of 4</p>
+              <h2 class="apply__title">Can you make the meetings?</h2>
+              {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
+              <fieldset class="apply__field apply__fieldset">
+                <legend class="apply__label">Availability</legend>
+                <div class="apply__chips apply__chips--radio">
+                  {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
+                </div>
+              </fieldset>
+              <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="2" maxlength="1000"></textarea></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="team-review" data-flow="team" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Join · 4 of 4</p>
+              <h2 class="apply__title">Ready to send?</h2>
+              <dl class="apply__summary" data-team-summary></dl>
+              <p class="apply__error" data-form-error hidden></p>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Send the application</span></button></div>
+            </div>
+          </section>
+
+          <section class="apply__step" data-step="team-done" data-flow="team" hidden>
+            <div class="apply__panel">
+              <p class="apply__kicker">Application received</p>
+              <h2 class="apply__title">Thanks. The team will reach out.</h2>
+              <p class="apply__lead">Expect a message on Discord or by email with the next meeting. Meanwhile, the <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener noreferrer">XR Club Discord</a> is where everything happens.</p>
+              <div class="apply__actions">
+                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
+                <button type="button" class="apply__link" data-jump="teams">Apply to another team</button>
+              </div>
+            </div>
+          </section>
+        </form>
+      </div>
+      <div class="apply__snaps" data-apply-snaps aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <nav class="apply__rail" data-apply-rail aria-label="Steps"></nav>
+</main>
+
+<style>
+  .apply { position: relative; color: #f5f6f7; font-family: var(--font-site); }
+  .apply__fluid, .apply__shade, .apply__scroller { position: fixed; inset: 0; }
+  .apply__fluid { z-index: 0; width: 100%; height: 100%; display: block; background: #0a0a0a; }
+  .apply__swimmer { position: fixed; left: 0; top: 0; z-index: 1; pointer-events: none; visibility: hidden; transform-origin: 50% 55%; filter: drop-shadow(0 14px 18px rgb(0 0 0 / .35)); }
+  /* Lifts the reading column off the fluid without boxing it in. */
+  .apply__shade { z-index: 2; pointer-events: none; background: radial-gradient(ellipse 62% 78% at 30% 50%, rgb(10 10 10 / .62), rgb(10 10 10 / .22) 60%, transparent 100%); }
+  .apply__scroller { z-index: 3; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+  .apply__scroller::-webkit-scrollbar, .apply__step::-webkit-scrollbar { display: none; }
+  /* The deck is one screen per step; the stage stays pinned while the scroll position drives the morph between two steps. */
+  .apply__deck { position: relative; height: calc(var(--apply-steps, 1) * 100%); }
+  .apply__stage { position: sticky; top: 0; height: calc(100% / var(--apply-steps, 1)); }
+  .apply__snaps { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; }
+  .apply__snap { flex: 1 1 0; scroll-snap-align: start; scroll-snap-stop: always; }
+  .apply__form { display: contents; }
+  /* Steps stack on the stage; only the one being read (and the one it morphs into) shows. A step taller than the screen scrolls itself. */
+  .apply__step { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; visibility: hidden; padding: var(--apply-top, 112px) clamp(24px, 5vw, 76px) calc(var(--site-footer-height, 0px) + 32px); }
+  .apply__step[data-shown] { visibility: visible; }
+  .apply__step { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 112px) - 44px), #000 calc(var(--apply-top, 112px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 112px) - 44px), #000 calc(var(--apply-top, 112px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); }
+  .apply__step[hidden] { display: none; }
+  .apply__panel { flex: 0 0 auto; width: min(100%, 680px); margin: auto 0 auto max(0px, calc((100% - 1280px) / 2)); will-change: transform, opacity; }
+  .apply__panel--wide { width: min(100%, 1040px); }
+  .apply__kicker { margin: 0 0 14px; color: #a9b0b7; font-size: 14px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .apply__title { margin: 0 0 18px; font-size: clamp(38px, 5.2vw, 66px); font-weight: 700; line-height: .98; letter-spacing: -.035em; text-wrap: balance; text-shadow: 0 2px 14px rgb(0 0 0 / .45); }
+  .apply__lead { margin: 0 0 28px; max-width: 34em; font-size: clamp(18px, 1.6vw, 22px); line-height: 1.45; color: #dfe3e6; }
+  .apply__lead a { color: #fff; }
+  .apply__help { margin: 0 0 22px; max-width: 36em; font-size: 17px; line-height: 1.45; color: #c7ccd1; }
+  .apply__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 24px; margin: 40px 0 0; padding-top: 24px; border-top: 1px solid rgb(255 255 255 / .18); }
+  .apply__facts dt { font-size: 24px; font-weight: 700; letter-spacing: -.03em; }
+  .apply__facts dd { margin: 4px 0 0; color: #b4bbc1; font-size: 14px; line-height: 1.35; }
+  .apply__field { display: block; margin: 0 0 22px; }
+  .apply__row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+  .apply__label { display: block; margin-bottom: 6px; color: #b4bbc1; font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+  .apply__label em { font-style: normal; font-weight: 400; color: #8a9199; }
+  .apply__input { display: block; width: 100%; min-width: 0; padding: 8px 0 10px; border: 0; border-bottom: 1px solid rgb(255 255 255 / .35); border-radius: 0; background: none; color: #fff; font: 500 22px/1.3 var(--font-site); letter-spacing: -.01em; transition: border-color 150ms; }
+  .apply__input::placeholder { color: rgb(255 255 255 / .34); }
+  .apply__input:focus { outline: none; border-bottom-color: #fff; }
+  .apply__input--area { resize: none; min-height: 2.6em; field-sizing: content; }
+  select.apply__input { appearance: none; -webkit-appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23ffffff' stroke-width='1.6'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E") right center / 18px no-repeat; padding-right: 26px; cursor: pointer; }
+  select.apply__input option { color: #111; }
+  .apply__input[aria-invalid='true'] { border-bottom-color: #ff8a80; }
+  .apply__hint { display: block; margin-top: 6px; color: #9aa1a8; font-size: 14px; min-height: 1.4em; }
+  .apply__hint[data-invalid] { color: #ff8a80; }
+  .apply__fieldset { border: 0; padding: 0; min-width: 0; }
+  .apply__chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .apply__chips[hidden] { display: none; }
+  .apply__chip { position: relative; display: inline-flex; }
+  .apply__chip input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .apply__chip span { display: inline-block; padding: 9px 16px; border: 1px solid rgb(255 255 255 / .35); border-radius: 999px; font-size: 16px; font-weight: 500; color: #e6e9ec; transition: background 150ms, color 150ms, border-color 150ms; }
+  .apply__chip input:checked + span { background: #f3f2ed; border-color: #f3f2ed; color: #232527; }
+  .apply__chip input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
+  .apply__chips.is-invalid .apply__chip span { border-color: #ff8a80; }
+  .apply__check { display: flex; gap: 14px; align-items: flex-start; margin: 10px 0 18px; font-size: 16px; line-height: 1.45; color: #dfe3e6; cursor: pointer; }
+  .apply__check input { flex: none; width: 22px; height: 22px; margin-top: 2px; accent-color: #f3f2ed; }
+  .apply__check.is-invalid { color: #ff8a80; }
+  .apply__check.is-invalid input { outline: 2px solid #ff8a80; outline-offset: 2px; border-radius: 4px; }
+  .apply__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; margin-top: 26px; }
+  .apply__button { position: relative; isolation: isolate; --folder-button-fill: #f3f2ed; --folder-button-stroke: rgb(255 255 255 / .85); display: inline-flex; align-items: center; justify-content: center; min-height: 62px; min-width: 190px; padding: 20px 30px 16px; border: 0; background: none; color: #232527; font: 550 21px/1.2 var(--font-site); letter-spacing: -.025em; text-decoration: none; white-space: nowrap; cursor: pointer; }
+  .apply__button :global(.folder-button-shape) { filter: drop-shadow(0 5px 8px rgb(0 0 0 / .18)) drop-shadow(0 1px 2px rgb(0 0 0 / .12)); }
+  .apply__button > span { position: relative; z-index: 1; }
+  .apply__button:hover { --folder-button-fill: #fff; --folder-button-stroke: #fff; }
+  .apply__button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 8px; }
+  .apply__button[disabled] { opacity: .6; cursor: progress; }
+  .apply__link { padding: 10px 2px; border: 0; background: none; color: #e6e9ec; font: 500 17px/1.2 var(--font-site); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgb(255 255 255 / .4); cursor: pointer; }
+  .apply__link:hover { text-decoration-color: #fff; }
+  .apply__link:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
+  .apply__honey { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .apply__error { margin: 0 0 14px; color: #ff8a80; font-size: 16px; }
+  .apply__error[hidden] { display: none; }
+  /* Budget */
+  .apply__budget { margin: 0 0 26px; }
+  .apply__budget-head, .apply__budget-row { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1.6fr) 36px; gap: 0 18px; align-items: end; }
+  .apply__budget-head { color: #8a9199; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+  .apply__budget-row { margin-bottom: 8px; }
+  .apply__budget-row .apply__input { font-size: 18px; padding-top: 6px; padding-bottom: 8px; }
+  .apply__remove { width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: #9aa1a8; font-size: 24px; line-height: 1; cursor: pointer; }
+  .apply__remove:hover { color: #fff; background: rgb(255 255 255 / .1); }
+  .apply__budget-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
+  .apply__total { margin: 0; color: #b4bbc1; font-size: 15px; }
+  .apply__total strong { color: #fff; font-size: 20px; margin-left: 6px; }
+  .apply__rules { margin: 0 0 8px; color: #c7ccd1; }
+  .apply__rules summary { cursor: pointer; font-weight: 600; color: #e6e9ec; padding: 6px 0; }
+  .apply__rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; margin-top: 10px; }
+  .apply__rules h3 { margin: 10px 0 4px; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: #a9b0b7; }
+  .apply__rules ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.45; }
+  .apply__rules-notes { margin-top: 10px !important; }
+  /* Summaries */
+  .apply__summary { display: grid; gap: 14px; margin: 0 0 24px; font-size: 16px; line-height: 1.4; }
+  .apply__summary dt { color: #a9b0b7; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .apply__summary dd { margin: 2px 0 0; color: #f0f2f4; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .apply__next { margin: 0 0 8px; padding-left: 22px; font-size: 18px; line-height: 1.5; color: #dfe3e6; }
+  .apply__next li { margin-bottom: 6px; }
+  /* Teams */
+  .apply__teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; margin-top: 10px; }
+  .apply__team { position: relative; isolation: isolate; --folder-button-fill: #f3f2ed; --folder-button-stroke: rgb(255 255 255 / .85); display: block; min-height: 200px; padding: 40px 26px 26px; border: 0; background: none; text-align: left; color: #232527; cursor: pointer; }
+  .apply__team :global(.folder-button-shape) { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .22)); transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
+  .apply__team:hover { --folder-button-fill: #fff; }
+  .apply__team:hover :global(.folder-button-shape), .apply__team:focus-visible :global(.folder-button-shape) { transform: translateY(-4px); }
+  .apply__team:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 10px; }
+  .apply__team-body { position: relative; z-index: 1; display: grid; gap: 6px; }
+  .apply__team-kicker { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6d7177; }
+  .apply__team-name { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.05; }
+  .apply__team-tag { font-size: 17px; color: #4d5157; }
+  .apply__team-info[hidden] { display: none; }
+  .apply__team-columns { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px 44px; align-items: start; }
+  .apply__team-text p { margin: 0 0 14px; font-size: 17px; line-height: 1.5; color: #dfe3e6; max-width: 38em; }
+  .apply__team-roles strong { color: #fff; }
+  .apply__posters { display: flex; gap: 12px; margin-bottom: 18px; }
+  .apply__posters :global(img) { width: calc(50% - 6px); height: auto; border-radius: 10px; box-shadow: 0 12px 24px rgb(0 0 0 / .4); }
+  .apply__details { display: grid; gap: 12px; margin: 0; font-size: 15px; line-height: 1.4; }
+  .apply__details dt { color: #a9b0b7; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .apply__details dd { margin: 2px 0 0; color: #f0f2f4; overflow-wrap: anywhere; }
+  /* Rail */
+  .apply__rail { position: fixed; z-index: 4; left: clamp(10px, 1.6vw, 26px); top: 50%; display: grid; gap: 12px; translate: 0 -50%; }
+  .apply__rail[hidden] { display: none; }
+  .apply__rail button { width: 10px; height: 10px; padding: 0; border: 1px solid rgb(255 255 255 / .55); border-radius: 50%; background: none; cursor: pointer; transition: background 160ms, transform 160ms; }
+  .apply__rail button[aria-current='step'] { background: #fff; transform: scale(1.25); }
+  .apply__rail button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  @media (max-width: 900px) {
+    .apply__team-columns { grid-template-columns: 1fr; }
+    .apply__budget-head { display: none; }
+    .apply__budget-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; padding-bottom: 10px; border-bottom: 1px solid rgb(255 255 255 / .12); margin-bottom: 12px; }
+    .apply__budget-row .apply__remove { justify-self: end; }
+  }
+  @media (max-width: 640px) {
+    .apply__row { grid-template-columns: 1fr; gap: 0; }
+    .apply__rules-grid { grid-template-columns: 1fr; }
+    .apply__input { font-size: 19px; }
+    .apply__button { min-height: 56px; min-width: 0; width: 100%; font-size: 19px; }
+    .apply__actions { gap: 8px 20px; }
+    .apply__rail { left: 50%; top: auto; bottom: calc(var(--site-footer-height, 0px) + 10px); translate: -50% 0; grid-auto-flow: column; gap: 10px; }
+    .apply__shade { background: radial-gradient(ellipse 90% 70% at 50% 45%, rgb(10 10 10 / .66), rgb(10 10 10 / .28) 60%, transparent 100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .apply__scroller { scroll-behavior: auto; }
+    .apply__team :global(.folder-button-shape) { transition: none; }
+  }
+</style>
+
+<script>
+  import { mountApply } from './applyFlow';
+  let cleanup: (() => void) | undefined;
+  document.addEventListener('astro:page-load', () => {
+    cleanup?.(); cleanup = undefined;
+    const root = document.querySelector<HTMLElement>('[data-apply]');
+    if (root) cleanup = mountApply(root);
+  });
+  document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = undefined; });
+</script>
