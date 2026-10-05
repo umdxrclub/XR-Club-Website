@@ -5,6 +5,8 @@ export default defineConfig({
   output: 'static',
   redirects: {
     '/suits-dashboard': '/suits/dashboard/',
+    // The funding page's old address.
+    '/ideate': '/apply/',
   },
   // Preserve existing inline spacing across compiler upgrades.
   compressHTML: true,

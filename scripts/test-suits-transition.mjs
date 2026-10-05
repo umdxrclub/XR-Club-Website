@@ -128,7 +128,7 @@ for(const reducedMotion of [false,true]){
  // The funding page arrives the same way: held while its background starts, then one liquid reveal; it reports whether it is held.
  const page=arrival();
  const fundingDocument={documentElement:{setAttribute(){}},querySelector:selector=>selector.includes('data-arrival-hold')?{}:null};
- page.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/ideate/'),newDocument:fundingDocument,viewTransition:page.transition});
+ page.events.get('astro:before-swap')({from:new URL('http://local/'),to:new URL('http://local/apply/'),newDocument:fundingDocument,viewTransition:page.transition});
  await tick();
  assert.equal(page.window.xrSuitsHeld(),true,'The funding page can tell it is held');
  assert.equal(page.attrs.has('data-suits-navigation'),true,'The liquid reveal is prepared');
@@ -137,7 +137,7 @@ for(const reducedMotion of [false,true]){
  assert.equal(page.window.xrSuitsHeld(),false);
  // Leaving it for the homepage is a connected navigation with the homepage hold.
  const leaving=arrival();
- leaving.events.get('astro:before-swap')({from:new URL('http://local/ideate/'),to:new URL('http://local/'),newDocument:homeDocument,viewTransition:leaving.transition});
+ leaving.events.get('astro:before-swap')({from:new URL('http://local/apply/'),to:new URL('http://local/'),newDocument:homeDocument,viewTransition:leaving.transition});
  await tick();
  assert.equal(leaving.attrs.has('data-suits-navigation'),true);assert.equal(leaving.attrs.get('data-home-arrival'),'');
 }
