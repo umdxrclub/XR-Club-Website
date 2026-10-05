@@ -25,7 +25,8 @@ export function mountEquipmentCat(layer: HTMLElement) {
   const sheet = layer.querySelector<SVGPathElement>('[data-cat-sheet]')!;
   const sheetEdge = layer.querySelector<SVGPathElement>('[data-cat-sheet-edge]')!;
   let videoStarted = false;
-  function pauseVideo() { video.pause(); videoStarted = false; }
+  // Called on every story frame while the cat is hidden; pausing a paused video is not free.
+  function pauseVideo() { if (!video.paused) video.pause(); videoStarted = false; }
   const hands = part('hands');
   const grip = part('grip'), armLeft = part('arm-left'), armRight = part('arm-right');
   const handLeft = part('hand-left'), handRight = part('hand-right');

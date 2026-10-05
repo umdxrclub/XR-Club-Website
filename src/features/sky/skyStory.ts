@@ -17,6 +17,7 @@ export function mountSkyStory(root: HTMLElement) {
   const shadow = layer.querySelector<SVGFEFloodElement>('[data-story-shadow]')!;
   const softShadow = layer.querySelector<SVGFEFloodElement>('[data-story-shadow-soft]')!;
   const intro = layer.querySelector<HTMLElement>('[data-story-intro]')!;
+  const introTitle = intro.querySelector<HTMLElement>('.sky-story__title') ?? intro;
   const ideas = intro.querySelector<SVGSVGElement>('[data-story-ideas]')!;
   ideas.pauseAnimations();
   const events = new AbortController();
@@ -93,8 +94,9 @@ export function mountSkyStory(root: HTMLElement) {
     }
     const mode = pose.intro < 1 ? 'intro' : 'reading';
     if (root.dataset.skyStory !== mode) root.dataset.skyStory = mode;
-    // The intro title sizes itself up to the porthole's left edge.
-    style(layer!, '--story-focus-left', `${Math.round(bird.x - bird.radius)}px`);
+    // The intro title sizes itself up to the porthole's left edge. Per-frame values go on the one element that
+    // reads them: on the story layer, every chapter beneath it would restyle each frame.
+    style(introTitle, '--story-focus-left', `${Math.round(bird.x - bird.radius)}px`);
     const nextViewport = `${width} ${height}`;
     if (viewport !== nextViewport) {
       viewport = nextViewport;
@@ -139,7 +141,7 @@ export function mountSkyStory(root: HTMLElement) {
     }
     if (pose.intro < 1) {
       const introTop = Math.min(pose.introCopyTop, height - footerHeight - introHeight - 24);
-      style(layer!, '--story-intro-copy-top', `${introTop.toFixed(2)}px`);
+      style(intro, '--story-intro-copy-top', `${introTop.toFixed(2)}px`);
       style(veil, 'visibility', 'visible');
       // Reduced motion fades the paper as the aperture expands.
       style(paper, 'opacity', pose.veilOpacity.toFixed(4));

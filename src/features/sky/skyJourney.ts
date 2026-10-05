@@ -6,6 +6,7 @@ import { mountEquipmentJourney } from '../equipment/equipmentJourney';
 import { SKY_STORY_DISTANCE, storyCloudProgress } from './skyStoryMotion';
 import { SKY_PROJECT_HOLD, SKY_TRANSITION_DISTANCE, skyTransitionPose } from './skyTimeline';
 import { mountPointerTilt } from '../../lib/pointerTilt';
+import { clipCubics, cubicsPath, type Cubic, type Rect } from '../../lib/clipCurves';
 
 type Point = { x: number; y: number };
 const samples = 160;
@@ -89,7 +90,11 @@ function align(source: Point[], target: Point[]) {
   return target.map((_, i) => target[(i + best) % samples]);
 }
 
-function contour(points: Point[], box: StoryBox, pitch: number, yaw: number, roll: number, perspective: number) {
+// Window and shadow outlines are trimmed to the screen plus this margin (more than the shadow's blur and
+// offset reach). The camera zooms them far past the screen, and Chrome repaints a clip or filter layer the
+// size of the whole outline every frame; nothing beyond the margin can affect what is visible.
+const OUTLINE_MARGIN = 96;
+function contour(points: Point[], box: StoryBox, pitch: number, yaw: number, roll: number, perspective: number, bounds?: Rect) {
   // Rotate an undistorted plane in 3D, then project it through the camera.
   const cp = Math.cos(pitch), sp = Math.sin(pitch), cy = Math.cos(yaw), sy = Math.sin(yaw), cr = Math.cos(roll), sr = Math.sin(roll);
   const projected = points.map(point => {
@@ -102,13 +107,12 @@ function contour(points: Point[], box: StoryBox, pitch: number, yaw: number, rol
   });
   // A closed cubic spline removes the tiny facets of a polygon clip, including
   // while the outline is morphing and when the camera is close to its corners.
-  let path = `M${projected[0].x.toFixed(3)} ${projected[0].y.toFixed(3)}`;
-  for (let i = 0; i < projected.length; i++) {
-    const a = projected[(i + projected.length - 1) % projected.length], b = projected[i];
+  const segments = projected.map((b, i): Cubic => {
+    const a = projected[(i + projected.length - 1) % projected.length];
     const c = projected[(i + 1) % projected.length], d = projected[(i + 2) % projected.length];
-    path += `C${(b.x + (c.x - a.x) / 6).toFixed(3)} ${(b.y + (c.y - a.y) / 6).toFixed(3)} ${(c.x - (d.x - b.x) / 6).toFixed(3)} ${(c.y - (d.y - b.y) / 6).toFixed(3)} ${c.x.toFixed(3)} ${c.y.toFixed(3)}`;
-  }
-  return `${path}Z`;
+    return [b, { x: b.x + (c.x - a.x) / 6, y: b.y + (c.y - a.y) / 6 }, { x: c.x - (d.x - b.x) / 6, y: c.y - (d.y - b.y) / 6 }, c];
+  });
+  return cubicsPath(bounds ? clipCubics(segments, bounds) : segments);
 }
 
 export function mountSkyJourney(root: HTMLElement) {
@@ -170,15 +174,16 @@ export function mountSkyJourney(root: HTMLElement) {
     const cursorYaw = x * mix(4.5 * Math.PI / 180, .36, response);
     const pitch = theta + cursorPitch, facingFront = Math.cos(pitch) >= 0;
     const move = (base: StoryBox) => ({ ...base, x: base.x + dx, y: base.y + dy });
+    const bounds = shadowWidth ? { left: -OUTLINE_MARGIN, top: -OUTLINE_MARGIN, right: shadowWidth + OUTLINE_MARGIN, bottom: shadowHeight + OUTLINE_MARGIN } : undefined;
     // Project the windows and their shadows from the same cursor + scroll pose.
     // All three folders look into the same continuous sky.
     style(front, 'visibility', facingFront ? 'visible' : 'hidden');
     style(front, 'transform', `translate3d(${frontBox.x + dx}px, ${frontBox.y + dy}px, 0) perspective(${perspective}px) rotateZ(${roll}rad) rotateY(${yaw + cursorYaw}rad) rotateX(${pitch}rad)`);
-    setWindow(0, facingFront ? '' : contour(shape, move(box), pitch - Math.PI, yaw + cursorYaw, roll, perspective));
-    if (facingFront) attr(shadowPaths[0], 'd', contour(frontSource, move(frontBox), pitch, yaw + cursorYaw, roll, perspective));
+    setWindow(0, facingFront ? '' : contour(shape, move(box), pitch - Math.PI, yaw + cursorYaw, roll, perspective, bounds));
+    if (facingFront) attr(shadowPaths[0], 'd', contour(frontSource, move(frontBox), pitch, yaw + cursorYaw, roll, perspective, bounds));
     sideProjections.forEach((folder, i) => {
       const sideBox = { ...folder.box, x: folder.box.x + x * 36, y: folder.box.y + y * 28 };
-      setWindow(i + 1, contour(target, sideBox, folder.pitch - y * .25, folder.yaw + x * .34, folder.roll, folder.perspective));
+      setWindow(i + 1, contour(target, sideBox, folder.pitch - y * .25, folder.yaw + x * .34, folder.roll, folder.perspective, bounds));
     });
   }
   root.classList.add('has-sky-journey');
