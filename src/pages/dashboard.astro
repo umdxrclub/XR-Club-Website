@@ -22,8 +22,8 @@ const base = import.meta.env.BASE_URL;
         <div class="dash__nav-link dash__nav-link--active" data-tab="applications">Applications</div>
         <div class="dash__nav-link" data-tab="projects">Projects</div>
         <div class="dash__nav-link" data-tab="activity">Activity Log</div>
-        <div class="dash__nav-link" data-tab="pitches">Funding pitches</div>
-        <div class="dash__nav-link" data-tab="team-apps">Team applications</div>
+        <div class="dash__nav-link" data-tab="pitches">Proposals</div>
+        <div class="dash__nav-link" data-tab="team-apps">Project applications</div>
         <a href={`${base}suits/team/`} class="dash__nav-link">SUITS team</a>
         <a href={base} class="dash__nav-link">Back to Site</a>
       </nav>
@@ -106,17 +106,30 @@ const base = import.meta.env.BASE_URL;
       </div>
 
       <div id="pitches-view" class="dash__reviews" style="display:none;">
-        <h1 class="dash__title">Funding pitches</h1>
-        <p class="dash__reviews-intro">Project pitches from the funding page. Open one to read it, set its status, and leave notes for the board.</p>
+        <h1 class="dash__title">Proposals</h1>
+        <p class="dash__reviews-intro">Funding proposals submitted on the projects page. Open one to read it, set its status, and leave notes for the board.</p>
+        <div class="dash__toolbar">
+          <input class="dash__filter-input" type="search" data-review-search placeholder="Project or lead" />
+          <select class="dash__filter" data-review-filter="status"><option value="">All statuses</option><option value="new">New</option><option value="reviewing">Reviewing</option><option value="chosen">Chosen</option><option value="waitlisted">Waitlisted</option><option value="declined">Declined</option></select>
+          <span class="dash__review-count" data-review-count></span>
+          <button class="dash__export-btn" type="button" data-review-export>Export CSV</button>
+        </div>
         <div data-review-list></div>
-        <div class="dash__empty" data-review-empty style="display:none;">No pitches yet.</div>
+        <div class="dash__empty" data-review-empty style="display:none;">No proposals yet.</div>
       </div>
 
       <div id="team-apps-view" class="dash__reviews" style="display:none;">
-        <h1 class="dash__title">Team applications</h1>
-        <p class="dash__reviews-intro">People asking to join Immersive Installations, Niantic Spatial, or the Terrapin Terrarium team. Pass them on to the team contacts.</p>
+        <h1 class="dash__title">Project applications</h1>
+        <p class="dash__reviews-intro">People applying to join Immersive Installations, Niantic Spatial, or Terrapin Terrarium. Pass them on to the project contacts.</p>
+        <div class="dash__toolbar">
+          <input class="dash__filter-input" type="search" data-review-search placeholder="Name or email" />
+          <select class="dash__filter" data-review-filter="team"><option value="">All projects</option><option value="immersive-installations">Immersive Installations</option><option value="niantic-spatial">Niantic Spatial</option><option value="spatial-reality-display">Terrapin Terrarium</option></select>
+          <select class="dash__filter" data-review-filter="status"><option value="">All statuses</option><option value="new">New</option><option value="contacted">Contacted</option><option value="joined">Joined</option><option value="declined">Declined</option></select>
+          <span class="dash__review-count" data-review-count></span>
+          <button class="dash__export-btn" type="button" data-review-export>Export CSV</button>
+        </div>
         <div data-review-list></div>
-        <div class="dash__empty" data-review-empty style="display:none;">No team applications yet.</div>
+        <div class="dash__empty" data-review-empty style="display:none;">No applications yet.</div>
       </div>
     </main>
 
@@ -898,6 +911,8 @@ const base = import.meta.env.BASE_URL;
   </script>
 <style is:global>
   .dash__reviews-intro { margin: -0.4rem 0 1.2rem; color: rgba(255,255,255,.5); font-size: .9rem; }
+  .dash__reviews .dash__toolbar { margin-bottom: 1rem; }
+  .dash__review-count { margin-left: auto; color: rgba(255,255,255,.5); font-size: .85rem; white-space: nowrap; }
   .dash__review { border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(255,255,255,.025); margin-bottom: .6rem; }
   .dash__review-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) auto auto; gap: 1rem; align-items: center; padding: .9rem 1.1rem; cursor: pointer; list-style: none; }
   .dash__review-summary::-webkit-details-marker { display: none; }

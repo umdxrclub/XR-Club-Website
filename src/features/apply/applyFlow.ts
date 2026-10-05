@@ -25,7 +25,14 @@ export function mountApply(root: HTMLElement) {
   const snaps = root.querySelector<HTMLElement>('[data-apply-snaps]')!;
   // Steps start below the fixed header, whatever height it takes on this screen.
   const header = document.querySelector<HTMLElement>('.site-header');
-  const placeSteps = () => { const bottom = header?.getBoundingClientRect().bottom ?? 90; root.style.setProperty('--apply-top', `${Math.round(bottom + 20)}px`); };
+  let fluidTop = 0;
+  const placeSteps = () => {
+    const bottom = header?.getBoundingClientRect().bottom ?? 90;
+    root.style.setProperty('--apply-top', `${Math.round(bottom + 20)}px`);
+    // The fluid starts at the header's edge, so its currents and dye stop there.
+    fluidTop = Math.round(bottom);
+    root.style.setProperty('--apply-fluid-top', `${fluidTop}px`);
+  };
   placeSteps();
   const steps = [...root.querySelectorAll<HTMLElement>('[data-step]')];
   const rail = root.querySelector<HTMLElement>('[data-apply-rail]')!;
@@ -34,6 +41,7 @@ export function mountApply(root: HTMLElement) {
 
   // --- Background -------------------------------------------------------------------------------------
   const fluidCanvas = root.querySelector<HTMLCanvasElement>('[data-apply-fluid]')!;
+  let swimmer: ReturnType<typeof mountAxolotl> = null;
   const phone = Math.min(innerWidth, innerHeight) < 700;
   let fluid: Fluid | null = null;
   // Open on colour, not on an empty dark field. With reduced motion the field settles once and then holds still.
@@ -54,8 +62,15 @@ export function mountApply(root: HTMLElement) {
   root.dataset.fluid = fluid ? 'on' : 'off';
   if (fluid) {
     let idle = 0;
+    // An idle burst somewhere in the field; the swimmer feels it when it is close.
+    const burst = () => {
+      const sx = Math.random() * fluidCanvas.clientWidth, sy = Math.random() * fluidCanvas.clientHeight;
+      const dx = 560 * (Math.random() - .5) / 6, dy = 560 * (Math.random() - .5) / 6;
+      fluid?.splat(sx, sy, dx, dy, fluidColor().map(c => c * 10) as [number, number, number]);
+      swimmer?.nudge(sx, sy + fluidTop, dx * 2.5, dy * 2.5);
+    };
     const idleSplat = () => {
-      if (!document.hidden && !reduced) fluid?.randomSplats(Math.random() < .3 ? 2 : 1, 560);
+      if (!document.hidden && !reduced) { burst(); if (Math.random() < .3) burst(); }
       idle = window.setTimeout(idleSplat, 420 + Math.random() * 900);
     };
     idle = window.setTimeout(idleSplat, 700);
@@ -67,11 +82,15 @@ export function mountApply(root: HTMLElement) {
       if (lastPointer) {
         const dt = Math.max(8, now - lastPointer.t) / 1000;
         const dx = (event.clientX - lastPointer.x) / dt, dy = (event.clientY - lastPointer.y) / dt;
-        if (Math.abs(dx) + Math.abs(dy) > 40) fluid?.splat(event.clientX, event.clientY, dx * .55, dy * .55, undefined, .22);
+        if (Math.abs(dx) + Math.abs(dy) > 40) { fluid?.splat(event.clientX, event.clientY - fluidTop, dx * .55, dy * .55, undefined, .22); swimmer?.nudge(event.clientX, event.clientY, dx * .35, dy * .35); }
       }
       lastPointer = { x: event.clientX, y: event.clientY, t: now };
     }, { ...options, passive: true });
-    if (!reduced) addEventListener('pointerdown', event => { fluid?.splat(event.clientX, event.clientY, (Math.random() - .5) * 600, (Math.random() - .5) * 600, fluidColor().map(c => c * 6) as [number, number, number], .6); }, { ...options, passive: true });
+    if (!reduced) addEventListener('pointerdown', event => {
+      const dx = (Math.random() - .5) * 600, dy = (Math.random() - .5) * 600;
+      fluid?.splat(event.clientX, event.clientY - fluidTop, dx, dy, fluidColor().map(c => c * 6) as [number, number, number], .6);
+      swimmer?.nudge(event.clientX, event.clientY, dx, dy);
+    }, { ...options, passive: true });
     document.addEventListener('visibilitychange', () => fluid?.setPaused(document.hidden || reduced), options);
     disposers.push(() => { clearTimeout(idle); fluid?.dispose(); });
   }
@@ -79,13 +98,16 @@ export function mountApply(root: HTMLElement) {
   const base = (document.querySelector('base')?.getAttribute('href') ?? '/').replace(/\/?$/, '/');
   const sheet = phone ? axolotlSheets.small : axolotlSheets.large;
   const wakeColor = fluidColor(.95);
-  const swimmer = mountAxolotl(swimmerCanvas, {
+  swimmer = mountAxolotl(swimmerCanvas, {
     sheet: { ...sheet, src: base + sheet.src },
-    width: phone ? 150 : Math.round(Math.min(260, innerWidth * .17)),
+    width: phone ? 150 : Math.round(Math.min(230, innerWidth * .16)),
     reduced,
-    onWake: (x, y, dx, dy) => { if (fluid && (Math.abs(dx) + Math.abs(dy)) > 6) fluid.splat(x, y, dx * .35, dy * .35, wakeColor, .18); },
+    onWake: (x, y, dx, dy) => { if (fluid && (Math.abs(dx) + Math.abs(dy)) > 6) fluid.splat(x, y - fluidTop, dx * .35, dy * .35, wakeColor, .18); },
   });
-  if (swimmer) disposers.push(() => swimmer.dispose());
+  disposers.push(() => swimmer?.dispose());
+  // The swimmer keeps clear of the header and the footer.
+  const placeSwimmer = () => swimmer?.setInsets((header?.getBoundingClientRect().bottom ?? 90) + 8, (parseFloat(getComputedStyle(root).getPropertyValue('--site-footer-height')) || 0) + 8);
+  placeSwimmer();
 
   // --- Steps and morphing ----------------------------------------------------------------------------
   // Every step sits on one stage pinned to the screen; the scroller behind it only supplies a position. Between two
@@ -144,12 +166,11 @@ export function mountApply(root: HTMLElement) {
       const s = clamp(scroller.scrollTop / h, 0, list.length - 1), i = Math.min(list.length - 1, Math.floor(s + .001));
       render(list[i], list[i + 1], clamp(s - i));
     }
-    // The rail marks the step being read; the swimmer lags the scroll and ducks under the reading column.
+    // The rail marks the step being read; the swimmer steers around (or dims under) the reading column.
     const flow = active.dataset.flow ?? '';
     if (flow !== railFlow) buildRail(flow);
     const current = steps.indexOf(active);
     rail.querySelectorAll('button').forEach(b => { if (Number(b.dataset.index) === current) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
-    swimmer?.setScroll(scroller.scrollTop / Math.max(1, scroller.scrollHeight - scroller.clientHeight));
     swimmer?.setKeepOut(panels[current].getBoundingClientRect());
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(paint); };
@@ -177,7 +198,7 @@ export function mountApply(root: HTMLElement) {
   const turn = (direction: 1 | -1) => { if (turning) return; const target = neighbour(active, direction); if (target) go(target); };
   root.addEventListener('scroll', schedule, { ...options, capture: true, passive: true });
   root.addEventListener('input', schedule, options);
-  addEventListener('resize', () => { placeSteps(); scroller.scrollTo({ top: visible().indexOf(active) * height(), behavior: 'instant' as ScrollBehavior }); schedule(); }, options);
+  addEventListener('resize', () => { placeSteps(); placeSwimmer(); scroller.scrollTo({ top: visible().indexOf(active) * height(), behavior: 'instant' as ScrollBehavior }); schedule(); }, options);
   // A wheel turns one step per gesture. A step with more than a screen of content scrolls itself first, and the
   // tail of a trackpad flick is swallowed rather than turning a second step.
   const wheel = { at: 0, delta: 0, inner: false };
@@ -326,16 +347,20 @@ export function mountApply(root: HTMLElement) {
   const budgetItems = () => [...rows.querySelectorAll<HTMLElement>('.apply__budget-row')].map(row => ({
     name: row.querySelector<HTMLInputElement>('[name="budget_name"]')!.value.trim(),
     cost: Number(row.querySelector<HTMLInputElement>('[name="budget_cost"]')!.value) || 0,
-    priority: row.querySelector<HTMLSelectElement>('[name="budget_priority"]')!.value as 'must' | 'nice',
+    priority: row.querySelector<HTMLInputElement>('[name="budget_priority"]')!.value as 'must' | 'nice',
     link: row.querySelector<HTMLInputElement>('[name="budget_link"]')!.value.trim(),
   })).filter(item => item.name || item.cost || item.link);
   const updateTotal = () => { total.textContent = money(budgetItems().reduce((sum, item) => sum + item.cost, 0)); };
+  const setPriority = (row: HTMLElement, priority: 'must' | 'nice') => {
+    row.querySelector<HTMLInputElement>('[name="budget_priority"]')!.value = priority;
+    row.querySelectorAll<HTMLButtonElement>('[data-priority]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.priority === priority)));
+  };
   const addRow = (item?: { name: string; cost: number; priority: string; link: string }) => {
     const row = (template.content.cloneNode(true) as DocumentFragment).firstElementChild as HTMLElement;
     if (item) {
       row.querySelector<HTMLInputElement>('[name="budget_name"]')!.value = item.name;
       row.querySelector<HTMLInputElement>('[name="budget_cost"]')!.value = item.cost ? String(item.cost) : '';
-      row.querySelector<HTMLSelectElement>('[name="budget_priority"]')!.value = item.priority;
+      setPriority(row, item.priority === 'nice' ? 'nice' : 'must');
       row.querySelector<HTMLInputElement>('[name="budget_link"]')!.value = item.link;
     }
     rows.append(row);
@@ -345,6 +370,8 @@ export function mountApply(root: HTMLElement) {
     if (target.closest('[data-budget-add]')) { addRow(); rows.lastElementChild?.querySelector<HTMLInputElement>('input')?.focus(); }
     const remove = target.closest<HTMLElement>('[data-budget-remove]');
     if (remove) { remove.closest('.apply__budget-row')?.remove(); if (!rows.children.length) addRow(); updateTotal(); }
+    const priority = target.closest<HTMLElement>('[data-priority]');
+    if (priority) { setPriority(priority.closest<HTMLElement>('.apply__budget-row')!, priority.dataset.priority === 'nice' ? 'nice' : 'must'); refreshSummaries(); saveDraft(pitchForm); }
   }, options);
   budget.addEventListener('input', updateTotal, options);
 
@@ -404,17 +431,17 @@ export function mountApply(root: HTMLElement) {
   const refreshSummaries = () => {
     const items = budgetItems();
     summarize(pitchForm, pitchSummary, () => [
-      ['Project', value(pitchForm, 'project_title')], ['Idea', value(pitchForm, 'idea')], ['Topic', value(pitchForm, 'topic')],
-      ['Lead', [value(pitchForm, 'lead_name'), value(pitchForm, 'lead_email'), value(pitchForm, 'lead_discord')].filter(Boolean).join(' · ')],
-      ['Team', members(value(pitchForm, 'members')).join('\n')], ['Outline and MVP', value(pitchForm, 'outline')], ['$0 version', value(pitchForm, 'zero_dollar_plan')],
-      ['Timeline', value(pitchForm, 'timeline')], ['Budget', items.length ? items.map(item => `${item.name || 'Item'}: ${money(item.cost)} (${item.priority === 'must' ? 'must-have' : 'nice-to-have'})`).join('\n') + `\nRequested ${money(items.reduce((s, i) => s + i.cost, 0))}` : 'Lab equipment only'],
+      ['Project', value(pitchForm, 'project_title')], ['Summary', value(pitchForm, 'idea')], ['Topic', value(pitchForm, 'topic')],
+      ['Lead', [value(pitchForm, 'lead_name'), value(pitchForm, 'lead_email'), value(pitchForm, 'lead_discord')].filter(Boolean).join(', ')],
+      ['Team', members(value(pitchForm, 'members')).join('\n')], ['Outline and MVP', value(pitchForm, 'outline')], ['Plan without funding', value(pitchForm, 'zero_dollar_plan')],
+      ['Timeline', value(pitchForm, 'timeline')], ['Budget', items.length ? items.map(item => `${item.name || 'Item'}: ${money(item.cost)} (${item.priority === 'must' ? 'must have' : 'nice to have'})`).join('\n') + `\nTotal requested ${money(items.reduce((s, i) => s + i.cost, 0))}` : 'Lab equipment only'],
       ['Lab equipment', value(pitchForm, 'lab_equipment')], ['Deliverable', value(pitchForm, 'deliverable')],
     ]);
     const team = teams.find(t => t.slug === teamField.value);
     const tools = [...teamForm.querySelectorAll<HTMLInputElement>('input[name="tools"]:checked')].filter(input => !input.closest('[hidden]')).map(input => input.value);
     summarize(teamForm, teamSummary, () => [
-      ['Team', team?.name ?? ''], ['You', [value(teamForm, 'full_name'), value(teamForm, 'email'), value(teamForm, 'discord_username')].filter(Boolean).join(' · ')],
-      ['Year and major', [value(teamForm, 'year'), value(teamForm, 'major')].filter(Boolean).join(' · ')], ['Why this team', value(teamForm, 'pitch')],
+      ['Project', team?.name ?? ''], ['You', [value(teamForm, 'full_name'), value(teamForm, 'email'), value(teamForm, 'discord_username')].filter(Boolean).join(', ')],
+      ['Year and major', [value(teamForm, 'year'), value(teamForm, 'major')].filter(Boolean).join(', ')], ['Your fit', value(teamForm, 'pitch')],
       ['Tools', tools.join(', ')], ['Link', value(teamForm, 'link')], ['Availability', availabilityOptions.find(option => option.value === value(teamForm, 'availability'))?.label ?? value(teamForm, 'availability')], ['Anything else', value(teamForm, 'anything_else')],
     ]);
   };
@@ -427,7 +454,7 @@ export function mountApply(root: HTMLElement) {
     const review = form.querySelector<HTMLElement>('[data-step$="review"]')!;
     const error = form.querySelector<HTMLElement>('[data-form-error]')!;
     error.hidden = true;
-    if (form === teamForm && !teams.some(team => team.slug === teamField.value)) { go(byName('teams')); return; }
+    if (form === teamForm && !teams.some(team => team.slug === teamField.value)) { go(byName('intro')); return; }
     // Every step must pass, not just the review; the first problem comes back into view, and its field takes focus
     // once the turn has shown it.
     for (const step of [...form.querySelectorAll<HTMLElement>('[data-step]')].filter(step => !step.hidden && !step.dataset.step!.endsWith('done'))) {
@@ -462,7 +489,7 @@ export function mountApply(root: HTMLElement) {
     } catch (fail) {
       const message = (fail as Error).message || '';
       // A dropped connection reads as a fetch failure; say what to do rather than what the browser threw.
-      error.textContent = `Could not send that: ${!message || /failed to fetch|network/i.test(message) ? 'check your connection and try again.' : message}`;
+      error.textContent = !message || /failed to fetch|network/i.test(message) ? 'Could not submit. Check your connection and try again.' : `Could not submit: ${message}`;
       error.hidden = false;
       button.disabled = false;
     }
