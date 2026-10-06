@@ -11,64 +11,68 @@ const posters = [poster1, poster2];
   <canvas class="apply__fluid" data-apply-fluid aria-hidden="true"></canvas>
   <div class="apply__shade" aria-hidden="true"></div>
   <canvas class="apply__swimmer" data-apply-swimmer aria-hidden="true"></canvas>
-  {/* One segment per step of the whole process, aligned with the column; the script fills it. */}
+  {/* One segment per step of the whole process, aligned with the page; the script fills it. */}
   <nav class="apply__progress" data-apply-rail aria-label="Steps" hidden>
     <div class="apply__progress-track" data-progress-track></div>
     <span class="apply__progress-count" data-progress-count></span>
   </nav>
 
   <div class="apply__scroller" data-apply-scroller>
-    {/* Every step sits on one stage pinned to the screen; the scroller behind it only supplies the position that drives the morph. */}
+    {/* Every step is a page of paper on one stage pinned to the screen; the scroller behind it only supplies the position that drives the morph. */}
     <div class="apply__deck" data-apply-deck>
       <div class="apply__stage" data-apply-stage>
         {/* Everyone starts here: who you are. Both an application and a proposal use these details. */}
         <section class="apply__step" data-step="intro" data-flow="start" data-shown>
           <div class="apply__panel" data-basics>
-            <h1 class="apply__title">Projects</h1>
-            <p class="apply__lead">Join one of three projects this semester, or propose your own and request funding. Start with a few details.</p>
-            <div class="apply__row">
-              <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
-              <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email data-hint="Enter a umd.edu or terpmail.umd.edu address" /></label>
-            </div>
-            <div class="apply__row">
-              <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
-              <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
-            </div>
-            <fieldset class="apply__field apply__fieldset">
-              <legend class="apply__label">Year</legend>
-              <div class="apply__chips apply__chips--radio">
-                {years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}
+            <div class="apply__sheet">
+              <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+              <div class="apply__sheet-body">
+                <h1 class="apply__title">Projects</h1>
+                <p class="apply__lead">Join one of three projects this semester, or propose your own and request funding. Start with a few details.</p>
+                <div class="apply__row">
+                  <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
+                  <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email data-hint="Enter a umd.edu or terpmail.umd.edu address" /></label>
+                </div>
+                <div class="apply__row">
+                  <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
+                  <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
+                </div>
+                <fieldset class="apply__field apply__fieldset">
+                  <legend class="apply__label">Year</legend>
+                  <div class="apply__chips apply__chips--radio">
+                    {years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}
+                  </div>
+                </fieldset>
+                <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
               </div>
-            </fieldset>
-            <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+            </div>
           </div>
         </section>
 
         <section class="apply__step" data-step="choose" data-flow="start">
           <div class="apply__panel">
-            <h2 class="apply__title">Choose a project</h2>
-            <p class="apply__lead">Join a project that is taking members, or propose a new one and request funding.</p>
-            <div class="apply__cards" role="list">
-              {teams.map(team => (
-                <button type="button" class="apply__card" role="listitem" data-team-pick={team.slug}>
-                  <FolderButtonShape shortTab />
-                  <span class="apply__card-body">
-                    <span class="apply__card-name">{team.name}</span>
-                    <span class="apply__card-text">{team.tagline}</span>
-                    <span class="apply__card-cta">Apply</span>
-                  </span>
-                </button>
-              ))}
-              <button type="button" class="apply__card" role="listitem" data-pitch-pick>
-                <FolderButtonShape shortTab />
-                <span class="apply__card-body">
-                  <span class="apply__card-name">{proposal.name}</span>
-                  <span class="apply__card-text">{proposal.tagline}</span>
-                  <span class="apply__card-cta">{proposal.cta}</span>
-                </span>
-              </button>
+            <div class="apply__sheet">
+              <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+              <div class="apply__sheet-body">
+                <h2 class="apply__title">Choose a project</h2>
+                <p class="apply__lead">Join a project that is taking members, or propose a new one and request funding.</p>
+                <div class="apply__options" role="list">
+                  {teams.map(team => (
+                    <button type="button" class="apply__option" role="listitem" data-team-pick={team.slug}>
+                      <span class="apply__option-name">{team.name}</span>
+                      <span class="apply__option-cta">Apply</span>
+                      <span class="apply__option-text">{team.tagline}</span>
+                    </button>
+                  ))}
+                  <button type="button" class="apply__option" role="listitem" data-pitch-pick>
+                    <span class="apply__option-name">{proposal.name}</span>
+                    <span class="apply__option-cta">{proposal.cta}</span>
+                    <span class="apply__option-text">{proposal.tagline}</span>
+                  </button>
+                </div>
+                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button></div>
+              </div>
             </div>
-            <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button></div>
           </div>
         </section>
 
@@ -78,70 +82,91 @@ const posters = [poster1, poster2];
           <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <section class="apply__step" data-step="team-info" data-flow="team" hidden>
             <div class="apply__panel apply__panel--wide">
-              {teams.map(team => (
-                <article class="apply__team-info" data-team-info={team.slug} hidden>
-                  <h2 class="apply__title">{team.name}</h2>
-                  <div class="apply__team-columns">
-                    <div class="apply__team-text">
-                      {team.summary.map(paragraph => <p>{paragraph}</p>)}
-                      {team.roles && <p class="apply__team-roles"><strong>Roles:</strong> {team.roles.join(', ')}</p>}
-                      {team.people && <p class="apply__team-roles"><strong>Team:</strong> {team.people.join(', ')}</p>}
-                      <div class="apply__actions"><button type="button" class="apply__link" data-back>Other projects</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Apply</span></button></div>
-                    </div>
-                    <div class="apply__team-side">
-                      {team.posters && <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520, 780]} sizes="(max-width: 700px) 42vw, 150px" format="webp" quality={82} loading="lazy" />)}</div>}
-                      <dl class="apply__details">{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
-                    </div>
-                  </div>
-                </article>
-              ))}
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  {teams.map(team => (
+                    <article class="apply__team-info" data-team-info={team.slug} hidden>
+                      <h2 class="apply__title">{team.name}</h2>
+                      <div class="apply__team-columns">
+                        <div class="apply__team-text">
+                          {team.summary.map(paragraph => <p>{paragraph}</p>)}
+                          {team.roles && <p class="apply__team-roles"><strong>Roles:</strong> {team.roles.join(', ')}</p>}
+                          {team.people && <p class="apply__team-roles"><strong>Team:</strong> {team.people.join(', ')}</p>}
+                          <div class="apply__actions"><button type="button" class="apply__link" data-back>Other projects</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Apply</span></button></div>
+                        </div>
+                        <div class="apply__team-side">
+                          {team.posters && <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520, 780]} sizes="(max-width: 700px) 42vw, 150px" format="webp" quality={82} loading="lazy" />)}</div>}
+                          <dl class="apply__details">{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 
           <section class="apply__step" data-step="fit" data-flow="team" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Why this project</h2>
-              {teams.map(team => <p class="apply__lead" data-team-question={team.slug} hidden>{team.question}</p>)}
-              <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="2" maxlength="2000"></textarea></label>
-              <fieldset class="apply__field apply__fieldset">
-                <legend class="apply__label">Tools you have used <em>optional</em></legend>
-                {teams.map(team => (
-                  <div class="apply__chips" data-team-tools={team.slug} hidden>
-                    {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Why this project</h2>
+                  {teams.map(team => <p class="apply__lead" data-team-question={team.slug} hidden>{team.question}</p>)}
+                  <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="2" maxlength="2000"></textarea></label>
+                  <fieldset class="apply__field apply__fieldset">
+                    <legend class="apply__label">Tools you have used <em>optional</em></legend>
+                    {teams.map(team => (
+                      <div class="apply__chips" data-team-tools={team.slug} hidden>
+                        {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
+                      </div>
+                    ))}
+                  </fieldset>
+                  <fieldset class="apply__field apply__fieldset">
+                    <legend class="apply__label">Availability</legend>
+                    {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
+                    <div class="apply__chips apply__chips--radio">
+                      {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
+                    </div>
+                  </fieldset>
+                  <div class="apply__row">
+                    <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, or a video" data-hint="Enter a full link starting with https://" /></label>
+                    <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="1" maxlength="1000"></textarea></label>
                   </div>
-                ))}
-              </fieldset>
-              <fieldset class="apply__field apply__fieldset">
-                <legend class="apply__label">Availability</legend>
-                {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
-                <div class="apply__chips apply__chips--radio">
-                  {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
                 </div>
-              </fieldset>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, or a video" data-hint="Enter a full link starting with https://" /></label>
-                <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="1" maxlength="1000"></textarea></label>
               </div>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="team-review" data-flow="team" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Review</h2>
-              <dl class="apply__summary" data-team-summary></dl>
-              <p class="apply__error" data-form-error hidden></p>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit application</span></button></div>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Review</h2>
+                  <dl class="apply__summary" data-team-summary></dl>
+                  <p class="apply__error" data-form-error hidden></p>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit application</span></button></div>
+                </div>
+              </div>
             </div>
           </section>
 
           <section class="apply__step" data-step="team-done" data-flow="team" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Application received</h2>
-              <p class="apply__lead">The team will reach out on Discord or by email with the next meeting. Join the <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener noreferrer">XR Club Discord</a> in the meantime.</p>
-              <div class="apply__actions">
-                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
-                <button type="button" class="apply__link" data-jump="choose">Other projects</button>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <span class="apply__stamp" aria-hidden="true">Received</span>
+                  <h2 class="apply__title">Application received</h2>
+                  <p class="apply__lead">The team will reach out on Discord or by email with the next meeting. Join the <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener noreferrer">XR Club Discord</a> in the meantime.</p>
+                  <div class="apply__actions">
+                    <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
+                    <button type="button" class="apply__link" data-jump="choose">Other projects</button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -151,83 +176,109 @@ const posters = [poster1, poster2];
           <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <section class="apply__step" data-step="project" data-flow="pitch" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Project and team</h2>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="Short and memorable" /></label>
-                <label class="apply__field"><span class="apply__label">Topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="A board topic or your own direction" /></label>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Project and team</h2>
+                  <div class="apply__row">
+                    <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="Short and memorable" /></label>
+                    <label class="apply__field"><span class="apply__label">Topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="A board topic or your own direction" /></label>
+                  </div>
+                  <label class="apply__field"><span class="apply__label">Summary</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What you are building, who it is for, and why XR"></textarea></label>
+                  <label class="apply__field"><span class="apply__label">Team members, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="3" placeholder="Name, year, role" data-members></textarea><span class="apply__hint" data-members-count></span></label>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+                </div>
               </div>
-              <label class="apply__field"><span class="apply__label">Summary</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What you are building, who it is for, and why XR"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Team members, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="3" placeholder="Name, year, role" data-members></textarea><span class="apply__hint" data-members-count></span></label>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="plan" data-flow="pitch" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Plan</h2>
-              <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="3" placeholder="The smallest version that works, then what you build on top of it"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Plan without funding</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can build with lab equipment alone if funding is reduced or unavailable"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="2" placeholder="Checkpoints are every 2 to 3 weeks. What is done at each one, through the end of the semester"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="2" placeholder="What you will show at Demo Day"></textarea></label>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Plan</h2>
+                  <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="3" placeholder="The smallest version that works, then what you build on top of it"></textarea></label>
+                  <label class="apply__field"><span class="apply__label">Plan without funding</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can build with lab equipment alone if funding is reduced or unavailable"></textarea></label>
+                  <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="2" placeholder="Checkpoints are every 2 to 3 weeks. What is done at each one, through the end of the semester"></textarea></label>
+                  <label class="apply__field"><span class="apply__label">Deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="2" placeholder="What you will show at Demo Day"></textarea></label>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+                </div>
+              </div>
             </div>
           </section>
 
           <section class="apply__step" data-step="budget" data-flow="pitch" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Budget</h2>
-              <p class="apply__lead">Hardware only. Mark each item must have or nice to have. Leave this empty if lab equipment is enough.</p>
-              <div class="apply__budget" data-budget>
-                <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Estimated cost</span><span>Priority</span></div>
-                <div data-budget-rows></div>
-                <template data-budget-row>
-                  <div class="apply__budget-row">
-                    <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="Item" aria-label="Item" />
-                    <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
-                    <span class="apply__segment" role="group" aria-label="Priority">
-                      <button type="button" data-priority="must" aria-pressed="true">Must have</button>
-                      <button type="button" data-priority="nice" aria-pressed="false">Nice to have</button>
-                      <input type="hidden" name="budget_priority" value="must" />
-                    </span>
-                    <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
-                    <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Budget</h2>
+                  <p class="apply__lead">Hardware only. Mark each item must have or nice to have. Leave this empty if lab equipment is enough.</p>
+                  <div class="apply__budget" data-budget>
+                    <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Estimated cost</span><span>Priority</span></div>
+                    <div data-budget-rows></div>
+                    <template data-budget-row>
+                      <div class="apply__budget-row">
+                        <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="Item" aria-label="Item" />
+                        <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
+                        <span class="apply__segment" role="group" aria-label="Priority">
+                          <button type="button" data-priority="must" aria-pressed="true">Must have</button>
+                          <button type="button" data-priority="nice" aria-pressed="false">Nice to have</button>
+                          <input type="hidden" name="budget_priority" value="must" />
+                        </span>
+                        <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
+                        <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
+                      </div>
+                    </template>
+                    <div class="apply__budget-foot">
+                      <button type="button" class="apply__link" data-budget-add>Add item</button>
+                      <p class="apply__total">Total requested <strong data-budget-total>$0</strong></p>
+                    </div>
                   </div>
-                </template>
-                <div class="apply__budget-foot">
-                  <button type="button" class="apply__link" data-budget-add>Add item</button>
-                  <p class="apply__total">Total requested <strong data-budget-total>$0</strong></p>
+                  <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill" /></label>
+                  <details class="apply__rules">
+                    <summary>Funding rules</summary>
+                    <div class="apply__rules-grid">
+                      <div><h3>Funding covers</h3><ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul></div>
+                      <div><h3>Funding does not cover</h3><ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul></div>
+                    </div>
+                    <ul class="apply__rules-notes">{fundingRules.notes.map(item => <li>{item}</li>)}</ul>
+                  </details>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
                 </div>
               </div>
-              <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill" /></label>
-              <details class="apply__rules">
-                <summary>Funding rules</summary>
-                <div class="apply__rules-grid">
-                  <div><h3>Funding covers</h3><ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul></div>
-                  <div><h3>Funding does not cover</h3><ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul></div>
-                </div>
-                <ul class="apply__rules-notes">{fundingRules.notes.map(item => <li>{item}</li>)}</ul>
-              </details>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="pitch-review" data-flow="pitch" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Review</h2>
-              <dl class="apply__summary" data-pitch-summary></dl>
-              <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules. Hardware only, orders go through the Treasurer, no reimbursements, hardware stays with the club, and funds are released in stages at checkpoints.</span></label>
-              <p class="apply__error" data-form-error hidden></p>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit proposal</span></button></div>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <h2 class="apply__title">Review</h2>
+                  <dl class="apply__summary" data-pitch-summary></dl>
+                  <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules. Hardware only, orders go through the Treasurer, no reimbursements, hardware stays with the club, and funds are released in stages at checkpoints.</span></label>
+                  <p class="apply__error" data-form-error hidden></p>
+                  <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit proposal</span></button></div>
+                </div>
+              </div>
             </div>
           </section>
 
           <section class="apply__step" data-step="pitch-done" data-flow="pitch" hidden>
             <div class="apply__panel">
-              <h2 class="apply__title">Proposal received</h2>
-              <ol class="apply__next">{whatHappensNext.map(item => <li>{item}</li>)}</ol>
-              <div class="apply__actions">
-                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
-                <button type="button" class="apply__link" data-jump="choose">Other projects</button>
+              <div class="apply__sheet">
+                <div class="apply__sheet-paper" aria-hidden="true"><div class="apply__sheet-paper-inner" data-sheet-paper></div></div>
+                <div class="apply__sheet-body">
+                  <span class="apply__stamp" aria-hidden="true">Received</span>
+                  <h2 class="apply__title">Proposal received</h2>
+                  <ol class="apply__next">{whatHappensNext.map(item => <li>{item}</li>)}</ol>
+                  <div class="apply__actions">
+                    <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
+                    <button type="button" class="apply__link" data-jump="choose">Other projects</button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -239,12 +290,11 @@ const posters = [poster1, poster2];
 </main>
 
 <style>
-  /* One palette: white ink at three strengths on the dark field, and paper for anything you press. */
-  .apply { position: relative; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --paper-ink-2: #6e6e73; --error: #ff8a80; --column: 640px; color: var(--ink); font-family: var(--font-site); }
+  /* Outside the page: white ink on the dark field. Inside the page: dark ink on the club's folder paper. */
+  .apply { position: relative; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --error: #ff8a80; --column: 680px; color: var(--ink); font-family: var(--font-site); }
   .apply__fluid, .apply__shade, .apply__scroller { position: fixed; inset: 0; }
   .apply__fluid { z-index: 0; width: 100%; height: 100%; display: block; background: #0a0a0a; }
-  /* The shade lifts the reading column off the fluid; the swimmer sits above it so it is never dimmed by it. */
-  .apply__shade { z-index: 1; pointer-events: none; background: radial-gradient(ellipse 46% 74% at 50% 54%, rgb(10 10 10 / .62), rgb(10 10 10 / .22) 62%, transparent 100%); }
+  .apply__shade { z-index: 1; pointer-events: none; background: radial-gradient(ellipse 60% 70% at 50% 55%, rgb(10 10 10 / .3), transparent 100%); }
   .apply__swimmer { position: fixed; left: 0; top: 0; z-index: 2; pointer-events: none; visibility: hidden; filter: drop-shadow(0 14px 18px rgb(0 0 0 / .35)); }
   .apply__scroller { z-index: 3; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
   .apply__scroller::-webkit-scrollbar, .apply__step::-webkit-scrollbar { display: none; }
@@ -255,28 +305,44 @@ const posters = [poster1, poster2];
   .apply__snap { flex: 1 1 0; scroll-snap-align: start; scroll-snap-stop: always; }
   .apply__form { display: contents; }
   /* Steps stack on the stage; only the one being read (and the one it morphs into) shows. A step taller than the screen scrolls itself. */
-  .apply__step { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; visibility: hidden; padding: var(--apply-top, 148px) clamp(24px, 5vw, 76px) calc(var(--site-footer-height, 0px) + 32px); }
+  .apply__step { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; visibility: hidden; padding: var(--apply-top, 148px) clamp(24px, 5vw, 76px) calc(var(--site-footer-height, 0px) + 36px); }
   .apply__step[data-shown] { visibility: visible; }
   .apply__step { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); }
   .apply__step[hidden] { display: none; }
-  /* One centred column for everything. */
   .apply__panel { flex: 0 0 auto; width: min(100%, var(--column)); margin: auto; will-change: transform, opacity; }
   .apply__panel--wide { width: min(100%, 960px); }
-  @media (max-width: 1100px) { .apply__panel--wide { width: min(100%, 640px); } }
 
-  /* The progress bar: one segment per step of the whole process, on the column's left edge just above the title. */
+  /* The page: a sheet of the club's folder paper, with the folder's tab, floating on the fluid. */
+  .apply__sheet { position: relative; isolation: isolate; --ink: #1d1d1f; --ink-body: #2c2c2e; --ink-2: #6e6e73; --ink-3: #8e8e93; --line: rgb(0 0 0 / .14); --line-strong: rgb(0 0 0 / .34); --error: #c62828; padding: 62px 56px 44px; color: var(--ink); }
+  .apply__sheet-paper { position: absolute; inset: 0; z-index: 0; filter: drop-shadow(0 26px 50px rgb(0 0 0 / .5)) drop-shadow(0 2px 6px rgb(0 0 0 / .3)); }
+  .apply__sheet-paper-inner { position: absolute; inset: 0; background: var(--paper); clip-path: inset(0 round 22px); }
+  .apply__sheet-body { position: relative; z-index: 1; }
+  .apply__sheet .apply__button { --folder-button-fill: #1d1d1f; --folder-button-stroke: #1d1d1f; color: var(--paper); }
+  .apply__sheet .apply__button:hover { --folder-button-fill: #000; --folder-button-stroke: #000; }
+  .apply__sheet .apply__button :global(.folder-button-shape) { filter: drop-shadow(0 6px 12px rgb(0 0 0 / .22)); }
+  .apply__sheet .apply__chip input:checked + span, .apply__sheet .apply__segment button[aria-pressed='true'] { background: #1d1d1f; border-color: #1d1d1f; color: var(--paper); }
+  .apply__sheet .apply__chip input:focus-visible + span, .apply__sheet .apply__button:focus-visible, .apply__sheet .apply__link:focus-visible, .apply__sheet .apply__segment button:focus-visible, .apply__sheet .apply__option:focus-visible { outline-color: #1d1d1f; }
+  .apply__sheet .apply__check input { accent-color: #1d1d1f; }
+  .apply__sheet .apply__input { background: linear-gradient(var(--ink), var(--ink)) no-repeat left bottom / 0 2px; transition: background-size 340ms cubic-bezier(.2,.7,.2,1), border-color 150ms; }
+  .apply__sheet .apply__input:focus { background-size: 100% 2px; border-bottom-color: transparent; }
+  /* A rubber stamp on the pages that confirm a submission. */
+  .apply__stamp { position: absolute; top: -6px; right: 0; padding: 9px 14px 7px; border: 3px solid #b3261e; border-radius: 6px; color: #b3261e; font: 700 20px/1 var(--font-title); letter-spacing: .18em; text-transform: uppercase; transform: rotate(-11deg); opacity: .82; mix-blend-mode: multiply; pointer-events: none; }
+  .apply__sheet .apply__remove:hover { background: rgb(0 0 0 / .06); }
+
+  /* The progress bar: one segment per step of the whole process, on the page's left edge just above it. */
   .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 38px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); transition: width 320ms cubic-bezier(.2,.7,.2,1); }
   .apply__progress[hidden] { display: none; }
   .apply__progress-track { display: flex; flex: 1; gap: 6px; }
   .apply__progress-track button { position: relative; flex: 1; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; }
-  .apply__progress-track button::before { content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 3px; border-radius: 2px; background: var(--line); transition: background 220ms; }
-  .apply__progress-track button[data-done]::before, .apply__progress-track button[aria-current='step']::before { background: var(--ink); }
+  .apply__progress-track button::before { content: ''; position: absolute; left: 0; right: 0; top: 4px; height: 10px; clip-path: polygon(0 100%, 0 38%, 9px 0, calc(100% - 9px) 0, 100% 38%, 100% 100%); background: rgb(255 255 255 / .2); transition: background 220ms; }
+  .apply__progress-track button[data-done]::before { background: rgb(243 242 237 / .72); }
+  .apply__progress-track button[aria-current='step']::before { background: var(--paper); }
   .apply__progress-track button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
-  .apply__progress-count { flex: none; min-width: 3.4em; text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .apply__progress-count { flex: none; min-width: 3.4em; text-align: right; font-size: 13px; font-weight: 500; color: rgb(255 255 255 / .5); font-variant-numeric: tabular-nums; }
 
   /* Type: titles in the site's display face, everything else in Outfit. */
-  .apply__title { margin: 0 0 12px; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; color: var(--ink); }
-  .apply__lead { margin: 0 0 28px; max-width: 36em; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
+  .apply__title { margin: 0 0 12px; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 46px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; color: var(--ink); }
+  .apply__lead { margin: 0 0 26px; max-width: 36em; font-size: 17px; line-height: 1.5; color: var(--ink-2); }
   .apply__lead[hidden] { display: none; }
   .apply__lead a { color: var(--ink); }
   .apply__help { margin: 0 0 10px; max-width: 36em; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
@@ -313,7 +379,7 @@ const posters = [poster1, poster2];
   .apply__check input { flex: none; width: 22px; height: 22px; margin-top: 1px; accent-color: var(--paper); }
   .apply__check.is-invalid { color: var(--error); }
   .apply__check.is-invalid input { outline: 2px solid var(--error); outline-offset: 2px; border-radius: 4px; }
-  .apply__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 28px; }
+  .apply__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 26px; }
   .apply__button { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: inline-flex; align-items: center; justify-content: center; min-height: 58px; min-width: 176px; padding: 20px 30px 16px; border: 0; background: none; color: var(--paper-ink); font: 550 19px/1.2 var(--font-site); text-decoration: none; cursor: pointer; }
   .apply__button :global(.folder-button-shape) { filter: drop-shadow(0 5px 8px rgb(0 0 0 / .18)) drop-shadow(0 1px 2px rgb(0 0 0 / .12)); }
   .apply__button > span { position: relative; z-index: 1; }
@@ -327,17 +393,14 @@ const posters = [poster1, poster2];
   .apply__error { margin: 0 0 14px; color: var(--error); font-size: 15px; }
   .apply__error[hidden] { display: none; }
 
-  /* Project cards */
-  .apply__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px; }
-  .apply__card { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: flex; min-height: 172px; padding: 32px 22px 20px; border: 0; background: none; text-align: left; color: var(--paper-ink); cursor: pointer; }
-  .apply__card :global(.folder-button-shape) { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .22)); transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
-  .apply__card:hover { --folder-button-fill: #fff; }
-  .apply__card:hover :global(.folder-button-shape), .apply__card:focus-visible :global(.folder-button-shape) { transform: translateY(-4px); }
-  .apply__card:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 10px; }
-  .apply__card-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .apply__card-name { font-family: var(--font-title); font-weight: 600; font-size: 22px; line-height: 1.1; letter-spacing: .004em; font-synthesis: none; }
-  .apply__card-text { font-size: 15px; line-height: 1.45; color: var(--paper-ink-2); }
-  .apply__card-cta { margin-top: auto; padding-top: 10px; font-size: 15px; font-weight: 600; color: var(--paper-ink); }
+  /* The choice: a list on the page, one line per project. */
+  .apply__options { display: grid; margin-top: 4px; border-top: 1px solid var(--line); }
+  .apply__option { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; row-gap: 4px; align-items: center; width: 100%; padding: 18px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; color: var(--ink); cursor: pointer; transition: background 150ms; }
+  .apply__option:hover { background: rgb(0 0 0 / .04); }
+  .apply__option:focus-visible { outline: 2px solid #1d1d1f; outline-offset: -2px; border-radius: 6px; }
+  .apply__option-name { grid-column: 1; grid-row: 1; font-family: var(--font-title); font-weight: 600; font-size: 21px; line-height: 1.15; letter-spacing: .004em; font-synthesis: none; }
+  .apply__option-cta { grid-column: 2; grid-row: 1 / span 2; justify-self: end; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .apply__option-text { grid-column: 1; grid-row: 2; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 
   /* Budget */
   .apply__budget { margin: 0 0 22px; }
@@ -368,14 +431,15 @@ const posters = [poster1, poster2];
   /* Project pages */
   .apply__team-info[hidden] { display: none; }
   .apply__team-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px 56px; align-items: start; }
-  .apply__team-text p { margin: 0 0 12px; font-size: 16px; line-height: 1.55; color: var(--ink-body); max-width: 38em; }
+  .apply__team-text p { margin: 0 0 11px; font-size: 15px; line-height: 1.55; color: var(--ink-body); max-width: 40em; }
   .apply__team-roles strong { color: var(--ink); font-weight: 600; }
   .apply__posters { display: flex; gap: 12px; margin: 6px 0 18px; }
-  .apply__posters :global(img) { width: calc(50% - 6px); height: auto; border-radius: 10px; box-shadow: 0 12px 24px rgb(0 0 0 / .4); }
+  .apply__posters :global(img) { width: calc(50% - 6px); height: auto; border-radius: 10px; box-shadow: 0 12px 24px rgb(0 0 0 / .2); }
   .apply__details { display: grid; gap: 12px; margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
   .apply__details dt { color: var(--ink-3); font-size: 13px; font-weight: 500; }
   .apply__details dd { margin: 1px 0 0; color: var(--ink); overflow-wrap: anywhere; }
 
+  @media (max-width: 1100px) { .apply__panel--wide { width: min(100%, 680px); } }
   @media (max-width: 900px) {
     .apply__team-columns { grid-template-columns: 1fr; }
     .apply__budget-head { display: none; }
@@ -385,17 +449,17 @@ const posters = [poster1, poster2];
     .apply__budget-row [name='budget_link'] { grid-row: 3; }
   }
   @media (max-width: 640px) {
+    .apply__sheet { padding: 56px 22px 30px; }
+    .apply__sheet-paper-inner { clip-path: inset(0 round 18px); }
     .apply__row, .apply__rules-grid, .apply__summary { grid-template-columns: 1fr; gap: 0; }
     .apply__summary { gap: 14px; }
     .apply__button { min-height: 56px; min-width: 0; width: 100%; font-size: 18px; }
     .apply__actions { gap: 8px 20px; }
-    .apply__cards { grid-template-columns: 1fr; gap: 14px; }
-    .apply__card { min-height: 0; padding: 30px 22px 20px; }
-    .apply__shade { background: radial-gradient(ellipse 90% 70% at 50% 45%, rgb(10 10 10 / .64), rgb(10 10 10 / .26) 60%, transparent 100%); }
+    .apply__option { grid-template-columns: 1fr; }
+    .apply__option-cta { grid-column: 1; grid-row: 3; justify-self: start; }
   }
   @media (prefers-reduced-motion: reduce) {
     .apply__scroller { scroll-behavior: auto; }
-    .apply__card :global(.folder-button-shape) { transition: none; }
   }
 </style>
 
