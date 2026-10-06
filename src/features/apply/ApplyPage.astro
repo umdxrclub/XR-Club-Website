@@ -262,9 +262,10 @@ const posters = [poster1, poster2];
   /* One centred column for everything. */
   .apply__panel { flex: 0 0 auto; width: min(100%, var(--column)); margin: auto; will-change: transform, opacity; }
   .apply__panel--wide { width: min(100%, 960px); }
+  @media (max-width: 1100px) { .apply__panel--wide { width: min(100%, 640px); } }
 
   /* The progress bar: one segment per step of the whole process, on the column's left edge just above the title. */
-  .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 38px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); }
+  .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 38px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); transition: width 320ms cubic-bezier(.2,.7,.2,1); }
   .apply__progress[hidden] { display: none; }
   .apply__progress-track { display: flex; flex: 1; gap: 6px; }
   .apply__progress-track button { position: relative; flex: 1; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; }

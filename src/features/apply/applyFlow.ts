@@ -167,6 +167,8 @@ export function mountApply(root: HTMLElement) {
       if (index === current) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
       b.toggleAttribute('data-done', index < current);
     });
+    // The bar spans the column of the step being read, wide or not.
+    root.style.setProperty('--column', panels[current].classList.contains('apply__panel--wide') ? '960px' : '640px');
     const at = segments.findIndex(b => Number(b.dataset.index) >= current);
     railCount.textContent = segments.length ? `${(at < 0 ? segments.length : at + 1)} of ${segments.length}` : '';
     swimmer?.setKeepOut(panels[current].getBoundingClientRect());
