@@ -1,8 +1,8 @@
 // The projects page's swimmer: a 2-second swim loop (public/scenes/apply/axolotl-*.webp) that lives inside the
-// screen like a fish in a tank. It steers: a slow wander bends its course, the edges and (on wide screens) the
-// reading column push it into smooth arcs, it faces the way it swims, flipping edge-on through a turn, and its
-// body pitches with its course. It is always on screen, its tail leaves a wake in the fluid, and a burst of water
-// nearby (the pointer, an idle splat) carries it along for a moment before it recovers its course.
+// screen like a fish in a tank. It follows a slow, tall ellipse laid out in the open water beside the reading
+// column (a lap every half minute or so), faces the way it swims, banking steeply through the rare turn so the
+// change of side is barely visible, and a burst of water nearby (the pointer, an idle splat) carries it along for
+// a moment before it recovers its course. It is always on screen and adds nothing to the fluid itself.
 
 export type AxolotlSheet = { src: string; frameWidth: number; frameHeight: number; frames: number; columns: number; fps: number };
 export const axolotlSheets = {
@@ -15,8 +15,6 @@ export type AxolotlOptions = {
   /** Display width in CSS pixels. */
   width: number;
   reduced?: boolean;
-  /** Called every frame with the tail's position (CSS px) and the swimmer's velocity (CSS px/s) while it is drawn. */
-  onWake?: (x: number, y: number, dx: number, dy: number) => void;
 };
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -45,50 +43,47 @@ export function mountAxolotl(canvas: HTMLCanvasElement, options: AxolotlOptions)
   const seed = Math.random() * 100;
   // Centre, heading (radians, screen coordinates), which way the body faces, the drawn flip and pitch, and the
   // current carrying it after a nearby burst.
-  let x = viewW * .72, y = viewH * .6, heading = Math.PI * .94, facing = -1, flip = -1, pitch = 0, time = 0, driftX = 0, driftY = 0;
+  // It spawns in the open water to the right of the column, where its lap runs.
+  let x = viewW * .85, y = viewH * .55, heading = Math.PI * .5, facing = -1, flip = -1, pitch = 0, time = 0, driftX = 0, driftY = 0;
+  // Where it is along its lap, and which way round it swims.
+  let lap = Math.random() * Math.PI * 2;
+  const circle = Math.random() < .5 ? 1 : -1;
   const speed = () => clamp(viewW / 40, 32, 52); // CSS px/s: a lap of a laptop screen in about half a minute
   let keepOut: DOMRect | null = null, dim = 1;
 
   const steer = (dt: number) => {
     time += dt;
     const box = tank();
-    // The course it would like: where it is going, bent by a slow wander, the current, and pushes off the walls and the text.
-    let dx = Math.cos(heading) + driftX / speed() * .4, dy = Math.sin(heading) * .6 + driftY / speed() * .4;
-    dy += (Math.sin(time * .31 + seed) * .55 + Math.sin(time * .077 + seed * 2) * .45) * .35;
-    const push = (distance: number, nx: number, ny: number, range: number) => {
-      if (distance >= range) return;
-      const k = 1 - Math.max(0, distance) / range;
-      dx += nx * k * 2.4; dy += ny * k * 2.4;
-    };
-    push(x - box.left, 1, 0, 150); push(box.right - x, -1, 0, 150); push(y - box.top, 0, 1, 120); push(box.bottom - y, 0, -1, 120);
+    // The lap: a tall ellipse in the open water beside the reading column, or across the tank when there is none
+    // (phones, where it softens under the text instead).
+    let cx = (box.left + box.right) / 2, ax = (box.right - box.left) / 2;
+    const cy = (box.top + box.bottom) / 2, ay = (box.bottom - box.top) / 2;
     if (keepOut) {
-      // Swim around the reading column rather than under it, leaving toward whichever side of the tank has room
-      // for the body; where no side has room (phones) it stays and softens instead.
-      const sides = [
-        { nx: 1, ny: 0, space: box.right - keepOut.right }, { nx: -1, ny: 0, space: keepOut.left - box.left },
-        { nx: 0, ny: 1, space: box.bottom - keepOut.bottom }, { nx: 0, ny: -1, space: keepOut.top - box.top },
-      ];
-      const exit = sides.reduce((best, side) => (side.space > best.space ? side : best));
-      if (exit.space >= (exit.nx ? width : height) * .5) {
-        const px = clamp(x, keepOut.left, keepOut.right), py = clamp(y, keepOut.top, keepOut.bottom);
-        const ax = x - px, ay = y - py, distance = Math.hypot(ax, ay), range = width * .9;
-        if (distance === 0) { dx += exit.nx * 2; dy += exit.ny * 2; }
-        else if (distance < range) { const k = 1 - distance / range; dx += (ax / distance) * k * 2; dy += (ay / distance) * k * 2; }
+      const rightRoom = box.right - (keepOut.right + width / 2), leftRoom = (keepOut.left - width / 2) - box.left;
+      if (Math.max(rightRoom, leftRoom) >= 40) {
+        const lo = rightRoom >= leftRoom ? keepOut.right + width / 2 : box.left, hi = rightRoom >= leftRoom ? box.right : keepOut.left - width / 2;
+        cx = (lo + hi) / 2; ax = (hi - lo) / 2;
       }
     }
-    heading += clamp(turnTo(heading, Math.atan2(dy, dx)), -1.4 * dt, 1.4 * dt);
+    const a = clamp(ax, 10, 130), b = clamp(ay, 40, 200);
+    // Move along the lap at swimming speed and steer toward that point, bent a little by the current.
+    lap += circle * speed() / (2 * Math.PI * Math.sqrt((a * a + b * b) / 2)) * 2 * Math.PI * dt;
+    const tx = cx + Math.cos(lap) * a, ty = cy + Math.sin(lap) * b;
+    const dx = tx - x + driftX / speed() * 40, dy = ty - y + driftY / speed() * 40;
+    heading += clamp(turnTo(heading, Math.atan2(dy, dx)), -1.2 * dt, 1.2 * dt);
     // A stroke every two seconds, the length of the sheet's loop; the current fades in a second or two.
     const v = speed() * (1 + .18 * Math.sin(time * Math.PI));
     const decay = Math.exp(-dt * 2.2);
     driftX *= decay; driftY *= decay;
     x = clamp(x + (Math.cos(heading) * v + driftX) * dt, box.left, box.right);
     y = clamp(y + (Math.sin(heading) * v + driftY) * dt, box.top, box.bottom);
-    // It faces the way it swims, flipping edge-on through a turn, and pitches with its course.
-    if (Math.cos(heading) > .2) facing = 1; else if (Math.cos(heading) < -.2) facing = -1;
-    flip = lerp(flip, facing, 1 - Math.exp(-dt * 7));
+    // It faces the way its lap is heading (so the side changes exactly twice a lap, at the top and the bottom, never
+    // fluttering on a vertical stretch), turns through a slow edge-on bank, and tilts a little with its course.
+    facing = -Math.sin(lap) * circle >= 0 ? 1 : -1;
+    flip = lerp(flip, facing, 1 - Math.exp(-dt * 3));
     const vx = Math.cos(heading) * v + driftX, vy = Math.sin(heading) * v + driftY;
-    pitch = lerp(pitch, clamp(Math.atan2(facing * vy, Math.abs(vx) + 1e-3), -.5, .5), 1 - Math.exp(-dt * 5));
-    return { vx, vy };
+    void seed;
+    pitch = lerp(pitch, clamp(Math.atan2(facing * vy, Math.abs(vx) + 1e-3), -.6, .6), 1 - Math.exp(-dt * 4));
   };
 
   let frame = 0, last = performance.now(), hidden = document.hidden, disposed = false;
@@ -99,9 +94,8 @@ export function mountAxolotl(canvas: HTMLCanvasElement, options: AxolotlOptions)
     if (failed) { canvas.style.visibility = 'hidden'; return; }
     const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
     if (!hidden) {
-      let vx = 0, vy = 0;
       if (reduced) { x = viewW * .75; y = viewH * .65; facing = 1; flip = 1; pitch = 0; }
-      else ({ vx, vy } = steer(dt));
+      else steer(dt);
       // Under the reading column (phones, where it cannot swim around it) the swimmer softens so the text stays legible.
       const under = !!keepOut && x + width / 2 > keepOut.left && x - width / 2 < keepOut.right && y + height / 2 > keepOut.top && y - height / 2 < keepOut.bottom;
       dim = lerp(dim, under ? .5 : 1, 1 - Math.exp(-dt * 5));
@@ -114,8 +108,6 @@ export function mountAxolotl(canvas: HTMLCanvasElement, options: AxolotlOptions)
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, sx, sy, sheet.frameWidth, sheet.frameHeight, 0, 0, canvas.width, canvas.height);
       }
-      // The wake starts at the tail, behind the body.
-      if (loaded && !reduced && options.onWake) options.onWake(x - Math.cos(heading) * width * .34, y - Math.sin(heading) * width * .34, vx, vy);
     }
     frame = requestAnimationFrame(tick);
   };
