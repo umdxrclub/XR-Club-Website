@@ -308,47 +308,6 @@ export function mountApply(root: HTMLElement) {
     if (field.type === 'radio' || field.type === 'checkbox') field.closest('.apply__chips, .apply__check')?.classList.remove('is-invalid');
   }, options);
 
-  // --- The paper ----------------------------------------------------------------------------------------------
-  // Each page is cut like the club's folders: a notch across the top left, rounded corners, a chamfer at the bottom
-  // right, all at a fixed scale whatever the page's size (an SVG stretched to the page would scale the notch with it).
-  const sheetPath = (w: number, h: number) => {
-    const small = w < 560, notch = small ? 34 : 44, slope = small ? 44 : 58, tab = Math.min(small ? 120 : 168, w * .26), r = small ? 18 : 22, cut = small ? 30 : 42;
-    return `path('M0 ${notch + r}Q0 ${notch} ${r} ${notch}H${tab}L${tab + slope} 0H${w - r}Q${w} 0 ${w} ${r}V${h - cut - r}L${w - cut} ${h}H${r}Q0 ${h} 0 ${h - r}Z')`;
-  };
-  const shapeSheet = (paper: HTMLElement) => { const sheet = paper.closest<HTMLElement>('.apply__sheet'); if (sheet) paper.style.clipPath = sheetPath(sheet.offsetWidth, sheet.offsetHeight); };
-  const papers = [...root.querySelectorAll<HTMLElement>('[data-sheet-paper]')];
-  const sizes = new ResizeObserver(entries => entries.forEach(entry => { const paper = (entry.target as HTMLElement).querySelector<HTMLElement>('[data-sheet-paper]'); if (paper) shapeSheet(paper); }));
-  papers.forEach(paper => { shapeSheet(paper); const sheet = paper.closest<HTMLElement>('.apply__sheet'); if (sheet) sizes.observe(sheet); });
-  disposers.push(() => sizes.disconnect());
-
-  // --- The page in the water ----------------------------------------------------------------------------------
-  // Typing sends a soft ripple off the page's edge at the field's height; a choice makes a small burst; the swimmer
-  // glides to the edge of the page beside the field being filled in and watches, then drifts off when you leave it.
-  let lastRipple = 0;
-  const pageBox = () => panels[steps.indexOf(active)].getBoundingClientRect();
-  const ripple = (element: Element | null, strength = 1) => {
-    if (!fluid || reduced || !element) return;
-    const now = performance.now();
-    if (now - lastRipple < 70) return;
-    lastRipple = now;
-    const page = pageBox(), box = element.getBoundingClientRect();
-    const y = clamp(box.top + box.height / 2, page.top, page.bottom);
-    const toRight = Math.random() < .5;
-    fluid.splat(toRight ? page.right + 8 : page.left - 8, y, (toRight ? 1 : -1) * 240 * strength, (Math.random() - .5) * 140 * strength, undefined, .13 * Math.sqrt(strength));
-  };
-  root.addEventListener('input', event => ripple(event.target as Element), options);
-  root.addEventListener('change', event => ripple(event.target as Element, 2), options);
-  root.addEventListener('focusin', event => {
-    const field = (event.target as Element).closest('.apply__input, .apply__chip, .apply__check, .apply__segment');
-    if (!field) return;
-    const page = pageBox(), box = field.getBoundingClientRect();
-    swimmer?.setInterest({ x: page.right, y: clamp(box.top + box.height / 2, page.top, page.bottom) });
-  }, options);
-  root.addEventListener('focusout', event => {
-    const next = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.apply__input, .apply__chip, .apply__check, .apply__segment') : null;
-    if (!next) swimmer?.setInterest(null);
-  }, options);
-
   // --- Who you are ------------------------------------------------------------------------------------------
   // The opening screen's details serve both forms, and are kept as their own draft.
   const basics = root.querySelector<HTMLElement>('[data-basics]')!;
@@ -393,7 +352,7 @@ export function mountApply(root: HTMLElement) {
   root.addEventListener('click', event => {
     const target = event.target as HTMLElement;
     const nextButton = target.closest<HTMLElement>('[data-next]');
-    if (nextButton) { const step = nextButton.closest<HTMLElement>('[data-step]')!; if (step.querySelector('input:not([type="hidden"]), textarea, select') && !validateStep(step)) return; ripple(nextButton, 4); swimmer?.setInterest(null); next(step); return; }
+    if (nextButton) { const step = nextButton.closest<HTMLElement>('[data-step]')!; if (step.querySelector('input:not([type="hidden"]), textarea, select') && !validateStep(step)) return; next(step); return; }
     const backButton = target.closest<HTMLElement>('[data-back]');
     if (backButton) { previous(backButton.closest<HTMLElement>('[data-step]')!); return; }
     const jump = target.closest<HTMLElement>('[data-jump]');
