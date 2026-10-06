@@ -5,18 +5,7 @@ export const proposal = {
   name: 'Propose a new project',
   tagline: 'Request funding for your own idea. $400 per project, or $600 or $1,000 with a strong plan. Hardware only.',
   cta: 'Start a proposal',
-  image: 'equipment/microsoft-hololens-2.webp',
 };
-
-export const stages = ['Your details', 'Choose a project', 'A few questions', 'Review and submit'];
-
-export const fundingGlance = [
-  '$400 base funding per project',
-  '$600 or $1,000 with a strong outline, MVP and timeline',
-  'Teams of 3 to 10 people, including you',
-  'Hardware only. Software you build is yours',
-  'Checkpoints every 2 to 3 weeks',
-];
 
 export const fundingRules = {
   can: ['Hardware that fits the club\'s direction: headsets, sensors, parts and components', 'Equipment that benefits the club as a whole'],
@@ -48,8 +37,6 @@ export type Team = {
   tools: string[];
   meeting: string;
   posters?: boolean;
-  /** A picture of the kit the project uses, under public/. */
-  image?: string;
 };
 
 export const teams: Team[] = [
@@ -92,7 +79,6 @@ export const teams: Team[] = [
     question: 'Describe your Unity or C# experience: a project, a repository, or a class. If you have one, name a place you would anchor an AR experience to.',
     tools: ['Unity', 'C#', 'AR Foundation, ARKit or ARCore', 'Niantic Lightship or Spatial SDK', '3D art', 'Backend or networking'],
     meeting: 'weekly, at a time set with the team',
-    image: 'equipment/meta-quest-3.webp',
   },
   {
     slug: 'spatial-reality-display',
@@ -113,7 +99,6 @@ export const teams: Team[] = [
     question: 'Which part do you want to own: the creatures, the interactions, the phone remote, or sound and light? Describe the closest thing you have made.',
     tools: ['Unity (C#)', 'Blender or 3D animation', 'Shaders or VFX', 'Web (JavaScript)', 'Interaction or UX design', 'Sound design', 'None yet'],
     meeting: 'weekly, at a time set with the team',
-    image: 'equipment/spatial-reality-display.webp',
   },
 ];
 

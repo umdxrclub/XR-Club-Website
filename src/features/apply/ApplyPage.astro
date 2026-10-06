@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import FolderButtonShape from '../../components/FolderButtonShape.astro';
-import { availabilityOptions, fundingGlance, fundingRules, proposal, stages, teams, whatHappensNext, years } from './applyContent';
+import { availabilityOptions, fundingRules, proposal, teams, whatHappensNext, years } from './applyContent';
 import poster1 from '../../assets/apply/immersive-installations-poster-1.png';
 import poster2 from '../../assets/apply/immersive-installations-poster-2.png';
 const base = import.meta.env.BASE_URL;
@@ -11,7 +11,11 @@ const posters = [poster1, poster2];
   <canvas class="apply__fluid" data-apply-fluid aria-hidden="true"></canvas>
   <div class="apply__shade" aria-hidden="true"></div>
   <canvas class="apply__swimmer" data-apply-swimmer aria-hidden="true"></canvas>
-  <nav class="apply__progress" data-apply-rail aria-label="Steps" hidden></nav>
+  {/* One segment per step of the whole process, aligned with the column; the script fills it. */}
+  <nav class="apply__progress" data-apply-rail aria-label="Steps" hidden>
+    <div class="apply__progress-track" data-progress-track></div>
+    <span class="apply__progress-count" data-progress-count></span>
+  </nav>
 
   <div class="apply__scroller" data-apply-scroller>
     {/* Every step sits on one stage pinned to the screen; the scroller behind it only supplies the position that drives the morph. */}
@@ -19,37 +23,24 @@ const posters = [poster1, poster2];
       <div class="apply__stage" data-apply-stage>
         {/* Everyone starts here: who you are. Both an application and a proposal use these details. */}
         <section class="apply__step" data-step="intro" data-flow="start" data-shown>
-          <div class="apply__panel apply__split" data-basics>
-            <div class="apply__main">
-              <h1 class="apply__title">Projects</h1>
-              <p class="apply__lead">Join one of three projects this semester, or propose your own and request funding. Start with a few details.</p>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
-                <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email data-hint="Enter a umd.edu or terpmail.umd.edu address" /></label>
-              </div>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
-                <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
-              </div>
-              <fieldset class="apply__field apply__fieldset">
-                <legend class="apply__label">Year</legend>
-                <div class="apply__chips apply__chips--radio">
-                  {years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}
-                </div>
-              </fieldset>
-              <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+          <div class="apply__panel" data-basics>
+            <h1 class="apply__title">Projects</h1>
+            <p class="apply__lead">Join one of three projects this semester, or propose your own and request funding. Start with a few details.</p>
+            <div class="apply__row">
+              <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
+              <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email data-hint="Enter a umd.edu or terpmail.umd.edu address" /></label>
             </div>
-            <aside class="apply__side">
-              <div class="apply__folder">
-                <FolderButtonShape shortTab />
-                <div class="apply__folder-body">
-                  <Image class="apply__folder-image" src={poster1} alt="" width={640} widths={[320, 640]} sizes="300px" format="webp" quality={80} loading="eager" />
-                  <h3>How it works</h3>
-                  <ol>{stages.map(stage => <li>{stage}</li>)}</ol>
-                  <p>Takes about five minutes. Your progress is saved in this browser.</p>
-                </div>
+            <div class="apply__row">
+              <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
+              <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
+            </div>
+            <fieldset class="apply__field apply__fieldset">
+              <legend class="apply__label">Year</legend>
+              <div class="apply__chips apply__chips--radio">
+                {years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}
               </div>
-            </aside>
+            </fieldset>
+            <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
           </div>
         </section>
 
@@ -62,24 +53,18 @@ const posters = [poster1, poster2];
                 <button type="button" class="apply__card" role="listitem" data-team-pick={team.slug}>
                   <FolderButtonShape shortTab />
                   <span class="apply__card-body">
-                    {team.posters ? <Image class="apply__card-media" src={poster1} alt="" width={272} widths={[136, 272]} sizes="136px" format="webp" quality={80} /> : <img class="apply__card-media" src={base + team.image} alt="" loading="lazy" />}
-                    <span class="apply__card-text-block">
-                      <span class="apply__card-name">{team.name}</span>
-                      <span class="apply__card-text">{team.tagline}</span>
-                      <span class="apply__card-cta">Apply</span>
-                    </span>
+                    <span class="apply__card-name">{team.name}</span>
+                    <span class="apply__card-text">{team.tagline}</span>
+                    <span class="apply__card-cta">Apply</span>
                   </span>
                 </button>
               ))}
               <button type="button" class="apply__card" role="listitem" data-pitch-pick>
                 <FolderButtonShape shortTab />
                 <span class="apply__card-body">
-                  <img class="apply__card-media" src={base + proposal.image} alt="" loading="lazy" />
-                  <span class="apply__card-text-block">
-                    <span class="apply__card-name">{proposal.name}</span>
-                    <span class="apply__card-text">{proposal.tagline}</span>
-                    <span class="apply__card-cta">{proposal.cta}</span>
-                  </span>
+                  <span class="apply__card-name">{proposal.name}</span>
+                  <span class="apply__card-text">{proposal.tagline}</span>
+                  <span class="apply__card-cta">{proposal.cta}</span>
                 </span>
               </button>
             </div>
@@ -92,7 +77,7 @@ const posters = [poster1, poster2];
           <input type="hidden" name="team" data-team-field />
           <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <section class="apply__step" data-step="team-info" data-flow="team" hidden>
-            <div class="apply__panel">
+            <div class="apply__panel apply__panel--wide">
               {teams.map(team => (
                 <article class="apply__team-info" data-team-info={team.slug} hidden>
                   <h2 class="apply__title">{team.name}</h2>
@@ -103,12 +88,9 @@ const posters = [poster1, poster2];
                       {team.people && <p class="apply__team-roles"><strong>Team:</strong> {team.people.join(', ')}</p>}
                       <div class="apply__actions"><button type="button" class="apply__link" data-back>Other projects</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Apply</span></button></div>
                     </div>
-                    <div class="apply__folder">
-                      <FolderButtonShape shortTab />
-                      <div class="apply__folder-body">
-                        {team.posters ? <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520]} sizes="140px" format="webp" quality={82} loading="lazy" />)}</div> : <img class="apply__folder-image" src={base + team.image} alt="" loading="lazy" />}
-                        <dl>{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
-                      </div>
+                    <div class="apply__team-side">
+                      {team.posters && <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520, 780]} sizes="(max-width: 700px) 42vw, 150px" format="webp" quality={82} loading="lazy" />)}</div>}
+                      <dl class="apply__details">{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
                     </div>
                   </div>
                 </article>
@@ -117,70 +99,44 @@ const posters = [poster1, poster2];
           </section>
 
           <section class="apply__step" data-step="fit" data-flow="team" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Why this project</h2>
-                {teams.map(team => <p class="apply__lead" data-team-question={team.slug} hidden>{team.question}</p>)}
-                <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="2" maxlength="2000"></textarea></label>
-                <fieldset class="apply__field apply__fieldset">
-                  <legend class="apply__label">Tools you have used <em>optional</em></legend>
-                  {teams.map(team => (
-                    <div class="apply__chips" data-team-tools={team.slug} hidden>
-                      {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
-                    </div>
-                  ))}
-                </fieldset>
-                <fieldset class="apply__field apply__fieldset">
-                  <legend class="apply__label">Availability</legend>
-                  {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
-                  <div class="apply__chips apply__chips--radio">
-                    {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
-                  </div>
-                </fieldset>
-                <div class="apply__row">
-                  <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, or a video" data-hint="Enter a full link starting with https://" /></label>
-                  <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="1" maxlength="1000"></textarea></label>
-                </div>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
-              </div>
-              <aside class="apply__side">
+            <div class="apply__panel">
+              <h2 class="apply__title">Why this project</h2>
+              {teams.map(team => <p class="apply__lead" data-team-question={team.slug} hidden>{team.question}</p>)}
+              <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="2" maxlength="2000"></textarea></label>
+              <fieldset class="apply__field apply__fieldset">
+                <legend class="apply__label">Tools you have used <em>optional</em></legend>
                 {teams.map(team => (
-                  <div class="apply__folder" data-team-aside={team.slug} hidden>
-                    <FolderButtonShape shortTab />
-                    <div class="apply__folder-body">
-                      {team.posters ? <Image class="apply__folder-image" src={poster2} alt="" width={640} widths={[320, 640]} sizes="300px" format="webp" quality={80} loading="lazy" /> : <img class="apply__folder-image" src={base + team.image} alt="" loading="lazy" />}
-                      <h3>{team.name}</h3>
-                      <p>{team.tagline}</p>
-                      <dl>{team.details.slice(0, 2).map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
-                    </div>
+                  <div class="apply__chips" data-team-tools={team.slug} hidden>
+                    {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
                   </div>
                 ))}
-              </aside>
+              </fieldset>
+              <fieldset class="apply__field apply__fieldset">
+                <legend class="apply__label">Availability</legend>
+                {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
+                <div class="apply__chips apply__chips--radio">
+                  {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
+                </div>
+              </fieldset>
+              <div class="apply__row">
+                <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, or a video" data-hint="Enter a full link starting with https://" /></label>
+                <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="1" maxlength="1000"></textarea></label>
+              </div>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="team-review" data-flow="team" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Review</h2>
-                <dl class="apply__summary" data-team-summary></dl>
-                <p class="apply__error" data-form-error hidden></p>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit application</span></button></div>
-              </div>
-              <aside class="apply__side">
-                <div class="apply__folder">
-                  <FolderButtonShape shortTab />
-                  <div class="apply__folder-body">
-                    <h3>What happens next</h3>
-                    <ol><li>The team reads your application.</li><li>They reach out on Discord or by email with the next meeting.</li><li>Join the meeting and start building.</li></ol>
-                  </div>
-                </div>
-              </aside>
+            <div class="apply__panel">
+              <h2 class="apply__title">Review</h2>
+              <dl class="apply__summary" data-team-summary></dl>
+              <p class="apply__error" data-form-error hidden></p>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit application</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="team-done" data-flow="team" hidden>
-            <div class="apply__panel apply__panel--narrow">
+            <div class="apply__panel">
               <h2 class="apply__title">Application received</h2>
               <p class="apply__lead">The team will reach out on Discord or by email with the next meeting. Join the <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener noreferrer">XR Club Discord</a> in the meantime.</p>
               <div class="apply__actions">
@@ -194,119 +150,79 @@ const posters = [poster1, poster2];
         <form class="apply__form" data-apply-form="pitch" novalidate autocomplete="on">
           <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <section class="apply__step" data-step="project" data-flow="pitch" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Project and team</h2>
-                <div class="apply__row">
-                  <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="Short and memorable" /></label>
-                  <label class="apply__field"><span class="apply__label">Topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="A board topic or your own direction" /></label>
-                </div>
-                <label class="apply__field"><span class="apply__label">Summary</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What you are building, who it is for, and why XR"></textarea></label>
-                <label class="apply__field"><span class="apply__label">Team members, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="3" placeholder="Name, year, role" data-members></textarea><span class="apply__hint" data-members-count></span></label>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
+            <div class="apply__panel">
+              <h2 class="apply__title">Project and team</h2>
+              <div class="apply__row">
+                <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="Short and memorable" /></label>
+                <label class="apply__field"><span class="apply__label">Topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="A board topic or your own direction" /></label>
               </div>
-              <aside class="apply__side">
-                <div class="apply__folder">
-                  <FolderButtonShape shortTab />
-                  <div class="apply__folder-body">
-                    <img class="apply__folder-image" src={base + proposal.image} alt="" loading="lazy" />
-                    <h3>Funding at a glance</h3>
-                    <ul>{fundingGlance.map(item => <li>{item}</li>)}</ul>
-                  </div>
-                </div>
-              </aside>
+              <label class="apply__field"><span class="apply__label">Summary</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What you are building, who it is for, and why XR"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Team members, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="3" placeholder="Name, year, role" data-members></textarea><span class="apply__hint" data-members-count></span></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="plan" data-flow="pitch" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Plan</h2>
-                <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="3" placeholder="The smallest version that works, then what you build on top of it"></textarea></label>
-                <label class="apply__field"><span class="apply__label">Plan without funding</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can build with lab equipment alone if funding is reduced or unavailable"></textarea></label>
-                <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="2" placeholder="Checkpoints are every 2 to 3 weeks. What is done at each one, through the end of the semester"></textarea></label>
-                <label class="apply__field"><span class="apply__label">Deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="2" placeholder="What you will show at Demo Day"></textarea></label>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
-              </div>
-              <aside class="apply__side">
-                <div class="apply__folder">
-                  <FolderButtonShape shortTab />
-                  <div class="apply__folder-body">
-                    <h3>What a strong plan has</h3>
-                    <ul><li>An MVP you can show at the first checkpoint</li><li>A version that works with lab equipment alone</li><li>A checkpoint every 2 to 3 weeks through the semester</li><li>Something on the table at Demo Day</li></ul>
-                  </div>
-                </div>
-              </aside>
+            <div class="apply__panel">
+              <h2 class="apply__title">Plan</h2>
+              <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="3" placeholder="The smallest version that works, then what you build on top of it"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Plan without funding</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can build with lab equipment alone if funding is reduced or unavailable"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="2" placeholder="Checkpoints are every 2 to 3 weeks. What is done at each one, through the end of the semester"></textarea></label>
+              <label class="apply__field"><span class="apply__label">Deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="2" placeholder="What you will show at Demo Day"></textarea></label>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="budget" data-flow="pitch" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Budget</h2>
-                <p class="apply__lead">Hardware only. Mark each item must have or nice to have. Leave this empty if lab equipment is enough.</p>
-                <div class="apply__budget" data-budget>
-                  <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Estimated cost</span><span>Priority</span></div>
-                  <div data-budget-rows></div>
-                  <template data-budget-row>
-                    <div class="apply__budget-row">
-                      <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="Item" aria-label="Item" />
-                      <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
-                      <span class="apply__segment" role="group" aria-label="Priority">
-                        <button type="button" data-priority="must" aria-pressed="true">Must have</button>
-                        <button type="button" data-priority="nice" aria-pressed="false">Nice to have</button>
-                        <input type="hidden" name="budget_priority" value="must" />
-                      </span>
-                      <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
-                      <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
-                    </div>
-                  </template>
-                  <div class="apply__budget-foot">
-                    <button type="button" class="apply__link" data-budget-add>Add item</button>
-                    <p class="apply__total">Total requested <strong data-budget-total>$0</strong></p>
+            <div class="apply__panel">
+              <h2 class="apply__title">Budget</h2>
+              <p class="apply__lead">Hardware only. Mark each item must have or nice to have. Leave this empty if lab equipment is enough.</p>
+              <div class="apply__budget" data-budget>
+                <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Estimated cost</span><span>Priority</span></div>
+                <div data-budget-rows></div>
+                <template data-budget-row>
+                  <div class="apply__budget-row">
+                    <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="Item" aria-label="Item" />
+                    <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
+                    <span class="apply__segment" role="group" aria-label="Priority">
+                      <button type="button" data-priority="must" aria-pressed="true">Must have</button>
+                      <button type="button" data-priority="nice" aria-pressed="false">Nice to have</button>
+                      <input type="hidden" name="budget_priority" value="must" />
+                    </span>
+                    <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
+                    <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
                   </div>
+                </template>
+                <div class="apply__budget-foot">
+                  <button type="button" class="apply__link" data-budget-add>Add item</button>
+                  <p class="apply__total">Total requested <strong data-budget-total>$0</strong></p>
                 </div>
-                <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill" /></label>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
               </div>
-              <aside class="apply__side">
-                <div class="apply__folder">
-                  <FolderButtonShape shortTab />
-                  <div class="apply__folder-body">
-                    <h3>Funding covers</h3>
-                    <ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul>
-                    <h3>Funding does not cover</h3>
-                    <ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul>
-                    <details class="apply__folder-more"><summary>All the rules</summary><ul>{fundingRules.notes.map(item => <li>{item}</li>)}</ul></details>
-                  </div>
+              <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill" /></label>
+              <details class="apply__rules">
+                <summary>Funding rules</summary>
+                <div class="apply__rules-grid">
+                  <div><h3>Funding covers</h3><ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul></div>
+                  <div><h3>Funding does not cover</h3><ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul></div>
                 </div>
-              </aside>
+                <ul class="apply__rules-notes">{fundingRules.notes.map(item => <li>{item}</li>)}</ul>
+              </details>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="pitch-review" data-flow="pitch" hidden>
-            <div class="apply__panel apply__split">
-              <div class="apply__main">
-                <h2 class="apply__title">Review</h2>
-                <dl class="apply__summary" data-pitch-summary></dl>
-                <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules. Hardware only, orders go through the Treasurer, no reimbursements, hardware stays with the club, and funds are released in stages at checkpoints.</span></label>
-                <p class="apply__error" data-form-error hidden></p>
-                <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit proposal</span></button></div>
-              </div>
-              <aside class="apply__side">
-                <div class="apply__folder">
-                  <FolderButtonShape shortTab />
-                  <div class="apply__folder-body">
-                    <h3>What happens next</h3>
-                    <ol>{whatHappensNext.map(item => <li>{item}</li>)}</ol>
-                  </div>
-                </div>
-              </aside>
+            <div class="apply__panel">
+              <h2 class="apply__title">Review</h2>
+              <dl class="apply__summary" data-pitch-summary></dl>
+              <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules. Hardware only, orders go through the Treasurer, no reimbursements, hardware stays with the club, and funds are released in stages at checkpoints.</span></label>
+              <p class="apply__error" data-form-error hidden></p>
+              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit proposal</span></button></div>
             </div>
           </section>
 
           <section class="apply__step" data-step="pitch-done" data-flow="pitch" hidden>
-            <div class="apply__panel apply__panel--narrow">
+            <div class="apply__panel">
               <h2 class="apply__title">Proposal received</h2>
               <ol class="apply__next">{whatHappensNext.map(item => <li>{item}</li>)}</ol>
               <div class="apply__actions">
@@ -323,12 +239,12 @@ const posters = [poster1, poster2];
 </main>
 
 <style>
-  /* One palette: white ink at three strengths on the dark field, and paper for anything you press or read closely. */
-  .apply { position: relative; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --paper-ink-2: #6e6e73; --error: #ff8a80; --column: 980px; color: var(--ink); font-family: var(--font-site); }
+  /* One palette: white ink at three strengths on the dark field, and paper for anything you press. */
+  .apply { position: relative; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --paper-ink-2: #6e6e73; --error: #ff8a80; --column: 640px; color: var(--ink); font-family: var(--font-site); }
   .apply__fluid, .apply__shade, .apply__scroller { position: fixed; inset: 0; }
   .apply__fluid { z-index: 0; width: 100%; height: 100%; display: block; background: #0a0a0a; }
   /* The shade lifts the reading column off the fluid; the swimmer sits above it so it is never dimmed by it. */
-  .apply__shade { z-index: 1; pointer-events: none; background: radial-gradient(ellipse 54% 76% at 50% 54%, rgb(10 10 10 / .6), rgb(10 10 10 / .2) 64%, transparent 100%); }
+  .apply__shade { z-index: 1; pointer-events: none; background: radial-gradient(ellipse 46% 74% at 50% 54%, rgb(10 10 10 / .62), rgb(10 10 10 / .22) 62%, transparent 100%); }
   .apply__swimmer { position: fixed; left: 0; top: 0; z-index: 2; pointer-events: none; visibility: hidden; filter: drop-shadow(0 14px 18px rgb(0 0 0 / .35)); }
   .apply__scroller { z-index: 3; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
   .apply__scroller::-webkit-scrollbar, .apply__step::-webkit-scrollbar { display: none; }
@@ -343,20 +259,19 @@ const posters = [poster1, poster2];
   .apply__step[data-shown] { visibility: visible; }
   .apply__step { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); }
   .apply__step[hidden] { display: none; }
-  /* One centred column; most steps split it into the work on the left and a folder of context on the right. */
+  /* One centred column for everything. */
   .apply__panel { flex: 0 0 auto; width: min(100%, var(--column)); margin: auto; will-change: transform, opacity; }
-  .apply__panel--narrow { width: min(100%, 640px); }
-  .apply__split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px 56px; align-items: start; }
-  .apply__main, .apply__side { min-width: 0; }
-  .apply__side { padding-top: 8px; }
+  .apply__panel--wide { width: min(100%, 960px); }
 
-  /* A thin progress bar above the column, one segment per step of the flow being read. */
-  .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 40px); translate: -50% 0; display: flex; gap: 6px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); }
+  /* The progress bar: one segment per step of the whole process, on the column's left edge just above the title. */
+  .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 38px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); }
   .apply__progress[hidden] { display: none; }
-  .apply__progress button { position: relative; flex: 1; height: 16px; padding: 0; border: 0; background: none; cursor: pointer; }
-  .apply__progress button::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 3px; border-radius: 2px; background: var(--line); transition: background 220ms; }
-  .apply__progress button[data-done]::before, .apply__progress button[aria-current='step']::before { background: var(--ink); }
-  .apply__progress button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+  .apply__progress-track { display: flex; flex: 1; gap: 6px; }
+  .apply__progress-track button { position: relative; flex: 1; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; }
+  .apply__progress-track button::before { content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 3px; border-radius: 2px; background: var(--line); transition: background 220ms; }
+  .apply__progress-track button[data-done]::before, .apply__progress-track button[aria-current='step']::before { background: var(--ink); }
+  .apply__progress-track button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+  .apply__progress-count { flex: none; min-width: 3.4em; text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* Type: titles in the site's display face, everything else in Outfit. */
   .apply__title { margin: 0 0 12px; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; color: var(--ink); }
@@ -411,42 +326,17 @@ const posters = [poster1, poster2];
   .apply__error { margin: 0 0 14px; color: var(--error); font-size: 15px; }
   .apply__error[hidden] { display: none; }
 
-  /* Folders: paper panels in the site's folder shape, for context beside the work and for the project cards. */
-  .apply__folder { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); padding: 48px 22px 22px; color: var(--paper-ink); }
-  .apply__folder :global(.folder-button-shape) { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .22)); }
-  .apply__folder-body { position: relative; z-index: 1; }
-  .apply__folder-image { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; margin: 0 0 14px; background: #e6e4dd; }
-  .apply__folder h3 { margin: 0 0 8px; font: 600 18px/1.2 var(--font-title); letter-spacing: .004em; font-synthesis: none; color: var(--paper-ink); }
-  .apply__folder h3 + h3, .apply__folder ul + h3 { margin-top: 14px; }
-  .apply__folder p, .apply__folder li { font-size: 14px; line-height: 1.45; color: var(--paper-ink-2); }
-  .apply__folder p { margin: 10px 0 0; }
-  .apply__folder ol, .apply__folder ul { margin: 0; padding-left: 20px; }
-  .apply__folder ol { list-style: decimal; }
-  .apply__folder ul { list-style: disc; }
-  .apply__folder li { margin: 0 0 6px; }
-  .apply__folder li::marker { color: var(--paper-ink); font-weight: 600; }
-  .apply__folder dl { margin: 10px 0 0; display: grid; gap: 8px; }
-  .apply__folder dt { font-size: 12px; font-weight: 500; color: var(--paper-ink-2); }
-  .apply__folder dd { margin: 1px 0 0; font-size: 14px; line-height: 1.4; color: var(--paper-ink); overflow-wrap: anywhere; }
-  .apply__folder-more { margin-top: 12px; }
-  .apply__folder-more summary { font-size: 14px; font-weight: 500; color: var(--paper-ink); cursor: pointer; }
-  .apply__folder-more ul { margin-top: 8px; }
-  .apply__posters { display: flex; gap: 10px; margin: 0 0 12px; }
-  .apply__posters :global(img) { width: calc(50% - 5px); height: auto; border-radius: 8px; box-shadow: 0 8px 18px rgb(0 0 0 / .18); }
-
-  /* Project cards: a picture beside the words. */
-  .apply__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 4px; }
-  .apply__card { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: block; padding: 28px 20px 18px; border: 0; background: none; text-align: left; color: var(--paper-ink); cursor: pointer; }
+  /* Project cards */
+  .apply__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px; }
+  .apply__card { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: flex; min-height: 172px; padding: 32px 22px 20px; border: 0; background: none; text-align: left; color: var(--paper-ink); cursor: pointer; }
   .apply__card :global(.folder-button-shape) { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .22)); transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
   .apply__card:hover { --folder-button-fill: #fff; }
   .apply__card:hover :global(.folder-button-shape), .apply__card:focus-visible :global(.folder-button-shape) { transform: translateY(-4px); }
   .apply__card:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 10px; }
-  .apply__card-body { position: relative; z-index: 1; display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: stretch; }
-  .apply__card-media, .apply__card-body :global(img.apply__card-media) { display: block; width: 132px; height: 132px; object-fit: cover; border-radius: 10px; background: #e6e4dd; }
-  .apply__card-text-block { display: flex; flex-direction: column; gap: 6px; min-height: 132px; }
-  .apply__card-name { font-family: var(--font-title); font-weight: 600; font-size: 21px; line-height: 1.1; letter-spacing: .004em; font-synthesis: none; }
-  .apply__card-text { font-size: 14px; line-height: 1.45; color: var(--paper-ink-2); }
-  .apply__card-cta { margin-top: auto; padding-top: 8px; font-size: 14px; font-weight: 600; color: var(--paper-ink); }
+  .apply__card-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .apply__card-name { font-family: var(--font-title); font-weight: 600; font-size: 22px; line-height: 1.1; letter-spacing: .004em; font-synthesis: none; }
+  .apply__card-text { font-size: 15px; line-height: 1.45; color: var(--paper-ink-2); }
+  .apply__card-cta { margin-top: auto; padding-top: 10px; font-size: 15px; font-weight: 600; color: var(--paper-ink); }
 
   /* Budget */
   .apply__budget { margin: 0 0 22px; }
@@ -460,10 +350,15 @@ const posters = [poster1, poster2];
   .apply__budget-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 6px; }
   .apply__total { margin: 0; color: var(--ink-2); font-size: 15px; }
   .apply__total strong { color: var(--ink); font-size: 19px; margin-left: 6px; }
+  .apply__rules { margin: 0 0 6px; color: var(--ink-2); }
+  .apply__rules summary { cursor: pointer; font-weight: 500; color: var(--ink); padding: 6px 0; }
+  .apply__rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; margin-top: 8px; }
+  .apply__rules h3 { margin: 8px 0 4px; font-size: 14px; font-weight: 500; color: var(--ink-3); }
+  .apply__rules ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.5; }
+  .apply__rules-notes { margin-top: 8px !important; }
 
   /* Summaries */
-  .apply__summary { display: grid; gap: 14px; margin: 0 0 22px; font-size: 16px; line-height: 1.45; }
-  .apply__split .apply__summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; }
+  .apply__summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 0 0 22px; font-size: 16px; line-height: 1.45; }
   .apply__summary dt { color: var(--ink-3); font-size: 13px; font-weight: 500; }
   .apply__summary dd { margin: 2px 0 0; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
   .apply__next { margin: 0 0 8px; padding-left: 22px; font-size: 17px; line-height: 1.55; color: var(--ink-body); }
@@ -471,17 +366,17 @@ const posters = [poster1, poster2];
 
   /* Project pages */
   .apply__team-info[hidden] { display: none; }
-  .apply__team-columns { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px 56px; align-items: start; }
+  .apply__team-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px 56px; align-items: start; }
   .apply__team-text p { margin: 0 0 12px; font-size: 16px; line-height: 1.55; color: var(--ink-body); max-width: 38em; }
   .apply__team-roles strong { color: var(--ink); font-weight: 600; }
+  .apply__posters { display: flex; gap: 12px; margin: 6px 0 18px; }
+  .apply__posters :global(img) { width: calc(50% - 6px); height: auto; border-radius: 10px; box-shadow: 0 12px 24px rgb(0 0 0 / .4); }
+  .apply__details { display: grid; gap: 12px; margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
+  .apply__details dt { color: var(--ink-3); font-size: 13px; font-weight: 500; }
+  .apply__details dd { margin: 1px 0 0; color: var(--ink); overflow-wrap: anywhere; }
 
-  @media (max-width: 1100px) {
-    .apply { --column: 640px; }
-    .apply__split, .apply__team-columns { grid-template-columns: 1fr; }
-    .apply__side { display: none; }
-    .apply__team-columns .apply__folder { order: -1; margin-bottom: 20px; }
-  }
   @media (max-width: 900px) {
+    .apply__team-columns { grid-template-columns: 1fr; }
     .apply__budget-head { display: none; }
     .apply__budget-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; margin-bottom: 14px; }
     .apply__budget-row .apply__segment { grid-row: 2; grid-column: 1; justify-self: start; margin-top: 8px; }
@@ -489,14 +384,12 @@ const posters = [poster1, poster2];
     .apply__budget-row [name='budget_link'] { grid-row: 3; }
   }
   @media (max-width: 640px) {
-    .apply__row { grid-template-columns: 1fr; gap: 0; }
+    .apply__row, .apply__rules-grid, .apply__summary { grid-template-columns: 1fr; gap: 0; }
+    .apply__summary { gap: 14px; }
     .apply__button { min-height: 56px; min-width: 0; width: 100%; font-size: 18px; }
     .apply__actions { gap: 8px 20px; }
     .apply__cards { grid-template-columns: 1fr; gap: 14px; }
-    .apply__card { padding: 26px 18px 16px; }
-    .apply__card-body { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; }
-    .apply__card-media, .apply__card-body :global(img.apply__card-media) { width: 96px; height: 96px; }
-    .apply__card-text-block { min-height: 96px; }
+    .apply__card { min-height: 0; padding: 30px 22px 20px; }
     .apply__shade { background: radial-gradient(ellipse 90% 70% at 50% 45%, rgb(10 10 10 / .64), rgb(10 10 10 / .26) 60%, transparent 100%); }
   }
   @media (prefers-reduced-motion: reduce) {

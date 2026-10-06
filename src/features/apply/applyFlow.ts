@@ -116,8 +116,8 @@ export function mountApply(root: HTMLElement) {
     root.style.setProperty('--apply-steps', String(count));
     while (snaps.children.length < count) snaps.append(make('div', 'apply__snap'));
     while (snaps.children.length > count) snaps.lastElementChild!.remove();
+    buildRail();
   };
-  layout();
   let active = steps[0];
   const painted = new Map<HTMLElement, string>();
   const put = (i: number, clip: string, transform: string, opacity: string, shown: boolean) => {
@@ -159,15 +159,16 @@ export function mountApply(root: HTMLElement) {
       const s = clamp(scroller.scrollTop / h, 0, list.length - 1), i = Math.min(list.length - 1, Math.floor(s + .001));
       render(list[i], list[i + 1], clamp(s - i));
     }
-    // The progress bar marks the step being read; the swimmer steers around (or softens under) the reading column.
-    const flow = active.dataset.flow ?? '';
-    if (flow !== railFlow) buildRail(flow);
+    // The progress bar marks the step being read; the swimmer hovers beside (or softens under) the reading column.
     const current = steps.indexOf(active);
-    rail.querySelectorAll('button').forEach(b => {
+    const segments = [...rail.querySelectorAll('button')];
+    segments.forEach(b => {
       const index = Number(b.dataset.index);
       if (index === current) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
       b.toggleAttribute('data-done', index < current);
     });
+    const at = segments.findIndex(b => Number(b.dataset.index) >= current);
+    railCount.textContent = segments.length ? `${(at < 0 ? segments.length : at + 1)} of ${segments.length}` : '';
     swimmer?.setKeepOut(panels[current].getBoundingClientRect());
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(paint); };
@@ -236,21 +237,21 @@ export function mountApply(root: HTMLElement) {
   };
 
   // --- Progress ------------------------------------------------------------------------------------------
-  // One segment per step of the flow being read (the application's or the proposal's); none on the opening screens.
-  let railFlow = '';
-  const buildRail = (flow = railFlow) => {
-    railFlow = flow;
-    const shown = flow === 'start' || !flow ? [] : visible().filter(step => step.dataset.flow === flow && !step.dataset.step!.endsWith('done'));
+  // One segment per step of the whole process as it stands: your details, the choice, and the branch once chosen.
+  const railTrack = rail.querySelector<HTMLElement>('[data-progress-track]')!;
+  const railCount = rail.querySelector<HTMLElement>('[data-progress-count]')!;
+  function buildRail() {
+    const shown = visible().filter(step => !step.dataset.step!.endsWith('done'));
     rail.hidden = shown.length < 2;
-    rail.replaceChildren(...shown.map(step => {
+    railTrack.replaceChildren(...shown.map(step => {
       const button = make('button');
       button.type = 'button'; button.dataset.index = String(steps.indexOf(step));
       button.setAttribute('aria-label', step.querySelector('.apply__title')?.textContent?.trim() || step.dataset.step || 'Step');
       button.addEventListener('click', () => go(step));
       return button;
     }));
-  };
-  buildRail('start');
+  }
+  layout();
 
   // --- Validation ---------------------------------------------------------------------------------------
   // An invalid field shows why underneath it; a field with its own note (the members count) colours that instead.
@@ -334,12 +335,11 @@ export function mountApply(root: HTMLElement) {
   const branch = (form: HTMLFormElement) => {
     for (const other of [pitchForm, teamForm]) other.querySelectorAll<HTMLElement>('[data-step]:not([data-step$="done"])').forEach(step => { step.hidden = other !== form; });
     layout();
-    if (railFlow !== 'start') buildRail();
   };
   const chooseTeam = (slug: string) => {
     if (!teams.some(team => team.slug === slug)) return;
     teamField.value = slug;
-    for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting', 'data-team-aside']) {
+    for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting']) {
       root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== slug; });
     }
     branch(teamForm);
@@ -437,7 +437,7 @@ export function mountApply(root: HTMLElement) {
       // A saved project only shows its details again; the branch is chosen fresh each visit.
       if (key === 'team' && typeof value === 'string' && teams.some(team => team.slug === value)) {
         teamField.value = value;
-        for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting', 'data-team-aside']) root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== value; });
+        for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting']) root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== value; });
       }
     }
   };
@@ -531,7 +531,6 @@ export function mountApply(root: HTMLElement) {
     try { localStorage.removeItem(draftKey(form)); } catch { /* ignore */ }
     const done = form.querySelector<HTMLElement>('[data-step$="done"]')!;
     done.hidden = false;
-    buildRail(done.dataset.flow);
     go(done);
     if (fluid) fluid.randomSplats(phone ? 5 : 9, 900);
     form.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => { button.disabled = false; });
