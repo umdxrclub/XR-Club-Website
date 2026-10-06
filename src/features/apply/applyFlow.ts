@@ -34,7 +34,6 @@ export function mountApply(root: HTMLElement) {
   const make = <K extends keyof HTMLElementTagNameMap>(tag: K, className = '') => { const element = document.createElement(tag); if (scope) element.setAttribute(scope, ''); if (className) element.className = className; return element; };
   // Steps start below the fixed header and the progress bar, whatever height the header takes on this screen.
   const header = document.querySelector<HTMLElement>('.site-header');
-  const plate = document.querySelector<HTMLElement>('.site-header__bar');
   const headerBottom = () => header?.getBoundingClientRect().bottom ?? 90;
   const placeSteps = () => { root.style.setProperty('--apply-top', `${Math.round(headerBottom() + 56)}px`); };
   placeSteps();
@@ -44,18 +43,13 @@ export function mountApply(root: HTMLElement) {
   let swimmer: ReturnType<typeof mountAxolotl> = null;
   const phone = Math.min(innerWidth, innerHeight) < 700;
   let fluid: Fluid | null = null;
-  // The header's plate is a solid object in the fluid: dye and currents stop at its rounded edge.
-  const placePlate = () => {
-    const box = (plate ?? header)?.getBoundingClientRect();
-    fluid?.setObstacle(box ? { x: box.left, y: box.top, width: box.width, height: box.height, radius: 18 } : null);
-  };
   // Open on colour, not on an empty dark field. With reduced motion the field settles once and then holds still.
   const startFluid = (): Fluid | null => {
     try {
       const started = mountFluid(fluidCanvas, {
         simResolution: phone ? 128 : 192, dyeResolution: phone ? 512 : 1024, pressureIterations: phone ? 14 : 18, densityDissipation: .992, pixelRatio: Math.min(devicePixelRatio || 1, phone ? 1 : 1.25),
         // A lost GPU context (a backgrounded phone tab, a driver reset) comes back as a fresh simulation.
-        onRestore: () => { fluid = startFluid(); placePlate(); },
+        onRestore: () => { fluid = startFluid(); },
       });
       if (!started) return null;
       started.randomSplats(phone ? 8 : 14, 900);
@@ -64,7 +58,6 @@ export function mountApply(root: HTMLElement) {
     } catch (error) { console.warn('The fluid background could not start.', error); return null; }
   };
   fluid = startFluid();
-  placePlate();
   root.dataset.fluid = fluid ? 'on' : 'off';
   if (fluid) {
     let idle = 0;
@@ -103,7 +96,7 @@ export function mountApply(root: HTMLElement) {
   const swimmerCanvas = root.querySelector<HTMLCanvasElement>('[data-apply-swimmer]')!;
   const base = (document.querySelector('base')?.getAttribute('href') ?? '/').replace(/\/?$/, '/');
   const sheet = phone ? axolotlSheets.small : axolotlSheets.large;
-  swimmer = mountAxolotl(swimmerCanvas, { sheet: { ...sheet, src: base + sheet.src }, width: phone ? 150 : Math.round(Math.min(200, innerWidth * .14)), reduced });
+  swimmer = mountAxolotl(swimmerCanvas, { sheet: { ...sheet, src: base + sheet.src }, width: phone ? 150 : Math.round(Math.min(160, innerWidth * .12)), reduced });
   disposers.push(() => swimmer?.dispose());
   // The swimmer keeps clear of the header and the footer.
   const placeSwimmer = () => swimmer?.setInsets(headerBottom() + 8, (parseFloat(getComputedStyle(root).getPropertyValue('--site-footer-height')) || 0) + 8);
@@ -202,7 +195,7 @@ export function mountApply(root: HTMLElement) {
   const turn = (direction: 1 | -1) => { if (turning) return; const target = neighbour(active, direction); if (target) go(target); };
   root.addEventListener('scroll', schedule, { ...options, capture: true, passive: true });
   root.addEventListener('input', schedule, options);
-  addEventListener('resize', () => { placeSteps(); placeSwimmer(); placePlate(); scroller.scrollTo({ top: visible().indexOf(active) * height(), behavior: 'instant' as ScrollBehavior }); schedule(); }, options);
+  addEventListener('resize', () => { placeSteps(); placeSwimmer(); scroller.scrollTo({ top: visible().indexOf(active) * height(), behavior: 'instant' as ScrollBehavior }); schedule(); }, options);
   // A wheel turns one step per gesture. A step with more than a screen of content scrolls itself first, and the
   // tail of a trackpad flick is swallowed rather than turning a second step.
   const wheel = { at: 0, delta: 0, inner: false };
@@ -270,7 +263,7 @@ export function mountApply(root: HTMLElement) {
     let note = holder.querySelector<HTMLElement>('.apply__hint[data-note]');
     if (!invalid) { note?.remove(); return; }
     if (!note) { note = make('span', 'apply__hint'); note.dataset.note = ''; note.toggleAttribute('data-invalid', true); holder.append(note); }
-    note.textContent = (field as Field).value.trim() ? (field.dataset.hint || 'Check this field') : 'Required';
+    note.textContent = (field as Field).value.trim() ? (field.dataset.hint || 'Enter a valid value') : 'Required';
   };
   // You are the lead: the members list is everyone else, and the team is three to ten people with you.
   const members = (value: string) => value.split('\n').map(line => line.trim()).filter(Boolean);
@@ -346,7 +339,7 @@ export function mountApply(root: HTMLElement) {
   const chooseTeam = (slug: string) => {
     if (!teams.some(team => team.slug === slug)) return;
     teamField.value = slug;
-    for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting']) {
+    for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting', 'data-team-aside']) {
       root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== slug; });
     }
     branch(teamForm);
@@ -444,7 +437,7 @@ export function mountApply(root: HTMLElement) {
       // A saved project only shows its details again; the branch is chosen fresh each visit.
       if (key === 'team' && typeof value === 'string' && teams.some(team => team.slug === value)) {
         teamField.value = value;
-        for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting']) root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== value; });
+        for (const attribute of ['data-team-info', 'data-team-question', 'data-team-tools', 'data-team-meeting', 'data-team-aside']) root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.hidden = element.getAttribute(attribute) !== value; });
       }
     }
   };
@@ -480,8 +473,8 @@ export function mountApply(root: HTMLElement) {
     const team = teams.find(t => t.slug === teamField.value);
     const tools = [...teamForm.querySelectorAll<HTMLInputElement>('input[name="tools"]:checked')].filter(input => !input.closest('[hidden]')).map(input => input.value);
     summarize(teamSummary, [
-      ['Project', team?.name ?? ''], ['You', you()], ['Year and major', [basic('year'), basic('major')].filter(Boolean).join(', ')],
-      ['Your fit', value(teamForm, 'pitch')], ['Tools', tools.join(', ')], ['Link', value(teamForm, 'link')],
+      ['Project', team?.name ?? ''], ['Contact', you()], ['Year and major', [basic('year'), basic('major')].filter(Boolean).join(', ')],
+      ['Why this project', value(teamForm, 'pitch')], ['Tools', tools.join(', ')], ['Link', value(teamForm, 'link')],
       ['Availability', availabilityOptions.find(option => option.value === value(teamForm, 'availability'))?.label ?? value(teamForm, 'availability')], ['Anything else', value(teamForm, 'anything_else')],
     ]);
   };

@@ -28,8 +28,6 @@ export type Fluid = {
   setPaused(paused: boolean): void;
   /** Runs the simulation `steps` frames at once, for a still field that still looks like a fluid. */
   settle(steps: number): void;
-  /** A solid rounded box (canvas CSS px) that dye and currents cannot enter, or null for none. */
-  setObstacle(box: { x: number; y: number; width: number; height: number; radius: number } | null): void;
   /** Resolves after the first frame has been drawn. */
   readonly ready: Promise<void>;
   dispose(): void;
@@ -193,21 +191,7 @@ export function mountFluid(canvas: HTMLCanvasElement, options: FluidOptions = {}
     }
     return { program, uniforms };
   };
-  // Everything inside a rounded box is cleared each frame, so the box reads as a solid object the fluid flows around.
-  const obstacleShader = `
-precision highp float; precision highp sampler2D;
-varying vec2 vUv;
-uniform sampler2D uTexture;
-uniform vec4 rect;
-uniform vec2 radius;
-void main () {
-  vec2 c = clamp(vUv, rect.xy + radius, rect.zw - radius);
-  vec2 d = (vUv - c) / max(radius, vec2(1e-5));
-  float inside = step(dot(d, d), 1.0);
-  gl_FragColor = texture2D(uTexture, vUv) * (1.0 - inside);
-}`;
   const programs = {
-    obstacle: makeProgram(obstacleShader),
     copy: makeProgram(shaders.copy), clear: makeProgram(shaders.clear), splat: makeProgram(shaders.splat),
     advection: makeProgram(shaders.advection, supportLinearFiltering ? [] : ['MANUAL_FILTERING']),
     divergence: makeProgram(shaders.divergence), curl: makeProgram(shaders.curl), vorticity: makeProgram(shaders.vorticity),
@@ -343,15 +327,6 @@ void main () {
     blit(dye.write); dye.swap();
   };
 
-  let obstacle: { rect: [number, number, number, number]; radius: [number, number] } | null = null;
-  const carve = () => {
-    if (!obstacle) return;
-    const u = programs.obstacle.uniforms;
-    gl.useProgram(programs.obstacle.program);
-    gl.uniform4f(u.rect, ...obstacle.rect); gl.uniform2f(u.radius, ...obstacle.radius);
-    gl.uniform1i(u.uTexture, velocity.read.attach(0)); blit(velocity.write); velocity.swap();
-    gl.uniform1i(u.uTexture, dye.read.attach(0)); blit(dye.write); dye.swap();
-  };
   let frame = 0, last = performance.now(), paused = false, disposed = false;
   let resolveReady!: () => void;
   const ready = new Promise<void>(resolve => { resolveReady = resolve; });
@@ -360,7 +335,7 @@ void main () {
     if (disposed) return;
     const dt = Math.min(.033, Math.max(0, (now - last) / 1000)); last = now;
     if (resizeCanvas()) initFramebuffers();
-    if (!paused) { step(dt || .016); carve(); }
+    if (!paused) step(dt || .016);
     render();
     resolveReady();
     frame = requestAnimationFrame(tick);
@@ -392,12 +367,7 @@ void main () {
       }
     },
     setPaused(value) { if (disposed) return; if (paused && !value) last = performance.now(); paused = value; },
-    settle(steps) { if (disposed) return; if (resizeCanvas()) initFramebuffers(); for (let i = 0; i < steps; i++) { step(.016); carve(); } render(); },
-    setObstacle(box) {
-      if (!box) { obstacle = null; return; }
-      const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
-      obstacle = { rect: [box.x / w, 1 - (box.y + box.height) / h, (box.x + box.width) / w, 1 - box.y / h], radius: [box.radius / w, box.radius / h] };
-    },
+    settle(steps) { if (disposed) return; if (resizeCanvas()) initFramebuffers(); for (let i = 0; i < steps; i++) step(.016); render(); },
     ready,
     dispose,
   };
