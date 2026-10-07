@@ -29,12 +29,11 @@ export function mountApplyBackground(root: HTMLElement) {
   root.dataset.fluid = fluid ? 'on' : 'off';
   if (fluid) {
     let idle = 0;
-    // An idle burst somewhere in the field; the swimmer feels it when it is close.
+    // An idle burst somewhere in the field.
     const burst = () => {
       const sx = Math.random() * fluidCanvas.clientWidth, sy = Math.random() * fluidCanvas.clientHeight;
       const dx = 560 * (Math.random() - .5) / 6, dy = 560 * (Math.random() - .5) / 6;
       fluid?.splat(sx, sy, dx, dy, fluidColor().map(c => c * 10) as [number, number, number]);
-      swimmer?.nudge(sx, sy, dx * 2.5, dy * 2.5);
     };
     const idleSplat = () => {
       if (!document.hidden && !reduced) { burst(); if (Math.random() < .3) burst(); }
@@ -49,18 +48,19 @@ export function mountApplyBackground(root: HTMLElement) {
       if (lastPointer) {
         const dt = Math.max(8, now - lastPointer.t) / 1000;
         const dx = (event.clientX - lastPointer.x) / dt, dy = (event.clientY - lastPointer.y) / dt;
-        if (Math.abs(dx) + Math.abs(dy) > 40) { fluid?.splat(event.clientX, event.clientY, dx * .55, dy * .55, undefined, .22); swimmer?.nudge(event.clientX, event.clientY, dx * .35, dy * .35); }
+        if (Math.abs(dx) + Math.abs(dy) > 40) fluid?.splat(event.clientX, event.clientY, dx * .55, dy * .55, undefined, .22);
       }
       lastPointer = { x: event.clientX, y: event.clientY, t: now };
     }, { ...options, passive: true });
     if (!reduced) addEventListener('pointerdown', event => {
       const dx = (Math.random() - .5) * 600, dy = (Math.random() - .5) * 600;
       fluid?.splat(event.clientX, event.clientY, dx, dy, fluidColor().map(c => c * 6) as [number, number, number], .6);
-      swimmer?.nudge(event.clientX, event.clientY, dx, dy);
     }, { ...options, passive: true });
     document.addEventListener('visibilitychange', () => fluid?.setPaused(document.hidden || reduced), options);
     disposers.push(() => { clearTimeout(idle); fluid?.dispose(); });
   }
+  // The cursor coming close to the swimmer startles it into a dart away.
+  addEventListener('pointermove', event => { if (event.pointerType !== 'touch') swimmer?.startle(event.clientX, event.clientY); }, { ...options, passive: true });
   const swimmerCanvas = root.querySelector<HTMLCanvasElement>('[data-apply-swimmer]')!;
   const base = (document.querySelector('base')?.getAttribute('href') ?? '/').replace(/\/?$/, '/');
   const sheet = phone ? axolotlSheets.small : axolotlSheets.large;
