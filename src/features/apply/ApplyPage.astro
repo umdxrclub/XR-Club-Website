@@ -1,8 +1,5 @@
 ---
 import FolderButtonShape from '../../components/FolderButtonShape.astro';
-import { Image } from 'astro:assets';
-import immersivePoster1 from '../../assets/apply/immersive-installations-poster-1.png';
-import immersivePoster2 from '../../assets/apply/immersive-installations-poster-2.png';
 import { availabilityOptions, fundingRules, teams, years } from './applyContent';
 ---
 <main class="apply" data-apply data-arrival-hold>
@@ -53,10 +50,6 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
           <div>
             <label class="apply__field"><span class="apply__label" data-project-question></span><textarea class="apply__input" name="pitch" rows="3" required maxlength="5000" placeholder="A few sentences is enough"></textarea></label>
             <fieldset class="apply__field"><legend class="apply__label">Availability</legend><p class="apply__help" data-meeting></p><div class="apply__chips">{availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}</div></fieldset>
-            <div class="apply__posters" data-project-media="immersive-installations" aria-label="Immersive Installations posters" hidden>
-              <a href={immersivePoster1.src} target="_blank" rel="noopener noreferrer" aria-label="Open Immersive Installations team poster at full size"><Image src={immersivePoster1} width={320} format="webp" quality={90} alt="Immersive Installations team poster. Meetings Monday, 4 to 5 pm in AVW 4176." loading="lazy" /></a>
-              <a href={immersivePoster2.src} target="_blank" rel="noopener noreferrer" aria-label="Open interactive art poster at full size"><Image src={immersivePoster2} width={320} format="webp" quality={90} alt="Interactive art poster featuring audio reactive art, body tracking, performance and projection mapping." loading="lazy" /></a>
-            </div>
           </div>
         </fieldset>
         <fieldset class="apply__columns" data-funding-fields disabled hidden>
@@ -195,10 +188,7 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
   .apply__card:has(input:checked) .apply__card-cta::after { content: 'Selected'; }
   .apply__context p { margin: 0 0 18px; font-size: 16px; line-height: 1.55; color: var(--ink-body); }
   .apply__more { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
-  .apply__more:focus-visible, .apply__posters a:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 3px; }
-  .apply__posters { display: flex; gap: 14px; margin: 0 0 18px; }
-  .apply__posters a { display: block; min-width: 0; }
-  .apply__posters img { display: block; height: 160px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; }
+  .apply__more:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 3px; }
   .apply__project-dialog .apply__rules-body p + p { margin-top: 18px; }
   .apply__help { margin: 0 0 12px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
   .apply__hint { margin: 6px 0 12px; font-size: 13px; line-height: 1.4; color: var(--ink-3); }

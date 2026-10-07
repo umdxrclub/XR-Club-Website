@@ -147,7 +147,6 @@ export function mountApply(root: HTMLElement) {
     fundingFields.hidden = !funding; fundingFields.disabled = !funding;
     find<HTMLElement>('[data-funding-info]').hidden = !funding;
     root.querySelectorAll<HTMLElement>('[data-project-info]').forEach(info => { info.hidden = funding || info.dataset.projectInfo !== team?.slug; });
-    root.querySelectorAll<HTMLElement>('[data-project-media]').forEach(media => { media.hidden = funding || media.dataset.projectMedia !== team?.slug; });
     root.querySelectorAll<HTMLElement>('[data-project-tools]').forEach(group => {
       group.hidden = funding || group.dataset.projectTools !== team?.slug;
       group.querySelectorAll<HTMLInputElement>('input').forEach(input => { input.disabled = group.hidden; });
