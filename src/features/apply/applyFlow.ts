@@ -23,6 +23,8 @@ export function mountApply(root: HTMLElement) {
   const teamFields = find<HTMLFieldSetElement>('[data-team-fields]');
   const fundingFields = find<HTMLFieldSetElement>('[data-funding-fields]');
   const error = find<HTMLElement>('[data-form-error]');
+  const applicationChoices = find<HTMLFieldSetElement>('.apply__choices');
+  const applicationError = find<HTMLElement>('[data-application-error]');
   const rows = find<HTMLElement>('[data-budget-rows]');
   const memberFields = find<HTMLFieldSetElement>('[data-members-field]');
   const memberRows = find<HTMLElement>('[data-member-rows]');
@@ -161,20 +163,25 @@ export function mountApply(root: HTMLElement) {
   };
   const showStep = (next: 1 | 2) => {
     step = next;
-    root.dataset.step = String(next);
     basics.hidden = next !== 1;
     details.hidden = next !== 2;
     error.hidden = true;
-    const progress = find<HTMLElement>('[data-progress]');
-    progress.setAttribute('aria-valuenow', String(next));
-    progress.setAttribute('aria-valuetext', `Step ${next} of 2`);
-    find<HTMLElement>('[data-progress-count]').textContent = `Step ${next} of 2`;
     find<HTMLElement>('.apply__content').scrollTop = 0;
     window.scrollTo({ top: 0, behavior: 'instant' });
     (next === 1 ? basics : details).querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   };
   const validate = (section: HTMLElement) => {
     let first: Field | undefined;
+    if (section === basics) {
+      applicationError.hidden = !!value('application');
+      if (applicationError.hidden) {
+        applicationChoices.removeAttribute('aria-invalid');
+        applicationChoices.removeAttribute('aria-describedby');
+      } else {
+        applicationChoices.setAttribute('aria-invalid', 'true');
+        applicationChoices.setAttribute('aria-describedby', 'application-error');
+      }
+    }
     section.querySelectorAll<Field>('input, select, textarea').forEach(input => {
       if (!input.willValidate) return;
       input.setCustomValidity('');
@@ -190,6 +197,11 @@ export function mountApply(root: HTMLElement) {
       else input.removeAttribute('aria-invalid');
     });
     if (first) {
+      if (first.name === 'application') {
+        applicationChoices.focus({ preventScroll: true });
+        applicationChoices.scrollIntoView({ block: 'nearest' });
+        return false;
+      }
       first.focus();
       first.reportValidity();
       return false;
@@ -222,6 +234,12 @@ export function mountApply(root: HTMLElement) {
     const input = event.target;
     if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input instanceof HTMLSelectElement) {
       input.setCustomValidity(''); input.removeAttribute('aria-invalid');
+      if (input.name === 'application') {
+        applicationError.hidden = true;
+        applicationChoices.removeAttribute('aria-invalid');
+        applicationChoices.removeAttribute('aria-describedby');
+        applicationChoices.querySelectorAll<HTMLInputElement>('[name="application"]').forEach(choice => choice.removeAttribute('aria-invalid'));
+      }
     }
     updateBudget(); save();
   }, options);
@@ -300,7 +318,6 @@ export function mountApply(root: HTMLElement) {
       completed = true;
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* Ignore unavailable storage. */ }
       form.hidden = true;
-      find<HTMLElement>('[data-progress]').hidden = true;
       find<HTMLElement>('[data-done]').hidden = false;
       window.scrollTo({ top: 0, behavior: 'instant' });
       find<HTMLElement>('#done-title').focus({ preventScroll: true });

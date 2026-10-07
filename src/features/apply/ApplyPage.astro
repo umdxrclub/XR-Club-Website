@@ -5,13 +5,10 @@ import immersivePoster1 from '../../assets/apply/immersive-installations-poster-
 import immersivePoster2 from '../../assets/apply/immersive-installations-poster-2.png';
 import { availabilityOptions, fundingRules, teams, years } from './applyContent';
 ---
-<main class="apply" data-apply data-arrival-hold data-step="1">
+<main class="apply" data-apply data-arrival-hold>
   <canvas class="apply__fluid" data-apply-fluid aria-hidden="true"></canvas>
   <div class="apply__shade" aria-hidden="true"></div>
   <canvas class="apply__swimmer" data-apply-swimmer aria-hidden="true"></canvas>
-  <div class="apply__progress" data-progress role="progressbar" aria-label="Application progress" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" aria-valuetext="Step 1 of 2">
-    <span class="apply__progress-track"><span data-progress-fill></span><span></span></span><span data-progress-count>Step 1 of 2</span>
-  </div>
   <div class="apply__content">
     <form data-apply-form novalidate>
       <section data-step="basics" aria-labelledby="apply-title">
@@ -30,12 +27,13 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
             <fieldset class="apply__field"><legend class="apply__label">Year</legend><div class="apply__chips">{years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}</div></fieldset>
             <div class="apply__actions"><button class="apply__button" type="button" data-continue><FolderButtonShape tabSide="right" /><span>Continue</span></button></div>
           </fieldset>
-          <fieldset class="apply__choices">
+          <fieldset class="apply__choices" tabindex="-1">
             <legend class="apply__label">Choose an application</legend>
             <div class="apply__cards">
               {teams.map(team => <label class="apply__card"><input type="radio" name="application" value={team.slug} required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">{team.name}</strong><span class="apply__card-text">{team.tagline}</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>)}
               <label class="apply__card apply__card--funding"><input type="radio" name="application" value="funding" required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">Apply for funding</strong><span class="apply__card-text">Up to $400 solo or $1,000 with a team.</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>
             </div>
+            <p class="apply__choice-error" id="application-error" data-application-error role="alert" hidden>Choose an application to continue.</p>
           </fieldset>
         </div>
       </section>
@@ -143,10 +141,6 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
   .apply__content::-webkit-scrollbar-thumb, [data-budget-rows]::-webkit-scrollbar-thumb, [data-member-rows]::-webkit-scrollbar-thumb, .apply textarea::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .38); border-radius: 999px; }
   .apply__content::-webkit-scrollbar-track, [data-budget-rows]::-webkit-scrollbar-track, [data-member-rows]::-webkit-scrollbar-track, .apply textarea::-webkit-scrollbar-track { background: transparent; }
   .apply__content > form { flex: 0 0 auto; }
-  .apply__progress { position: absolute; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 32px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 4vw, 76px), var(--column)); font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-  .apply__progress-track { display: flex; flex: 1; gap: 6px; }
-  .apply__progress-track > span { flex: 1; height: 3px; border-radius: 2px; background: var(--line); }
-  .apply__progress-track > span:first-child, .apply[data-step='2'] .apply__progress-track > span { background: var(--ink); }
   .apply__heading { margin-bottom: 24px; }
   .apply h1 { margin: 0; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; }
   .apply h1:focus { outline: none; }
@@ -191,18 +185,15 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
   .apply__card:has(input:checked) .apply__card-cta { color: #463579; font-weight: 700; }
   .apply__card:has(input:focus-visible) { --folder-button-fill: #cbbbff; }
   .apply__card:has(input:focus-visible) .apply__card-cta { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
-  .apply__card:has(input[aria-invalid='true']) { --folder-button-stroke: var(--error); }
+  .apply__choices:focus { outline: none; }
+  .apply__choice-error { margin: 12px 4px 0; color: #d9d0ff; font-size: 15px; line-height: 1.4; }
   .apply__card-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; width: 100%; pointer-events: none; }
   .apply__card-name { font: 600 22px/1.1 var(--font-title); letter-spacing: .004em; font-synthesis: none; }
   .apply__card-text { font-size: 15px; line-height: 1.45; color: var(--paper-ink-2); }
   .apply__card-cta { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; }
   .apply__card-cta::after { content: 'Select'; }
   .apply__card:has(input:checked) .apply__card-cta::after { content: 'Selected'; }
-  .apply__card--funding { --folder-button-fill: #e9857e; --paper-ink: #451614; --paper-ink-2: #62231f; }
-  .apply__card--funding:hover { --folder-button-fill: #f49b94; }
-  .apply__card--funding:has(input:checked) { --folder-button-fill: #b93732; --paper-ink: #fff; --paper-ink-2: #fff; }
-  .apply__card--funding:has(input:focus-visible) { --folder-button-fill: #a72f2b; --paper-ink: #fff; --paper-ink-2: #fff; }
-  .apply__card--funding:has(input:checked) .apply__card-cta { color: var(--paper-ink); }
+  .apply__card--funding .apply__card-name { color: #a12e2a; }
   .apply__context p { margin: 0 0 18px; font-size: 16px; line-height: 1.55; color: var(--ink-body); }
   .apply__more { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
   .apply__more:focus-visible, .apply__posters a:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 3px; }

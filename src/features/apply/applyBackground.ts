@@ -59,7 +59,7 @@ export function mountApplyBackground(root: HTMLElement) {
     document.addEventListener('visibilitychange', () => fluid?.setPaused(document.hidden || reduced), options);
     disposers.push(() => { clearTimeout(idle); fluid?.dispose(); });
   }
-  // The cursor coming close to the swimmer startles it into a dart away.
+  // A nearby cursor gives the swimmer a brief burst of speed without turning it around.
   addEventListener('pointermove', event => { if (event.pointerType !== 'touch') swimmer?.startle(event.clientX, event.clientY); }, { ...options, passive: true });
   const swimmerCanvas = root.querySelector<HTMLCanvasElement>('[data-apply-swimmer]')!;
   const base = (document.querySelector('base')?.getAttribute('href') ?? '/').replace(/\/?$/, '/');
@@ -69,16 +69,6 @@ export function mountApplyBackground(root: HTMLElement) {
   // The swimmer keeps clear of the header and the footer.
   const placeSwimmer = () => swimmer?.setInsets(headerBottom() + 8, (parseFloat(getComputedStyle(root).getPropertyValue('--site-footer-height')) || 0) + 8);
   placeSwimmer();
-
-  const content = root.querySelector<HTMLElement>('.apply__content');
-  const placeKeepOut = () => swimmer?.setKeepOut(content?.getBoundingClientRect() ?? null);
-  const observer = new ResizeObserver(placeKeepOut);
-  if (content) observer.observe(content);
-  placeKeepOut();
-  addEventListener('scroll', placeKeepOut, { ...options, passive: true });
-  addEventListener('resize', placeKeepOut, options);
-  disposers.push(() => observer.disconnect());
-
 
   addEventListener('resize', placeSwimmer, options);
   return { ready: fluid?.ready, dispose: () => { listeners.abort(); disposers.forEach(dispose => dispose()); } };
