@@ -31,7 +31,7 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
             <legend class="apply__label">Choose an application</legend>
             <div class="apply__cards">
               {teams.map(team => <label class="apply__card"><input type="radio" name="application" value={team.slug} required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">{team.name}</strong><span class="apply__card-text">{team.tagline}</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>)}
-              <label class="apply__card apply__card--funding"><input type="radio" name="application" value="funding" required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">Apply for funding</strong><span class="apply__card-text">Up to $400 solo or $1,000 with a team.</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>
+              <label class="apply__card"><input type="radio" name="application" value="funding" required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">Apply for funding</strong><span class="apply__card-text">Up to $400 solo or $1,000 with a team.</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>
             </div>
             <p class="apply__choice-error" id="application-error" data-application-error role="alert" hidden>Choose an application to continue.</p>
           </fieldset>
@@ -193,7 +193,6 @@ import { availabilityOptions, fundingRules, teams, years } from './applyContent'
   .apply__card-cta { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; }
   .apply__card-cta::after { content: 'Select'; }
   .apply__card:has(input:checked) .apply__card-cta::after { content: 'Selected'; }
-  .apply__card--funding .apply__card-name { color: #a12e2a; }
   .apply__context p { margin: 0 0 18px; font-size: 16px; line-height: 1.55; color: var(--ink-body); }
   .apply__more { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
   .apply__more:focus-visible, .apply__posters a:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 3px; }
