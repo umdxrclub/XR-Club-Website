@@ -32,7 +32,29 @@ for (const f of files) {
       fr = Math.min(255, Math.max(0, (r - (1 - a) * br) / a)); fg = Math.min(255, Math.max(0, (g - (1 - a) * bg) / a)); fb = Math.min(255, Math.max(0, (b - (1 - a) * bb) / a));
     }
     out[p * 4] = fr; out[p * 4 + 1] = fg; out[p * 4 + 2] = fb; out[p * 4 + 3] = Math.round(a * 255);
-    if (a > 0.02) { const x = p % W, y = (p / W) | 0; if (x < box.left) box.left = x; if (x > box.right) box.right = x; if (y < box.top) box.top = y; if (y > box.bottom) box.bottom = y; }
+  }
+  // Only the one connected shape survives (the swimmer with its riders): stray bits of water the colour key let
+  // through, like the pale streak under the belly, are islands and are cleared.
+  const label = new Int32Array(W * H).fill(-1);
+  let best = -1, bestSize = 0;
+  const stack = [];
+  for (let seed = 0, next = 0; seed < W * H; seed++) {
+    if (out[seed * 4 + 3] <= 5 || label[seed] >= 0) continue;
+    const id = next++; let size = 0; stack.push(seed); label[seed] = id;
+    while (stack.length) {
+      const q = stack.pop(); size++;
+      const qx = q % W, qy = (q / W) | 0;
+      for (const [nx, ny] of [[qx - 1, qy], [qx + 1, qy], [qx, qy - 1], [qx, qy + 1]]) {
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const n = ny * W + nx;
+        if (label[n] < 0 && out[n * 4 + 3] > 5) { label[n] = id; stack.push(n); }
+      }
+    }
+    if (size > bestSize) { bestSize = size; best = id; }
+  }
+  for (let p = 0; p < W * H; p++) {
+    if (label[p] !== best) { out[p * 4 + 3] = 0; continue; }
+    const x = p % W, y = (p / W) | 0; if (x < box.left) box.left = x; if (x > box.right) box.right = x; if (y < box.top) box.top = y; if (y > box.bottom) box.bottom = y;
   }
   keyed.push({ out, W, H });
 }
