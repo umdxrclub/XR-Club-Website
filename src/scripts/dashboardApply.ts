@@ -30,11 +30,28 @@ function field(label: string, value: unknown) {
 }
 const members = (p: FundingPitch) => list(p.members).map(m => [m.name, m.detail].filter(Boolean).map(String).join(', ')).join('\n');
 const budget = (p: FundingPitch) => list(p.budget_items).map(item => `${item.name || 'Item'}: ${money(item.cost)} (${item.priority === 'must' ? 'must have' : 'nice to have'})${item.link ? ` ${item.link}` : ''}`).join('\n');
+function productLink(value: unknown) {
+  if (typeof value !== 'string') return '';
+  try {
+    const url = new URL(value);
+    if (!['https:', 'http:'].includes(url.protocol) || !url.hostname) return '';
+    return `<a href="${esc(url.href)}" target="_blank" rel="noopener noreferrer">View product</a>`;
+  } catch { return ''; }
+}
+function budgetDetail(p: FundingPitch) {
+  const items = list(p.budget_items);
+  if (!items.length) return field('Budget', 'Lab equipment only');
+  const rows = items.map(item => {
+    const link = productLink(item.link);
+    return `<div>${esc(item.name || 'Item')}: ${esc(money(item.cost))} (${item.priority === 'must' ? 'must have' : 'nice to have'})${link ? ` ${link}` : ''}</div>`;
+  }).join('');
+  return `<div class="dash__detail-field"><div class="dash__detail-label">Budget</div><div class="dash__detail-value">${rows}<div>Total requested ${esc(money(p.requested_total))}</div></div></div>`;
+}
 function pitchDetail(p: FundingPitch) {
-  const items = budget(p);
-  return field('Summary', p.idea) + field('Topic', p.topic) + field('Lead', `${p.lead_name}, ${p.lead_email}, Discord ${p.lead_discord}`) + field('Team', members(p))
+  return field('Summary', p.idea) + field('Why they want to make it', p.motivation) + field('Topic', p.topic) + field('Lead', `${p.lead_name}, ${p.lead_email}, Discord ${p.lead_discord}`)
+    + field('Year and major', [p.lead_year, p.lead_major].filter(Boolean).join(', ')) + field('Project type', p.funding_mode === 'solo' ? 'Solo' : p.funding_mode === 'team' ? 'Team' : null) + field('Team', members(p))
     + field('Outline and MVP', p.outline) + field('Plan without funding', p.zero_dollar_plan) + field('Timeline', p.timeline) + field('Deliverable', p.deliverable)
-    + field('Lab equipment', p.lab_equipment) + field('Budget', items ? `${items}\nTotal requested ${money(p.requested_total)}` : 'Lab equipment only') + field('Agreed to the funding rules', p.agreed_to_rules ? 'Yes' : 'No');
+    + field('Lab equipment', p.lab_equipment) + budgetDetail(p) + field('Agreed to the funding rules', p.agreed_to_rules ? 'Yes' : 'No');
 }
 function teamDetail(a: TeamApplication) {
   return field('Project', teamName(a.team)) + field('Applicant', `${a.full_name}, ${a.email}, Discord ${a.discord_username}`) + field('Year and major', `${a.year}, ${a.major}`)
@@ -45,8 +62,8 @@ function teamDetail(a: TeamApplication) {
 const csvCell = (value: unknown) => { const text = Array.isArray(value) ? value.join('; ') : String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; };
 function csv(kind: Kind, rows: Row[]) {
   const lines = kind === 'pitches'
-    ? [['Submitted', 'Status', 'Project', 'Summary', 'Topic', 'Lead', 'Lead email', 'Lead Discord', 'Team', 'Outline and MVP', 'Plan without funding', 'Timeline', 'Deliverable', 'Lab equipment', 'Budget', 'Total requested', 'Agreed to rules', 'Reviewer notes'],
-      ...(rows as FundingPitch[]).map(p => [p.created_at, p.status, p.project_title, p.idea, p.topic, p.lead_name, p.lead_email, p.lead_discord, members(p).replace(/\n/g, '; '), p.outline, p.zero_dollar_plan, p.timeline, p.deliverable, p.lab_equipment, budget(p).replace(/\n/g, '; '), p.requested_total, p.agreed_to_rules ? 'yes' : 'no', p.reviewer_notes])]
+    ? [['Submitted', 'Status', 'Project', 'Summary', 'Why they want to make it', 'Topic', 'Lead', 'Lead email', 'Lead Discord', 'Year', 'Major', 'Project type', 'Team', 'Outline and MVP', 'Plan without funding', 'Timeline', 'Deliverable', 'Lab equipment', 'Budget', 'Total requested', 'Agreed to rules', 'Reviewer notes'],
+      ...(rows as FundingPitch[]).map(p => [p.created_at, p.status, p.project_title, p.idea, p.motivation, p.topic, p.lead_name, p.lead_email, p.lead_discord, p.lead_year, p.lead_major, p.funding_mode, members(p).replace(/\n/g, '; '), p.outline, p.zero_dollar_plan, p.timeline, p.deliverable, p.lab_equipment, budget(p).replace(/\n/g, '; '), p.requested_total, p.agreed_to_rules ? 'yes' : 'no', p.reviewer_notes])]
     : [['Submitted', 'Status', 'Project', 'Name', 'Email', 'Discord', 'Year', 'Major', 'Fit', 'Tools', 'Link', 'Availability', 'Anything else', 'Reviewer notes'],
       ...(rows as TeamApplication[]).map(a => [a.created_at, a.status, teamName(a.team), a.full_name, a.email, a.discord_username, a.year, a.major, a.pitch, a.tools, a.link, availability(a.availability), a.anything_else, a.reviewer_notes])];
   return lines.map(line => line.map(csvCell).join(',')).join('\n');

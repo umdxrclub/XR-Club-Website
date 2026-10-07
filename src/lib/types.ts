@@ -140,15 +140,19 @@ export interface FundingPitch {
   status: FundingPitchStatus;
   project_title: string;
   idea: string;
+  motivation: string | null;
   topic: string | null;
   lead_name: string;
   lead_email: string;
   lead_discord: string;
-  members: { name: string; detail: string }[];
-  outline: string;
-  zero_dollar_plan: string;
-  timeline: string;
-  deliverable: string;
+  lead_major: string | null;
+  lead_year: string | null;
+  funding_mode: 'solo' | 'team' | null;
+  members: { name: string; detail: string }[]; // New funding forms store each member's UMD email in detail; legacy entries keep their original text.
+  outline: string | null;
+  zero_dollar_plan: string | null;
+  timeline: string | null;
+  deliverable: string | null;
   lab_equipment: string | null;
   budget_items: { name: string; cost: number; priority: 'must' | 'nice'; link: string }[];
   requested_total: number;

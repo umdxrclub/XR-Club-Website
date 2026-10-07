@@ -1,404 +1,360 @@
 ---
-import { Image } from 'astro:assets';
 import FolderButtonShape from '../../components/FolderButtonShape.astro';
-import { availabilityOptions, fundingRules, proposal, teams, whatHappensNext, years } from './applyContent';
-import poster1 from '../../assets/apply/immersive-installations-poster-1.png';
-import poster2 from '../../assets/apply/immersive-installations-poster-2.png';
-const base = import.meta.env.BASE_URL;
-const posters = [poster1, poster2];
+import { Image } from 'astro:assets';
+import immersivePoster1 from '../../assets/apply/immersive-installations-poster-1.png';
+import immersivePoster2 from '../../assets/apply/immersive-installations-poster-2.png';
+import { availabilityOptions, fundingRules, teams, years } from './applyContent';
 ---
-<main class="apply" data-apply data-arrival-hold>
+<main class="apply" data-apply data-arrival-hold data-step="1">
   <canvas class="apply__fluid" data-apply-fluid aria-hidden="true"></canvas>
   <div class="apply__shade" aria-hidden="true"></div>
   <canvas class="apply__swimmer" data-apply-swimmer aria-hidden="true"></canvas>
-  {/* One segment per step of the whole process, aligned with the column; the script fills it. */}
-  <nav class="apply__progress" data-apply-rail aria-label="Steps" hidden>
-    <div class="apply__progress-track" data-progress-track></div>
-    <span class="apply__progress-count" data-progress-count></span>
-  </nav>
-
-  <div class="apply__scroller" data-apply-scroller>
-    {/* Every step sits on one stage pinned to the screen; the scroller behind it only supplies the position that drives the morph. */}
-    <div class="apply__deck" data-apply-deck>
-      <div class="apply__stage" data-apply-stage>
-        {/* Everyone starts here: who you are. Both an application and a proposal use these details. */}
-        <section class="apply__step" data-step="intro" data-flow="start" data-shown>
-          <div class="apply__panel" data-basics>
-            <h1 class="apply__title">Projects</h1>
-            <p class="apply__lead">Join one of three projects this semester, or propose your own and request funding. Start with a few details.</p>
-            <div class="apply__row">
-              <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" type="text" required maxlength="120" autocomplete="name" /></label>
-              <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="you@terpmail.umd.edu" data-umd-email data-hint="Enter a umd.edu or terpmail.umd.edu address" /></label>
-            </div>
-            <div class="apply__row">
-              <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" type="text" required maxlength="80" autocomplete="off" /></label>
-              <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" type="text" required maxlength="160" /></label>
-            </div>
-            <fieldset class="apply__field apply__fieldset">
-              <legend class="apply__label">Year</legend>
-              <div class="apply__chips apply__chips--radio">
-                {years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}
-              </div>
-            </fieldset>
-            <div class="apply__actions"><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
-          </div>
-        </section>
-
-        <section class="apply__step" data-step="choose" data-flow="start">
-          <div class="apply__panel">
-            <h2 class="apply__title">Choose a project</h2>
-            <p class="apply__lead">Join a project that is taking members, or propose a new one and request funding.</p>
-            <div class="apply__cards" role="list">
-              {teams.map(team => (
-                <button type="button" class="apply__card" role="listitem" data-team-pick={team.slug}>
-                  <FolderButtonShape shortTab />
-                  <span class="apply__card-body">
-                    <span class="apply__card-name">{team.name}</span>
-                    <span class="apply__card-text">{team.tagline}</span>
-                    <span class="apply__card-cta">Apply</span>
-                  </span>
-                </button>
-              ))}
-              <button type="button" class="apply__card" role="listitem" data-pitch-pick>
-                <FolderButtonShape shortTab />
-                <span class="apply__card-body">
-                  <span class="apply__card-name">{proposal.name}</span>
-                  <span class="apply__card-text">{proposal.tagline}</span>
-                  <span class="apply__card-cta">{proposal.cta}</span>
-                </span>
-              </button>
-            </div>
-            <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button></div>
-          </div>
-        </section>
-
-        {/* Each branch stays off the deck until it is chosen, so scrolling cannot skip the choice. */}
-        <form class="apply__form" data-apply-form="team" novalidate autocomplete="on">
-          <input type="hidden" name="team" data-team-field />
-          <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          <section class="apply__step" data-step="team-info" data-flow="team" hidden>
-            <div class="apply__panel apply__panel--wide">
-              {teams.map(team => (
-                <article class="apply__team-info" data-team-info={team.slug} hidden>
-                  <h2 class="apply__title">{team.name}</h2>
-                  <div class="apply__team-columns">
-                    <div class="apply__team-text">
-                      {team.summary.map(paragraph => <p>{paragraph}</p>)}
-                      {team.roles && <p class="apply__team-roles"><strong>Roles:</strong> {team.roles.join(', ')}</p>}
-                      {team.people && <p class="apply__team-roles"><strong>Team:</strong> {team.people.join(', ')}</p>}
-                      <div class="apply__actions"><button type="button" class="apply__link" data-back>Other projects</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Apply</span></button></div>
-                    </div>
-                    <div class="apply__team-side">
-                      {team.posters && <div class="apply__posters">{posters.map((poster, index) => <Image src={poster} alt={index === 0 ? 'Immersive Installations poster: Mondays 4 to 5 pm, AVW 4176' : 'Poster: audio reactive, body tracking, performance, projection mapping. All immersive installations welcome.'} width={520} widths={[260, 520, 780]} sizes="(max-width: 700px) 42vw, 150px" format="webp" quality={82} loading="lazy" />)}</div>}
-                      <dl class="apply__details">{team.details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="fit" data-flow="team" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Why this project</h2>
-              {teams.map(team => <p class="apply__lead" data-team-question={team.slug} hidden>{team.question}</p>)}
-              <label class="apply__field"><span class="apply__label">Your answer</span><textarea class="apply__input apply__input--area" name="pitch" required rows="2" maxlength="2000"></textarea></label>
-              <fieldset class="apply__field apply__fieldset">
-                <legend class="apply__label">Tools you have used <em>optional</em></legend>
-                {teams.map(team => (
-                  <div class="apply__chips" data-team-tools={team.slug} hidden>
-                    {team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}
-                  </div>
-                ))}
-              </fieldset>
-              <fieldset class="apply__field apply__fieldset">
-                <legend class="apply__label">Availability</legend>
-                {teams.map(team => <p class="apply__help" data-team-meeting={team.slug} hidden>This team meets {team.meeting}.</p>)}
-                <div class="apply__chips apply__chips--radio">
-                  {availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}
-                </div>
-              </fieldset>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="400" placeholder="Portfolio, GitHub, or a video" data-hint="Enter a full link starting with https://" /></label>
-                <label class="apply__field"><span class="apply__label">Anything else <em>optional</em></span><textarea class="apply__input apply__input--area" name="anything_else" rows="1" maxlength="1000"></textarea></label>
-              </div>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="team-review" data-flow="team" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Review</h2>
-              <dl class="apply__summary" data-team-summary></dl>
-              <p class="apply__error" data-form-error hidden></p>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit application</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="team-done" data-flow="team" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Application received</h2>
-              <p class="apply__lead">The team will reach out on Discord or by email with the next meeting. Join the <a href="https://discord.gg/mn8ZKTwXFQ" target="_blank" rel="noopener noreferrer">XR Club Discord</a> in the meantime.</p>
-              <div class="apply__actions">
-                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
-                <button type="button" class="apply__link" data-jump="choose">Other projects</button>
-              </div>
-            </div>
-          </section>
-        </form>
-
-        <form class="apply__form" data-apply-form="pitch" novalidate autocomplete="on">
-          <input type="text" name="website" class="apply__honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          <section class="apply__step" data-step="project" data-flow="pitch" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Project and team</h2>
-              <div class="apply__row">
-                <label class="apply__field"><span class="apply__label">Project name</span><input class="apply__input" name="project_title" type="text" required maxlength="120" placeholder="Short and memorable" /></label>
-                <label class="apply__field"><span class="apply__label">Topic <em>optional</em></span><input class="apply__input" name="topic" type="text" maxlength="120" placeholder="A board topic or your own direction" /></label>
-              </div>
-              <label class="apply__field"><span class="apply__label">Summary</span><textarea class="apply__input apply__input--area" name="idea" required maxlength="600" rows="2" placeholder="What you are building, who it is for, and why XR"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Team members, one per line</span><textarea class="apply__input apply__input--area" name="members" required rows="3" placeholder="Name, year, role" data-members></textarea><span class="apply__hint" data-members-count></span></label>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="plan" data-flow="pitch" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Plan</h2>
-              <label class="apply__field"><span class="apply__label">Outline and MVP</span><textarea class="apply__input apply__input--area" name="outline" required rows="3" placeholder="The smallest version that works, then what you build on top of it"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Plan without funding</span><textarea class="apply__input apply__input--area" name="zero_dollar_plan" required rows="2" placeholder="What you can build with lab equipment alone if funding is reduced or unavailable"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Timeline</span><textarea class="apply__input apply__input--area" name="timeline" required rows="2" placeholder="Checkpoints are every 2 to 3 weeks. What is done at each one, through the end of the semester"></textarea></label>
-              <label class="apply__field"><span class="apply__label">Deliverable</span><textarea class="apply__input apply__input--area" name="deliverable" required rows="2" placeholder="What you will show at Demo Day"></textarea></label>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Continue</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="budget" data-flow="pitch" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Budget</h2>
-              <p class="apply__lead">Hardware only. Mark each item must have or nice to have. Leave this empty if lab equipment is enough.</p>
-              <div class="apply__budget" data-budget>
-                <div class="apply__budget-head" aria-hidden="true"><span>Item</span><span>Estimated cost</span><span>Priority</span></div>
-                <div data-budget-rows></div>
-                <template data-budget-row>
-                  <div class="apply__budget-row">
-                    <input class="apply__input" type="text" name="budget_name" maxlength="120" placeholder="Item" aria-label="Item" />
-                    <input class="apply__input" type="number" name="budget_cost" min="0" step="0.01" inputmode="decimal" placeholder="$" aria-label="Estimated cost in dollars" />
-                    <span class="apply__segment" role="group" aria-label="Priority">
-                      <button type="button" data-priority="must" aria-pressed="true">Must have</button>
-                      <button type="button" data-priority="nice" aria-pressed="false">Nice to have</button>
-                      <input type="hidden" name="budget_priority" value="must" />
-                    </span>
-                    <button type="button" class="apply__remove" data-budget-remove aria-label="Remove item">×</button>
-                    <input class="apply__input" type="url" name="budget_link" maxlength="400" placeholder="https://" aria-label="Link" />
-                  </div>
-                </template>
-                <div class="apply__budget-foot">
-                  <button type="button" class="apply__link" data-budget-add>Add item</button>
-                  <p class="apply__total">Total requested <strong data-budget-total>$0</strong></p>
-                </div>
-              </div>
-              <label class="apply__field"><span class="apply__label">Lab equipment you will use <em>optional</em></span><input class="apply__input" name="lab_equipment" type="text" maxlength="300" placeholder="Quest 3, PSVR2, HoloLens, the treadmill" /></label>
-              <details class="apply__rules">
-                <summary>Funding rules</summary>
-                <div class="apply__rules-grid">
-                  <div><h3>Funding covers</h3><ul>{fundingRules.can.map(item => <li>{item}</li>)}</ul></div>
-                  <div><h3>Funding does not cover</h3><ul>{fundingRules.cannot.map(item => <li>{item}</li>)}</ul></div>
-                </div>
-                <ul class="apply__rules-notes">{fundingRules.notes.map(item => <li>{item}</li>)}</ul>
-              </details>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="button" class="apply__button" data-next><FolderButtonShape /><span>Review</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="pitch-review" data-flow="pitch" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Review</h2>
-              <dl class="apply__summary" data-pitch-summary></dl>
-              <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules. Hardware only, orders go through the Treasurer, no reimbursements, hardware stays with the club, and funds are released in stages at checkpoints.</span></label>
-              <p class="apply__error" data-form-error hidden></p>
-              <div class="apply__actions"><button type="button" class="apply__link" data-back>Back</button><button type="submit" class="apply__button" data-submit><FolderButtonShape /><span>Submit proposal</span></button></div>
-            </div>
-          </section>
-
-          <section class="apply__step" data-step="pitch-done" data-flow="pitch" hidden>
-            <div class="apply__panel">
-              <h2 class="apply__title">Proposal received</h2>
-              <ol class="apply__next">{whatHappensNext.map(item => <li>{item}</li>)}</ol>
-              <div class="apply__actions">
-                <a class="apply__button" href={base}><FolderButtonShape /><span>Back to home</span></a>
-                <button type="button" class="apply__link" data-jump="choose">Other projects</button>
-              </div>
-            </div>
-          </section>
-        </form>
-      </div>
-      <div class="apply__snaps" data-apply-snaps aria-hidden="true"></div>
-    </div>
+  <div class="apply__progress" data-progress role="progressbar" aria-label="Application progress" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" aria-valuetext="Step 1 of 2">
+    <span class="apply__progress-track"><span data-progress-fill></span><span></span></span><span data-progress-count>Step 1 of 2</span>
   </div>
+  <div class="apply__content">
+    <form data-apply-form novalidate>
+      <section data-step="basics" aria-labelledby="apply-title">
+        <div class="apply__columns">
+          <fieldset class="apply__basics">
+            <legend class="sr-only">Your details</legend>
+            <header class="apply__heading"><h1 id="apply-title" tabindex="-1">Project Applications</h1><p>Join a project or request funding for your own idea.</p></header>
+            <div class="apply__row">
+              <label class="apply__field"><span class="apply__label">Name</span><input class="apply__input" name="full_name" autocomplete="name" required maxlength="200" /></label>
+              <label class="apply__field"><span class="apply__label">UMD email</span><input class="apply__input" name="email" type="email" autocomplete="email" required maxlength="320" placeholder="you@umd.edu" /></label>
+            </div>
+            <div class="apply__row">
+              <label class="apply__field"><span class="apply__label">Discord username</span><input class="apply__input" name="discord_username" autocomplete="off" required maxlength="100" /></label>
+              <label class="apply__field"><span class="apply__label">Major <em>and minor, if any</em></span><input class="apply__input" name="major" required maxlength="200" /></label>
+            </div>
+            <fieldset class="apply__field"><legend class="apply__label">Year</legend><div class="apply__chips">{years.map(year => <label class="apply__chip"><input type="radio" name="year" value={year} required /><span>{year}</span></label>)}</div></fieldset>
+            <div class="apply__actions"><button class="apply__button" type="button" data-continue><FolderButtonShape tabSide="right" /><span>Continue</span></button></div>
+          </fieldset>
+          <fieldset class="apply__choices">
+            <legend class="apply__label">Choose an application</legend>
+            <div class="apply__cards">
+              {teams.map(team => <label class="apply__card"><input type="radio" name="application" value={team.slug} required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">{team.name}</strong><span class="apply__card-text">{team.tagline}</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>)}
+              <label class="apply__card apply__card--funding"><input type="radio" name="application" value="funding" required /><FolderButtonShape shortTab tabSide="right" /><span class="apply__card-body"><strong class="apply__card-name">Apply for funding</strong><span class="apply__card-text">Up to $400 solo or $1,000 with a team.</span><span class="apply__card-cta" aria-hidden="true"></span></span></label>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+      <section data-step="details" hidden aria-labelledby="details-title">
+        <header class="apply__heading"><h1 id="details-title" tabindex="-1" data-details-title></h1></header>
+        <fieldset class="apply__columns" data-team-fields disabled hidden>
+          <legend class="sr-only">Project application</legend>
+          <div class="apply__context">
+            {teams.map(team => <div data-project-info={team.slug} hidden>
+              {team.summary.map((paragraph, index) => <p>{paragraph}{index === team.summary.length - 1 && <> <button type="button" class="apply__more" data-open-project-details aria-haspopup="dialog">More details</button></>}</p>)}
+            </div>)}
+            <fieldset class="apply__field"><legend class="apply__label">Tools you have used <em>optional</em></legend>
+              {teams.map(team => <div class="apply__chips" data-project-tools={team.slug} hidden>{team.tools.map(tool => <label class="apply__chip"><input type="checkbox" name="tools" value={tool} /><span>{tool}</span></label>)}</div>)}
+            </fieldset>
+            <label class="apply__field"><span class="apply__label">Link <em>optional</em></span><input class="apply__input" name="link" type="url" maxlength="1000" placeholder="Portfolio, GitHub, or a video" /></label>
+          </div>
+          <div>
+            <label class="apply__field"><span class="apply__label" data-project-question></span><textarea class="apply__input" name="pitch" rows="3" required maxlength="5000" placeholder="A few sentences is enough"></textarea></label>
+            <fieldset class="apply__field"><legend class="apply__label">Availability</legend><p class="apply__help" data-meeting></p><div class="apply__chips">{availabilityOptions.map(option => <label class="apply__chip"><input type="radio" name="availability" value={option.value} required /><span>{option.label}</span></label>)}</div></fieldset>
+            <div class="apply__posters" data-project-media="immersive-installations" aria-label="Immersive Installations posters" hidden>
+              <a href={immersivePoster1.src} target="_blank" rel="noopener noreferrer" aria-label="Open Immersive Installations team poster at full size"><Image src={immersivePoster1} width={320} format="webp" quality={90} alt="Immersive Installations team poster. Meetings Monday, 4 to 5 pm in AVW 4176." loading="lazy" /></a>
+              <a href={immersivePoster2.src} target="_blank" rel="noopener noreferrer" aria-label="Open interactive art poster at full size"><Image src={immersivePoster2} width={320} format="webp" quality={90} alt="Interactive art poster featuring audio reactive art, body tracking, performance and projection mapping." loading="lazy" /></a>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset class="apply__columns" data-funding-fields disabled hidden>
+          <legend class="sr-only">Funding application</legend>
+          <div class="apply__funding-outline">
+            <p class="apply__help" data-funding-info>Tell us about your idea!</p>
+            <label class="apply__field apply__funding-name"><span class="apply__label">Project Title</span><input class="apply__input" name="project_title" required maxlength="200" /></label>
+            <label class="apply__field apply__funding-idea"><span class="apply__label">What do you want to make?</span><textarea class="apply__input" name="idea" rows="2" required maxlength="2000"></textarea></label>
+            <label class="apply__field apply__funding-why"><span class="apply__label">Why do you want to make it?</span><textarea class="apply__input" name="motivation" rows="2" required maxlength="1200"></textarea></label>
+            <fieldset class="apply__field apply__funding-mode"><legend class="apply__label">Who is working on it?</legend><div class="apply__chips"><label class="apply__chip"><input type="radio" name="funding_mode" value="solo" checked /><span>Just me</span></label><label class="apply__chip"><input type="radio" name="funding_mode" value="team" /><span>A team</span></label></div></fieldset>
+          </div>
+          <div class="apply__budget">
+            <h2 class="apply__label">What do you need to buy?</h2>
+            <div data-budget-rows></div>
+            <template data-budget-template><div class="apply__budget-row">
+              <label class="apply__field"><span class="apply__label">Item</span><input class="apply__input" name="budget_name" maxlength="200" required placeholder="Equipment or parts" /></label>
+              <div class="apply__field apply__cost">
+                <label><span class="apply__label">Cost ($)</span><input class="apply__input" name="budget_cost" type="number" min="0.01" step="0.01" required placeholder="0.00" /></label>
+                <div class="apply__cost-controls">
+                  <button type="button" data-cost-step="up" aria-label="Increase cost"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 6 4-4 4 4" /></svg></button>
+                  <button type="button" data-cost-step="down" aria-label="Decrease cost"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 2 4 4 4-4" /></svg></button>
+                </div>
+              </div>
+              <button type="button" class="apply__remove" data-remove-item aria-label="Remove item">×</button>
+              <label class="apply__field apply__product-link"><span class="apply__label">Product link</span><input class="apply__input" name="budget_link" type="url" maxlength="1000" required placeholder="https://amazon.com/… or another retailer" /></label>
+            </div></template>
+            <div class="apply__budget-foot"><button type="button" class="apply__back" data-add-item>Add item</button><p class="apply__total">Total <strong data-budget-total>$0</strong></p></div>
+            <p class="apply__hint" data-budget-limit>Up to $400 for a solo project.</p><p class="apply__error" data-budget-error hidden></p>
+            <div class="apply__notice"><button class="apply__back" type="button" data-open-rules aria-haspopup="dialog">Read the funding rules</button></div>
+            <label class="apply__check"><input type="checkbox" name="agreed_to_rules" required /><span>I have read the funding rules and understand what can and cannot be funded.</span></label>
+          </div>
+          <fieldset class="apply__members" data-members-field disabled hidden>
+            <legend class="sr-only">Team members</legend>
+            <div class="apply__members-heading"><h2 class="apply__label">Team members <em>except yourself</em></h2><button type="button" class="apply__back" data-add-member>Add member</button></div>
+            <div data-member-rows></div>
+            <template data-member-template><div class="apply__member-row">
+              <label class="apply__field"><span class="apply__label">Member name</span><input class="apply__input" name="member_name" required maxlength="200" placeholder="Name" /></label>
+              <label class="apply__field"><span class="apply__label">Member UMD email</span><input class="apply__input" name="member_email" type="email" required maxlength="320" placeholder="you@umd.edu" /></label>
+              <button type="button" class="apply__remove" data-remove-member aria-label="Remove member">×</button>
+            </div></template>
+          </fieldset>
+        </fieldset>
+        <div class="apply__actions"><button type="button" class="apply__back" data-back>Back</button><button class="apply__button" type="submit" data-submit><FolderButtonShape tabSide="right" /><span data-submit-label>Submit application</span></button></div>
+      </section>
+      <label class="apply__honey" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+      <p class="apply__error" data-form-error role="alert" hidden></p>
+    </form>
+    <section class="apply__done" data-done hidden aria-labelledby="done-title"><h1 id="done-title" tabindex="-1">Application submitted</h1><p>We will review your application and contact you by email or Discord.</p><a class="apply__button" href={import.meta.env.BASE_URL}><FolderButtonShape tabSide="right" /><span>Back to home</span></a></section>
+    <noscript><p>Enable JavaScript to complete your application.</p></noscript>
+  </div>
+  <dialog class="apply__rules-dialog" data-rules-dialog aria-labelledby="funding-rules-title" aria-describedby="funding-rules-intro">
+    <header class="apply__rules-header"><div><h2 id="funding-rules-title">Funding rules</h2><p id="funding-rules-intro">Read before you apply. Up to $400 solo or $1,000 with a team.</p></div><button type="button" class="apply__rules-close" data-close-rules aria-label="Close funding rules">×</button></header>
+    <div class="apply__rules-body" tabindex="0" role="region" aria-label="Funding rules details">
+      <div class="apply__rules-eligibility">
+        <section><h3>What can be funded</h3><ul>{fundingRules.can.map(rule => <li>{rule}</li>)}</ul></section>
+        <section><h3>What cannot be funded</h3><ul>{fundingRules.cannot.map(rule => <li>{rule}</li>)}</ul></section>
+      </div>
+      <section><h3>Before you buy</h3><ul>{fundingRules.notes.slice(0, 3).map(rule => <li>{rule}</li>)}</ul></section>
+      <section><h3>After approval</h3><p>{fundingRules.notes[3]}</p></section>
+      <p class="apply__rules-equipment">{fundingRules.notes[4]}</p>
+    </div>
+    <footer class="apply__rules-footer"><button type="button" data-close-rules>Back to application</button></footer>
+  </dialog>
+  <dialog class="apply__rules-dialog apply__project-dialog" data-project-details-dialog aria-labelledby="project-details-title">
+    <header class="apply__rules-header"><h2 id="project-details-title" data-project-details-title></h2><button type="button" class="apply__rules-close" data-close-project-details aria-label="Close project details">×</button></header>
+    <div class="apply__rules-body" data-project-details-body tabindex="0" role="region" aria-label="Full project description">
+      {teams.map(team => <div data-project-description={team.slug} hidden>{team.fullDescription.map(paragraph => <p>{paragraph}</p>)}</div>)}
+    </div>
+    <footer class="apply__rules-footer"><button type="button" data-close-project-details>Back to application</button></footer>
+  </dialog>
 </main>
-
 <style>
-  /* One palette: white ink at three strengths on the dark field, and paper for anything you press. */
-  .apply { position: relative; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --paper-ink-2: #6e6e73; --error: #ff8a80; --column: 640px; color: var(--ink); font-family: var(--font-site); }
-  .apply__fluid, .apply__shade, .apply__scroller { position: fixed; inset: 0; }
-  .apply__fluid { z-index: 0; width: 100%; height: 100%; display: block; background: #0a0a0a; }
-  /* The shade lifts the reading column off the fluid; the swimmer sits above it so it is never dimmed by it. */
+  .apply { position: fixed; inset: 0; --ink: #fff; --ink-body: rgb(255 255 255 / .86); --ink-2: rgb(255 255 255 / .64); --ink-3: rgb(255 255 255 / .42); --line: rgb(255 255 255 / .22); --line-strong: rgb(255 255 255 / .5); --paper: #f3f2ed; --paper-ink: #1d1d1f; --paper-ink-2: #6e6e73; --error: #ff8a80; --column: 1100px; color: var(--ink); font-family: var(--font-site); }
+  .apply [hidden] { display: none !important; }
+  .apply__fluid, .apply__shade { position: fixed; inset: 0; width: 100%; height: 100%; }
+  .apply__fluid { z-index: 0; display: block; background: #0a0a0a; }
   .apply__shade { z-index: 1; pointer-events: none; background: radial-gradient(ellipse 46% 74% at 50% 54%, rgb(10 10 10 / .62), rgb(10 10 10 / .22) 62%, transparent 100%); }
   .apply__swimmer { position: fixed; left: 0; top: 0; z-index: 2; pointer-events: none; visibility: hidden; filter: drop-shadow(0 14px 18px rgb(0 0 0 / .35)); }
-  .apply__scroller { z-index: 3; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
-  .apply__scroller::-webkit-scrollbar, .apply__step::-webkit-scrollbar { display: none; }
-  /* The deck is one screen per step; the stage stays pinned while the scroll position drives the morph between two steps. */
-  .apply__deck { position: relative; height: calc(var(--apply-steps, 1) * 100%); }
-  .apply__stage { position: sticky; top: 0; height: calc(100% / var(--apply-steps, 1)); }
-  .apply__snaps { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; }
-  .apply__snap { flex: 1 1 0; scroll-snap-align: start; scroll-snap-stop: always; }
-  .apply__form { display: contents; }
-  /* Steps stack on the stage; only the one being read (and the one it morphs into) shows. A step taller than the screen scrolls itself. */
-  .apply__step { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; visibility: hidden; padding: var(--apply-top, 148px) clamp(24px, 5vw, 76px) calc(var(--site-footer-height, 0px) + 32px); }
-  .apply__step[data-shown] { visibility: visible; }
-  .apply__step { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); mask-image: linear-gradient(to bottom, transparent calc(var(--apply-top, 148px) - 44px), #000 calc(var(--apply-top, 148px) - 8px), #000 calc(100% - var(--site-footer-height, 0px) - 30px), transparent calc(100% - var(--site-footer-height, 0px) + 2px)); }
-  .apply__step[hidden] { display: none; }
-  /* One centred column for everything. */
-  .apply__panel { flex: 0 0 auto; width: min(100%, var(--column)); margin: auto; will-change: transform, opacity; }
-  .apply__panel--wide { width: min(100%, 960px); }
-  @media (max-width: 1100px) { .apply__panel--wide { width: min(100%, 640px); } }
-
-  /* The progress bar: one segment per step of the whole process, on the column's left edge just above the title. */
-  .apply__progress { position: fixed; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 38px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 5vw, 76px), var(--column)); transition: width 320ms cubic-bezier(.2,.7,.2,1); }
-  .apply__progress[hidden] { display: none; }
+  .apply__content { position: absolute; z-index: 3; top: var(--apply-top, 148px); bottom: calc(var(--site-footer-height, 54px) + 18px); left: 50%; translate: -50% 0; width: min(100% - 2 * clamp(24px, 4vw, 76px), var(--column)); display: flex; flex-direction: column; justify-content: safe center; overflow-y: auto; }
+  .apply__content, [data-budget-rows], [data-member-rows], .apply textarea { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .38) transparent; }
+  .apply__content::-webkit-scrollbar, [data-budget-rows]::-webkit-scrollbar, [data-member-rows]::-webkit-scrollbar, .apply textarea::-webkit-scrollbar { width: 5px; }
+  .apply__content::-webkit-scrollbar-thumb, [data-budget-rows]::-webkit-scrollbar-thumb, [data-member-rows]::-webkit-scrollbar-thumb, .apply textarea::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .38); border-radius: 999px; }
+  .apply__content::-webkit-scrollbar-track, [data-budget-rows]::-webkit-scrollbar-track, [data-member-rows]::-webkit-scrollbar-track, .apply textarea::-webkit-scrollbar-track { background: transparent; }
+  .apply__content > form { flex: 0 0 auto; }
+  .apply__progress { position: absolute; z-index: 4; left: 50%; top: calc(var(--apply-top, 148px) - 32px); translate: -50% 0; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * clamp(24px, 4vw, 76px), var(--column)); font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
   .apply__progress-track { display: flex; flex: 1; gap: 6px; }
-  .apply__progress-track button { position: relative; flex: 1; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; }
-  .apply__progress-track button::before { content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 3px; border-radius: 2px; background: var(--line); transition: background 220ms; }
-  .apply__progress-track button[data-done]::before, .apply__progress-track button[aria-current='step']::before { background: var(--ink); }
-  .apply__progress-track button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
-  .apply__progress-count { flex: none; min-width: 3.4em; text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-
-  /* Type: titles in the site's display face, everything else in Outfit. */
-  .apply__title { margin: 0 0 12px; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; color: var(--ink); }
-  .apply__lead { margin: 0 0 28px; max-width: 36em; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
-  .apply__lead[hidden] { display: none; }
-  .apply__lead a { color: var(--ink); }
-  .apply__help { margin: 0 0 10px; max-width: 36em; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
-  .apply__help[hidden] { display: none; }
-
-  /* Fields */
+  .apply__progress-track > span { flex: 1; height: 3px; border-radius: 2px; background: var(--line); }
+  .apply__progress-track > span:first-child, .apply[data-step='2'] .apply__progress-track > span { background: var(--ink); }
+  .apply__heading { margin-bottom: 24px; }
+  .apply h1 { margin: 0; font-family: var(--font-title); font-weight: 600; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: .006em; font-synthesis: none; text-wrap: balance; }
+  .apply h1:focus { outline: none; }
+  .apply__heading p, .apply__done p { margin-top: 12px; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
+  .apply__columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px clamp(28px, 4vw, 56px); align-items: start; }
+  .apply fieldset { border: 0; padding: 0; min-width: 0; }
+  .apply__choices > legend { padding: 0; margin-bottom: 22px; font: 600 clamp(22px, 2.2vw, 28px)/1.15 var(--font-title); letter-spacing: .006em; color: var(--ink); }
   .apply__field { display: block; margin: 0 0 18px; }
   .apply__row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
-  .apply__label { display: block; margin-bottom: 6px; color: var(--ink-2); font-size: 14px; font-weight: 500; }
+  .apply__label { display: block; margin-bottom: 6px; color: var(--ink-2); font-size: 14px; line-height: 1.4; font-weight: 500; }
   .apply__label em { font-style: normal; color: var(--ink-3); }
   .apply__input { display: block; width: 100%; min-width: 0; padding: 8px 0 10px; border: 0; border-bottom: 1px solid var(--line-strong); border-radius: 0; background: none; color: var(--ink); font: 500 18px/1.35 var(--font-site); transition: border-color 150ms; }
   .apply__input::placeholder { color: var(--ink-3); }
   .apply__input:focus { outline: none; border-bottom-color: var(--ink); }
-  .apply__input--area { resize: none; min-height: 2.4em; field-sizing: content; }
+  .apply textarea { resize: none; }
   .apply__input[aria-invalid='true'] { border-bottom-color: var(--error); }
-  .apply__hint { display: block; margin-top: 6px; color: var(--ink-3); font-size: 13px; line-height: 1.4; }
-  .apply__hint[data-invalid] { color: var(--error); }
-  .apply__fieldset { border: 0; padding: 0; min-width: 0; }
   .apply__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-  .apply__chips[hidden] { display: none; }
   .apply__chip { position: relative; display: inline-flex; }
   .apply__chip input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .apply__chip span { display: inline-block; padding: 8px 15px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--ink); transition: background 150ms, color 150ms, border-color 150ms; }
   .apply__chip:hover span { border-color: var(--ink); }
   .apply__chip input:checked + span { background: var(--paper); border-color: var(--paper); color: var(--paper-ink); }
   .apply__chip input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
-  .apply__chips.is-invalid .apply__chip span { border-color: var(--error); }
-  /* A two way toggle in the same language as the chips. */
-  .apply__segment { position: relative; display: inline-flex; align-self: end; margin-bottom: 5px; padding: 2px; border: 1px solid var(--line-strong); border-radius: 999px; }
-  .apply__segment button { padding: 5px 11px; border: 0; border-radius: 999px; background: none; color: var(--ink); font: 500 14px/1.3 var(--font-site); white-space: nowrap; cursor: pointer; transition: background 150ms, color 150ms; }
-  .apply__segment button[aria-pressed='true'] { background: var(--paper); color: var(--paper-ink); }
-  .apply__segment button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .apply__check { display: flex; gap: 14px; align-items: flex-start; margin: 8px 0 20px; font-size: 15px; line-height: 1.5; color: var(--ink-body); cursor: pointer; }
-  .apply__check input { flex: none; width: 22px; height: 22px; margin-top: 1px; accent-color: var(--paper); }
-  .apply__check.is-invalid { color: var(--error); }
-  .apply__check.is-invalid input { outline: 2px solid var(--error); outline-offset: 2px; border-radius: 4px; }
-  .apply__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 28px; }
-  .apply__button { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: inline-flex; align-items: center; justify-content: center; min-height: 58px; min-width: 176px; padding: 20px 30px 16px; border: 0; background: none; color: var(--paper-ink); font: 550 19px/1.2 var(--font-site); text-decoration: none; cursor: pointer; }
+  .apply__chip input[aria-invalid='true'] + span { border-color: var(--error); }
+  .apply__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 20px; padding: 4px 4px 8px; }
+  .apply__button { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: none; display: inline-flex; align-items: center; justify-content: center; min-height: 58px; min-width: 176px; padding: 20px 30px 16px; border: 0; background: none; color: var(--paper-ink); font: 550 19px/1.2 var(--font-site); text-decoration: none; cursor: pointer; }
   .apply__button :global(.folder-button-shape) { filter: drop-shadow(0 5px 8px rgb(0 0 0 / .18)) drop-shadow(0 1px 2px rgb(0 0 0 / .12)); }
   .apply__button > span { position: relative; z-index: 1; }
-  .apply__button:hover { --folder-button-fill: #fff; --folder-button-stroke: #fff; }
-  .apply__button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 8px; }
-  .apply__button[disabled] { opacity: .6; cursor: progress; }
-  .apply__link { padding: 10px 2px; border: 0; background: none; color: var(--ink-2); font: 500 16px/1.2 var(--font-site); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); cursor: pointer; transition: color 150ms, text-decoration-color 150ms; }
-  .apply__link:hover { color: var(--ink); text-decoration-color: var(--ink); }
-  .apply__link:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
-  .apply__honey { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-  .apply__error { margin: 0 0 14px; color: var(--error); font-size: 15px; }
-  .apply__error[hidden] { display: none; }
-
-  /* Project cards */
-  .apply__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px; }
-  .apply__card { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: rgb(255 255 255 / .85); display: flex; min-height: 172px; padding: 32px 22px 20px; border: 0; background: none; text-align: left; color: var(--paper-ink); cursor: pointer; }
+  .apply__button:hover { --folder-button-fill: #fff; }
+  .apply__button:focus-visible { outline: none; --folder-button-fill: #d9d0ff; }
+  .apply__button:focus-visible > span { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .apply button:disabled { opacity: .6; cursor: default; }
+  .apply__back { padding: 10px 2px; border: 0; background: none; color: var(--ink-2); font: 500 16px/1.2 var(--font-site); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); cursor: pointer; }
+  .apply__back:hover { color: var(--ink); text-decoration-color: var(--ink); }
+  .apply__back:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
+  .apply__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 4px; }
+  .apply__card { position: relative; isolation: isolate; --folder-button-fill: var(--paper); --folder-button-stroke: none; display: flex; min-height: 172px; padding: 30px 20px 18px; border: 0; background: none; color: var(--paper-ink); cursor: pointer; }
+  .apply__card > input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; width: 100%; height: 100%; }
   .apply__card :global(.folder-button-shape) { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .22)); transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
   .apply__card:hover { --folder-button-fill: #fff; }
-  .apply__card:hover :global(.folder-button-shape), .apply__card:focus-visible :global(.folder-button-shape) { transform: translateY(-4px); }
-  .apply__card:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 10px; }
-  .apply__card-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .apply__card-name { font-family: var(--font-title); font-weight: 600; font-size: 22px; line-height: 1.1; letter-spacing: .004em; font-synthesis: none; }
+  .apply__card:has(input:checked) { --folder-button-fill: #d9d0ff; }
+  .apply__card:has(input:checked) .apply__card-cta { color: #463579; font-weight: 700; }
+  .apply__card:has(input:focus-visible) { --folder-button-fill: #cbbbff; }
+  .apply__card:has(input:focus-visible) .apply__card-cta { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .apply__card:has(input[aria-invalid='true']) { --folder-button-stroke: var(--error); }
+  .apply__card-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; width: 100%; pointer-events: none; }
+  .apply__card-name { font: 600 22px/1.1 var(--font-title); letter-spacing: .004em; font-synthesis: none; }
   .apply__card-text { font-size: 15px; line-height: 1.45; color: var(--paper-ink-2); }
-  .apply__card-cta { margin-top: auto; padding-top: 10px; font-size: 15px; font-weight: 600; color: var(--paper-ink); }
-
-  /* Budget */
-  .apply__budget { margin: 0 0 22px; }
-  .apply__budget-head, .apply__budget-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr) 196px 36px; gap: 0 16px; align-items: end; }
-  .apply__budget-head { color: var(--ink-3); font-size: 13px; font-weight: 500; margin-bottom: 2px; }
-  .apply__budget-row { margin-bottom: 6px; }
-  .apply__budget-row .apply__input { font-size: 17px; padding-top: 6px; padding-bottom: 8px; }
-  .apply__budget-row [name='budget_link'] { grid-column: 1 / -1; margin-top: 2px; font-size: 15px; padding-top: 4px; padding-bottom: 6px; }
-  .apply__remove { width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-3); font-size: 24px; line-height: 1; cursor: pointer; }
+  .apply__card-cta { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; }
+  .apply__card-cta::after { content: 'Select'; }
+  .apply__card:has(input:checked) .apply__card-cta::after { content: 'Selected'; }
+  .apply__card--funding { --folder-button-fill: #e9857e; --paper-ink: #451614; --paper-ink-2: #62231f; }
+  .apply__card--funding:hover { --folder-button-fill: #f49b94; }
+  .apply__card--funding:has(input:checked) { --folder-button-fill: #b93732; --paper-ink: #fff; --paper-ink-2: #fff; }
+  .apply__card--funding:has(input:focus-visible) { --folder-button-fill: #a72f2b; --paper-ink: #fff; --paper-ink-2: #fff; }
+  .apply__card--funding:has(input:checked) .apply__card-cta { color: var(--paper-ink); }
+  .apply__context p { margin: 0 0 18px; font-size: 16px; line-height: 1.55; color: var(--ink-body); }
+  .apply__more { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
+  .apply__more:focus-visible, .apply__posters a:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 3px; }
+  .apply__posters { display: flex; gap: 14px; margin: 0 0 18px; }
+  .apply__posters a { display: block; min-width: 0; }
+  .apply__posters img { display: block; height: 160px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; }
+  .apply__project-dialog .apply__rules-body p + p { margin-top: 18px; }
+  .apply__help { margin: 0 0 12px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+  .apply__hint { margin: 6px 0 12px; font-size: 13px; line-height: 1.4; color: var(--ink-3); }
+  .apply__funding-outline { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+  .apply__funding-outline > .apply__help, .apply__funding-idea, .apply__funding-why, .apply__members { grid-column: 1 / -1; }
+  .apply__funding-name { grid-column: 1; }
+  .apply__funding-mode { grid-column: 2; grid-row: 2; }
+  .apply__members { padding-top: 16px !important; border-top: 1px solid var(--line) !important; }
+  .apply__members-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+  .apply__members-heading .apply__label { margin: 0; font-size: 16px; }
+  .apply__members-heading .apply__label em { margin-left: 6px; font-size: 14px; font-weight: 400; }
+  .apply__members-heading .apply__back { padding: 6px 0; font-size: 16px; white-space: nowrap; }
+  .apply__member-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) 40px; gap: 24px; align-items: end; }
+  .apply__member-row + .apply__member-row { margin-top: 18px; }
+  .apply__member-row .apply__field { margin: 0; }
+  .apply__member-row .apply__input { font-size: 18px; }
+  .apply__member-row .apply__remove { width: 40px; height: 40px; }
+  [data-member-rows] { padding: 2px; }
+  .apply__budget-row { display: grid; grid-template-columns: minmax(0, 1fr) 108px 30px; gap: 8px 12px; align-items: end; padding-bottom: 14px; }
+  .apply__budget-row .apply__field { margin: 0; }
+  .apply__product-link { grid-column: 1 / -1; }
+  .apply__product-link .apply__input { font-size: 15px; }
+  .apply__budget-row .apply__input { font-size: 17px; }
+  .apply__cost { position: relative; }
+  .apply__cost input { appearance: textfield; padding-right: 30px; }
+  .apply__cost input::-webkit-inner-spin-button, .apply__cost input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+  .apply__cost-controls { position: absolute; right: 0; bottom: 5px; display: flex; flex-direction: column; gap: 2px; }
+  .apply__cost-controls button { display: grid; place-items: center; width: 25px; height: 16px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--ink-2); cursor: pointer; }
+  .apply__cost-controls button:hover { background: var(--paper); border-color: var(--paper); color: var(--paper-ink); }
+  .apply__cost-controls button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .apply__cost-controls svg { width: 10px; height: 7px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  [data-budget-rows] { padding: 2px; }
+  .apply__remove { width: 30px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-3); font-size: 24px; cursor: pointer; }
   .apply__remove:hover { color: var(--ink); background: rgb(255 255 255 / .1); }
-  .apply__budget-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 6px; }
-  .apply__total { margin: 0; color: var(--ink-2); font-size: 15px; }
-  .apply__total strong { color: var(--ink); font-size: 19px; margin-left: 6px; }
-  .apply__rules { margin: 0 0 6px; color: var(--ink-2); }
-  .apply__rules summary { cursor: pointer; font-weight: 500; color: var(--ink); padding: 6px 0; }
-  .apply__rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; margin-top: 8px; }
-  .apply__rules h3 { margin: 8px 0 4px; font-size: 14px; font-weight: 500; color: var(--ink-3); }
-  .apply__rules ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.5; }
-  .apply__rules-notes { margin-top: 8px !important; }
-
-  /* Summaries */
-  .apply__summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 0 0 22px; font-size: 16px; line-height: 1.45; }
-  .apply__summary dt { color: var(--ink-3); font-size: 13px; font-weight: 500; }
-  .apply__summary dd { margin: 2px 0 0; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-  .apply__next { margin: 0 0 8px; padding-left: 22px; font-size: 17px; line-height: 1.55; color: var(--ink-body); }
-  .apply__next li { margin-bottom: 6px; }
-
-  /* Project pages */
-  .apply__team-info[hidden] { display: none; }
-  .apply__team-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px 56px; align-items: start; }
-  .apply__team-text p { margin: 0 0 12px; font-size: 16px; line-height: 1.55; color: var(--ink-body); max-width: 38em; }
-  .apply__team-roles strong { color: var(--ink); font-weight: 600; }
-  .apply__posters { display: flex; gap: 12px; margin: 6px 0 18px; }
-  .apply__posters :global(img) { width: calc(50% - 6px); height: auto; border-radius: 10px; box-shadow: 0 12px 24px rgb(0 0 0 / .4); }
-  .apply__details { display: grid; gap: 12px; margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
-  .apply__details dt { color: var(--ink-3); font-size: 13px; font-weight: 500; }
-  .apply__details dd { margin: 1px 0 0; color: var(--ink); overflow-wrap: anywhere; }
-
-  @media (max-width: 900px) {
-    .apply__team-columns { grid-template-columns: 1fr; }
-    .apply__budget-head { display: none; }
-    .apply__budget-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; margin-bottom: 14px; }
-    .apply__budget-row .apply__segment { grid-row: 2; grid-column: 1; justify-self: start; margin-top: 8px; }
-    .apply__budget-row .apply__remove { grid-row: 2; grid-column: 2; justify-self: end; margin-top: 8px; }
-    .apply__budget-row [name='budget_link'] { grid-row: 3; }
+  .apply__budget-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .apply__total { font-size: 15px; color: var(--ink-2); }
+  .apply__total strong { font-size: 19px; font-weight: 500; color: var(--ink); margin-left: 6px; }
+  .apply__notice { margin: 10px 0 14px; padding-top: 10px; }
+  .apply__notice .apply__back { padding: 0; color: var(--ink); }
+  .apply__rules-dialog { width: min(800px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 1px solid rgb(255 255 255 / .3); border-radius: 16px; background: var(--paper); color: var(--paper-ink); box-shadow: 0 24px 80px #0006; font-family: var(--font-site); }
+  .apply__rules-dialog[open] { display: flex; flex-direction: column; }
+  .apply__rules-dialog::backdrop { background: rgb(0 0 0 / .65); }
+  .apply__rules-header { display: flex; justify-content: space-between; gap: 20px; padding: 24px 28px 20px; border-bottom: 1px solid #1d1d1f24; }
+  .apply__rules-header h2 { margin: 0; font: 600 30px/1.15 var(--font-title); }
+  .apply__rules-header p { margin: 8px 0 0; font-size: 16px; line-height: 1.45; color: #535357; }
+  .apply__rules-close { flex: none; width: 36px; height: 36px; border: 1px solid #1d1d1f40; border-radius: 50%; background: transparent; font: 26px/1 var(--font-site); color: inherit; cursor: pointer; }
+  .apply__rules-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px 28px; font-size: 16px; line-height: 1.5; scrollbar-width: thin; scrollbar-color: #858589 transparent; }
+  .apply__rules-body::-webkit-scrollbar { width: 6px; }
+  .apply__rules-body::-webkit-scrollbar-thumb { background: #858589; border-radius: 999px; }
+  .apply__rules-body::-webkit-scrollbar-track { background: transparent; }
+  .apply__rules-eligibility { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding-bottom: 20px; border-bottom: 1px solid #1d1d1f24; }
+  .apply__rules-body > section { margin-top: 20px; }
+  .apply__rules-body h3 { margin: 0 0 8px; font-size: 17px; line-height: 1.3; font-weight: 600; }
+  .apply__rules-body ul { margin: 0; padding-left: 20px; }
+  .apply__rules-body li + li { margin-top: 6px; }
+  .apply__rules-body p { margin: 0; }
+  .apply__rules-body .apply__rules-equipment { margin-top: 18px; color: #535357; }
+  .apply__rules-footer { flex: none; display: flex; justify-content: end; padding: 16px 28px; border-top: 1px solid #1d1d1f24; }
+  .apply__rules-footer button { padding: 11px 18px; border: 0; border-radius: 999px; background: var(--paper-ink); color: var(--paper); font: 500 16px/1.2 var(--font-site); cursor: pointer; }
+  .apply__rules-dialog button:hover { opacity: .8; }
+  .apply__rules-dialog button:focus-visible, .apply__rules-body:focus-visible { outline: 2px solid #463579; outline-offset: -4px; }
+  .apply__check { display: flex; align-items: start; gap: 12px; font-size: 14px; line-height: 1.5; color: var(--ink-body); cursor: pointer; }
+  .apply__check input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: var(--paper); }
+  .apply__honey { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .apply__error { margin-top: 8px; color: var(--error); font-size: 14px; }
+  .apply__done .apply__button { margin-top: 28px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-height: 800px) {
+    .apply__heading { margin-bottom: 18px; }
+    .apply h1 { font-size: clamp(30px, 3.6vw, 40px); }
+    .apply__heading p { margin-top: 8px; font-size: 17px; }
+    .apply__field { margin-bottom: 12px; }
+    .apply__input { padding: 5px 0 7px; font-size: 17px; }
+    .apply__chip span { padding: 6px 12px; font-size: 14px; }
+    .apply__actions { margin-top: 12px; }
+    .apply__card { min-height: 132px; padding: 23px 16px 14px; }
+    .apply__card-name { font-size: 19px; }
+    .apply__card-text { font-size: 13px; line-height: 1.35; }
+    .apply__card-body { gap: 5px; }
+    .apply__card-cta { padding-top: 3px; font-size: 13px; }
+    .apply__context p { font-size: 15px; margin-bottom: 12px; }
+    .apply__help { font-size: 14px; margin-bottom: 8px; }
   }
   @media (max-width: 640px) {
-    .apply__row, .apply__rules-grid, .apply__summary { grid-template-columns: 1fr; gap: 0; }
-    .apply__summary { gap: 14px; }
-    .apply__button { min-height: 56px; min-width: 0; width: 100%; font-size: 18px; }
-    .apply__actions { gap: 8px 20px; }
-    .apply__cards { grid-template-columns: 1fr; gap: 14px; }
-    .apply__card { min-height: 0; padding: 30px 22px 20px; }
-    .apply__shade { background: radial-gradient(ellipse 90% 70% at 50% 45%, rgb(10 10 10 / .64), rgb(10 10 10 / .26) 60%, transparent 100%); }
+    .apply__columns { grid-template-columns: 1fr; gap: 7px; }
+    .apply__heading { margin-bottom: 8px; }
+    .apply h1 { font-size: 28px; }
+    .apply__heading p { font-size: 15px; line-height: 1.35; margin-top: 6px; }
+    .apply__row { gap: 16px; }
+    .apply__label { font-size: 12px; margin-bottom: 3px; }
+    .apply__input { font-size: 16px; padding: 3px 0 5px; }
+    .apply__field { margin-bottom: 10px; }
+    .apply__chips { gap: 6px; margin-top: 4px; }
+    .apply__chip span { font-size: 12px; padding: 5px 9px; }
+    .apply__basics { display: contents; }
+    .apply__basics > .apply__heading { margin-bottom: 0; }
+    .apply__basics > .apply__actions { grid-row: 6; margin: 0; }
+    .apply__choices { grid-row: 5; }
+    .apply__choices > legend { font-size: 14px; margin-bottom: 6px; }
+    .apply__cards { gap: 10px; margin: 2px; }
+    .apply__card { min-height: 80px; padding: 19px 13px 10px; }
+    .apply__card-name { font-size: 16px; }
+    .apply__card-text { display: none; }
+    .apply__card-cta { font-size: 12px; padding-top: 2px; }
+    .apply__button { min-height: 52px; font-size: 17px; padding: 17px 25px 13px; }
+    .apply__context p { font-size: 14px; line-height: 1.4; margin-bottom: 10px; }
+    .apply__context .apply__field { display: inline-block; vertical-align: top; width: 100%; }
+    .apply__context .apply__chips { gap: 5px; }
+    .apply__actions { margin-top: 0; }
+    .apply__help, .apply__check { font-size: 13px; }
+    .apply__budget-row { grid-template-columns: minmax(0, 1fr) 98px 26px; gap: 5px 10px; padding-bottom: 6px; }
+    .apply__notice { margin: 6px 0; padding-top: 6px; }
+    .apply__rules-header { padding: 18px 20px; }
+    .apply__rules-header h2 { font-size: 26px; }
+    .apply__rules-body { padding: 18px 20px; }
+    .apply__rules-eligibility { grid-template-columns: 1fr; gap: 20px; }
+    .apply__rules-footer { padding: 14px 20px; }
+    [data-team-fields] textarea { height: 54px; }
+    [data-funding-fields] > div:first-of-type { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+    [data-funding-info] { display: none; }
+    [data-funding-fields] textarea { height: 48px; }
+    .apply__funding-name { grid-column: 1; grid-row: 1; }
+    .apply__funding-mode { grid-column: 2; grid-row: 1; }
+    .apply__funding-idea { grid-column: 1; grid-row: 2; }
+    .apply__funding-why { grid-column: 2; grid-row: 2; }
+    .apply__funding-outline > .apply__field { margin-bottom: 8px; }
+    .apply__members { margin-top: 12px; }
+    .apply__member-row { gap: 12px; grid-template-columns: minmax(0, 1fr) 36px; }
+    .apply__member-row .apply__field { grid-column: 1; }
+    .apply__member-row .apply__input { font-size: 16px; }
+    .apply__member-row .apply__remove { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 36px; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .apply__scroller { scroll-behavior: auto; }
-    .apply__card :global(.folder-button-shape) { transition: none; }
+  @media (max-height: 720px) {
+    .apply__heading { margin-bottom: 12px; }
+    .apply__field { margin-bottom: 8px; }
+    .apply__actions { margin-top: 0; }
+    .apply__card { min-height: 118px; padding-top: 21px; }
+    [data-funding-fields] textarea { height: 48px; }
+    .apply__check { font-size: 13px; }
+    [data-funding-info] { display: none; }
+    .apply__funding-mode { grid-row: 1; }
+    .apply__budget .apply__hint { margin: 4px 0 6px; }
+    .apply__budget .apply__error { margin-top: 4px; font-size: 13px; line-height: 1.4; }
   }
+  @media (prefers-reduced-motion: reduce) { .apply__chip span, .apply__input, .apply__card :global(.folder-button-shape) { transition: none; } }
 </style>
-
 <script>
   import { mountApply } from './applyFlow';
   let cleanup: (() => void) | undefined;

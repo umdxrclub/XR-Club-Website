@@ -1,11 +1,16 @@
 ---
 import { folderContour } from '../lib/folderShape';
-interface Props { shortTab?: boolean }
-const { shortTab = false } = Astro.props;
+interface Props { shortTab?: boolean; tabSide?: 'left' | 'right' }
+const { shortTab = false, tabSide = 'left' } = Astro.props;
 const shortTabContour = 'M.038 0H.705C.721 0 .726 .008 .739 .024L.788 .085Q.801 .10 .818 .10H.963Q1 .10 1 .166V.936Q1 1 .963 1H.086Q.066 1 .054 .975L.012 .878Q0 .853 0 .824V.065Q0 0 .038 0Z';
+// Move only the top notch; keep the existing lower-right corner cut.
+const rightTabTop = shortTab
+  ? 'M.038 0H.705C.721 0 .726 .008 .739 .024L.788 .085Q.801 .10 .818 .10H.963Q1 .10 1 .166'
+  : 'M.038 0H.516C.532 0 .537 .008 .55 .024L.599 .085Q.612 .10 .629 .10H.963Q1 .10 1 .166';
+const rightTabContour = `${rightTabTop}V.824Q1 .853 .988 .878L.946 .975Q.934 1 .914 1H.037Q0 1 0 .936V.065Q0 0 .038 0Z`;
 ---
 <svg class="folder-button-shape" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
-  <path d={shortTab ? shortTabContour : folderContour} transform="translate(1 0) scale(-1 1)" vector-effect="non-scaling-stroke" />
+  <path d={tabSide === 'right' ? rightTabContour : shortTab ? shortTabContour : folderContour} transform={tabSide === 'left' ? 'translate(1 0) scale(-1 1)' : undefined} vector-effect="non-scaling-stroke" />
 </svg>
 <style>
   .folder-button-shape { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
