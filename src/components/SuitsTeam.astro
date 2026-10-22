@@ -1,10 +1,7 @@
 ---
-import { Image } from 'astro:assets';
 import AppLayout from '../layouts/AppLayout.astro';
 import SuitsApplications from './SuitsApplications.astro';
 import AngledWaves from '../features/home/AngledWaves.astro';
-import dreamersLogo from '../assets/suits/dreamers-logo.png';
-import dreamersLogoNight from '../assets/suits/dreamers-logo-night.png';
 
 import '../styles/suits-team.css';
 import '../styles/suits-labs.css';
@@ -18,14 +15,14 @@ const base = import.meta.env.BASE_URL;
 interface Props { workspace?: boolean; preview?: boolean; }
 const { workspace = false, preview = false } = Astro.props;
 const sections = [
-  { key: 'meetings', name: 'Calendar', icon: 'M4 5h16v15H4z M4 10h16 M8 3v4 M16 3v4' },
-  { key: 'overview', name: 'Overview', icon: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z' },
-  { key: 'tasks', name: 'Tasks', icon: 'M9 6h12 M9 12h12 M9 18h12 M2 5l2 2 3-4 M2 11l2 2 3-4 M2 17l2 2 3-4' },
-  { key: 'proposal', name: 'Proposal', icon: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 12h7 M9 16h7' },
-  { key: 'documents', name: 'Documents', icon: 'M3 5h7l2 3h9v12H3z' },
-  { key: 'team', name: 'Team', icon: 'M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M2 21v-2a7 7 0 0 1 14 0v2 M17 5a4 4 0 0 1 0 7 M19 15a5 5 0 0 1 3 5' },
-  { key: 'applications', name: 'Applications', icon: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 12h7 M9 16h7' },
-  { key: 'access', name: 'Team access', icon: 'M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7z M8 12l3 3 5-6' },
+  { key: 'meetings', name: 'Calendar' },
+  { key: 'overview', name: 'Overview' },
+  { key: 'tasks', name: 'Tasks' },
+  { key: 'proposal', name: 'Proposal' },
+  { key: 'documents', name: 'Documents' },
+  { key: 'team', name: 'Team' },
+  { key: 'applications', name: 'Applications' },
+  { key: 'access', name: 'Team access' },
 ];
 
 ---
@@ -33,7 +30,7 @@ const sections = [
 {/* The workspace sits inside the site's header and footer, on the home page's waves; the sign in page keeps its photograph. */}
 <AppLayout title="NASA SUITS workspace" description="Team workspace for the University of Maryland NASA SUITS proposal." hideChatBot noindex footer={workspace} clientNavigation>
   <div class:list={["st-bg", { "st-workspace-bg": workspace }]} aria-hidden="true">
-    {workspace ? <AngledWaves /> : <img class="st-bg__astronaut" src={`${base}scenes/suits-sky/login-source.png`} width="3840" height="2160" alt="" fetchpriority="high" decoding="async" />}
+    {workspace ? <><AngledWaves /><canvas class="st-bg__waves" data-wave-canvas aria-hidden="true"></canvas></> : <img class="st-bg__astronaut" src={`${base}scenes/suits-sky/login-source.png`} width="3840" height="2160" alt="" fetchpriority="high" decoding="async" />}
   </div>
   <div class="st" id="st" data-roles="[]" data-base={base} data-mode={workspace ? "workspace" : "login"} data-preview={preview && import.meta.env.DEV ? "true" : undefined}>
     <script is:inline>
@@ -66,7 +63,6 @@ const sections = [
     <!-- App -->
     <main class="st-app" id="st-app" hidden>
       <header class="st-top">
-        <a class="st-workspace-brand" href={`${base}suits/workspace/`} aria-label="Dreamers calendar" title="Dreamers"><Image class="st-workspace-logo st-workspace-logo--day" src={dreamersLogo} alt="" height={56} densities={[1, 2, 3]} format="png" loading="eager" /><Image class="st-workspace-logo st-workspace-logo--night" src={dreamersLogoNight} alt="" height={56} densities={[1, 2, 3]} format="png" loading="eager" /></a>
         <div class="st-top__actions">
           <button type="button" id="st-mobile-avatar" aria-label="Edit avatar"></button>
           <a class="st-workspace-home" href={base}>XR Labs</a>
@@ -79,7 +75,7 @@ const sections = [
       <div class="st-workspace">
         <aside class="st-side">
           <nav class="st-nav" id="st-nav" aria-label="Dashboard sections">
-            {sections.map(section => <button type="button" class="st-nav__btn" data-nav={section.key} hidden={['applications', 'access'].includes(section.key)} title={section.name} aria-label={section.name}><svg class="st-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path d={section.icon} /></svg><span class="st-nav__label">{section.name}</span></button>)}
+            {sections.map(section => <button type="button" class="st-nav__btn" data-nav={section.key} hidden={['applications', 'access'].includes(section.key)}><span class="st-nav__label">{section.name}</span></button>)}
           </nav>
           <div class="st-side__person"><span class="st-side__avatar" id="st-avatar"></span><div class="st-side__identity"><p class="st-top__sub" id="st-whoami"></p><button type="button" class="st-side__edit" id="st-edit-avatar">Edit avatar</button></div></div>
         </aside>
@@ -124,6 +120,19 @@ const sections = [
 
   <script>
     import { boot } from '../scripts/suits/index';
-    document.addEventListener('astro:page-load', () => { if (document.getElementById('st')) boot(); });
+    import { mountWaveBackdrop } from '../features/home/waveBackdrop';
+    // The moving waves behind the workspace: mounted with the page, dropped before the next page is swapped in.
+    let generation = 0, disposeWaves: (() => void) | undefined;
+    document.addEventListener('astro:page-load', () => {
+      if (!document.getElementById('st')) return;
+      boot();
+      const host = document.querySelector<HTMLElement>('.st-bg'), canvas = host?.querySelector<HTMLCanvasElement>('[data-wave-canvas]');
+      if (!host || !canvas) return;
+      const current = ++generation;
+      mountWaveBackdrop(host, canvas, () => current === generation && host.isConnected)
+        .then(dispose => { if (current === generation) disposeWaves = dispose; else dispose(); })
+        .catch(error => console.warn('Showing the still wave background.', error));
+    });
+    document.addEventListener('astro:before-swap', () => { generation++; disposeWaves?.(); disposeWaves = undefined; });
   </script>
 </AppLayout>

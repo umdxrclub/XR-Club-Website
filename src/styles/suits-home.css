@@ -1,153 +1,209 @@
 /*
- * The workspace in the home page's own aesthetic. Loaded last. The site header (with its groove) and the icon
- * footer frame it; behind it the home page's still angled waves; on them a paper folder for the sections and a
- * paper sheet for each view, with the site's title face for headings and the dark ink and paper tokens of the site.
- * Only the workspace mode is touched: the sign in page keeps its photograph. The ID keeps these rules above every
- * earlier layer, day or night, so there is one look.
+ * The signed in workspace: one frosted pane over the home page's moving waves, inside the site's header and footer.
+ * White ink on dark glass, a plain list of sections, white primary buttons, nothing decorative. Loaded last; the ID
+ * keeps these rules above every earlier layer, day or night, so there is one look. Only the workspace mode is
+ * touched: the sign in page keeps its photograph.
  */
 
 html:has(#st[data-mode="workspace"]), body:has(#st[data-mode="workspace"]) { background: #0a0a0a; }
 
 #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark {
-  /* The folder silhouette of the site's paper buttons (FolderButtonShape, short tab on the right), as a mask. */
-  --xr-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M.038 0H.705C.721 0 .726 .008 .739 .024L.788 .085Q.801 .10 .818 .10H.963Q1 .10 1 .166V.824Q1 .853 .988 .878L.946 .975Q.934 1 .914 1H.037Q0 1 0 .936V.065Q0 0 .038 0Z'/%3E%3C/svg%3E");
+  color-scheme: dark;
   --paper: #f3f2ed;
-  --paper-2: #fbfaf7;
   --paper-ink: #1d1d1f;
-  --surface: var(--paper-2);
-  --page: var(--paper);
-  --fill: #e9e7e0;
-  --fill-hover: #e1dfd6;
-  --hair: #1d1d1f1a;
-  --line: #1d1d1f33;
-  --ink: var(--paper-ink);
-  --ink-2: #5c5c61;
-  --ink-3: #74747a;
-  --accent: var(--paper-ink);
-  --accent-soft: #1d1d1f12;
-  --danger: #b3261e;
-  --danger-bg: #f7dedc;
+  --glass: rgb(10 10 12 / .6);
+  --surface: #ffffff12;
+  --page: transparent;
+  --fill: #ffffff14;
+  --fill-hover: #ffffff24;
+  --hair: #ffffff1f;
+  --line: #ffffff38;
+  --ink: #ffffff;
+  --ink-2: #c9c9cb;
+  --ink-3: #9a9a9e;
+  --accent: #ffffff;
+  --accent-soft: #ffffff1f;
+  --ok: #9be7ad;
+  --ok-bg: #6edc8c26;
+  --warn: #ffd28a;
+  --warn-bg: #ffc45a26;
+  --danger: #ffb4ad;
+  --danger-bg: #ff6b5e2e;
+  --red: #ffb4ad;
+  /* Ticks are drawn dark, because a checked box is filled with the (white) ink. */
+  --check-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a0a0a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c9cb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   font-family: var(--font-site);
-  /* Between the fixed header and the fixed footer, full height, nothing scrolling but the views. */
+  /* Between the fixed header and the fixed footer, full height; only the views scroll. */
   height: calc(100dvh - var(--site-footer-height, 0px));
   min-height: 0;
-  padding: 106px 0 14px;
+  padding: 104px 0 14px;
   display: flex;
   align-items: stretch;
   justify-content: center;
   overflow: hidden;
 }
 
-/* The backdrop: the home page's waves, still. */
+/* The backdrop: the home page's waves, moving. The still drawing shows until the shader is ready. */
 body:has(#st[data-mode="workspace"]) .st-bg { background: #000; }
 body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
-.st-bg .angled-waves { position: absolute; inset: 0; width: 100%; height: 100%; }
+.st-bg .angled-waves, .st-bg .st-bg__waves { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.st-bg .st-bg__waves { visibility: hidden; }
+.st-bg.is-ready .st-bg__waves { visibility: visible; }
+.st-bg.is-ready .angled-waves { visibility: hidden; }
 
 /* The app aligns with the header's bar and the footer's row. */
 #st[data-mode="workspace"] .st-app { width: min(100% - 2 * clamp(24px, 5vw, 76px), 1280px); max-width: none; height: 100%; margin: 0 auto; padding: 0; }
 #st[data-mode="workspace"][data-layout="wide"] .st-app { width: min(100% - 48px, 1800px); }
 
-/* While the account is checked: the title face in white on the waves, like the sign in page. */
+/* While the account is checked: white on the waves, like the sign in page. */
 #st[data-mode="workspace"] .st-gate { flex: 1; min-height: 0; padding: 0; }
 #st[data-mode="workspace"] .st-gate__title { font-family: var(--font-title); font-weight: 600; color: #fff; letter-spacing: -.03em; }
 #st[data-mode="workspace"] .st-gate__text { color: #c9c9cb; }
 #st[data-mode="workspace"] .st-gate__error { color: #ffb4ad; background: #ffffff14; }
 
-/* The workspace's own bar: the Dreamers logo in white ink, and plain text actions like the header's links. */
-#st[data-mode="workspace"] .st-top { height: 64px; margin: 0; padding: 0 4px; }
-#st[data-mode="workspace"] .st-workspace-logo--day { display: none; }
-#st[data-mode="workspace"] .st-workspace-logo--night { display: block; height: 52px; }
+/* Above the pane: plain text actions, right aligned, like the header's links. */
+#st[data-mode="workspace"] .st-top { height: 48px; margin: 0; padding: 0 4px; justify-content: flex-end; }
 #st[data-mode="workspace"] .st-top__actions { gap: clamp(20px, 2.6vw, 36px); }
-#st[data-mode="workspace"] .st-top__actions .st-btn { min-height: 44px; padding: 0; border: 0; border-radius: 0; background: none; color: #c9c9cb; font: 500 17px/1 var(--font-site); letter-spacing: -.025em; box-shadow: none; }
+#st[data-mode="workspace"] .st-top__actions .st-btn { min-height: 44px; padding: 0; border: 0; border-radius: 0; background: none; color: #c9c9cb; font: 500 16px/1 var(--font-site); letter-spacing: -.02em; box-shadow: none; }
 #st[data-mode="workspace"] .st-top__actions .st-btn:hover { background: none; color: #fff; }
 #st[data-mode="workspace"] .st-top__actions .st-btn:focus-visible { outline: 2px solid #e6e6e6; outline-offset: 5px; border-radius: 4px; }
 /* The header already leads home, and there is one look, so no night mode. */
 #st[data-mode="workspace"] .st-workspace-home, #st[data-mode="workspace"] #st-theme { display: none; }
 
-/* The sections: a paper folder, its tab at the top left, the open section a dark folder chip. */
-#st[data-mode="workspace"] .st-side { position: relative; isolation: isolate; padding: calc(10dvh - 14px) 12px 14px; border-radius: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; color: var(--paper-ink); overflow: auto; }
-#st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 14px 12px 12px; }
-#st[data-mode="workspace"] .st-side::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--paper); -webkit-mask: var(--xr-folder) center / 100% 100% no-repeat; mask: var(--xr-folder) center / 100% 100% no-repeat; }
-#st[data-mode="workspace"] .st-nav__btn { position: relative; isolation: isolate; min-height: 44px; padding-inline: 14px; border-radius: 0; background: none; color: #45454a; font: 500 15px/1 var(--font-site); letter-spacing: -.02em; transition: color 160ms ease; }
-#st[data-mode="workspace"] .st-nav__btn::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--paper-ink); opacity: 0; -webkit-mask: var(--xr-folder) center / 100% 100% no-repeat; mask: var(--xr-folder) center / 100% 100% no-repeat; transition: opacity 160ms ease; }
-#st[data-mode="workspace"] .st-nav__btn:hover { background: none; color: var(--paper-ink); }
-#st[data-mode="workspace"] .st-nav__btn.is-active { background: none; color: var(--paper); }
-#st[data-mode="workspace"] .st-nav__btn.is-active::before { opacity: 1; }
-#st[data-mode="workspace"] .st-nav__btn:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 2px; }
-#st[data-mode="workspace"] .st-nav__count { background: #1d1d1f14; color: inherit; }
-#st[data-mode="workspace"] .st-nav__btn.is-active .st-nav__count { background: #ffffff2e; }
-#st[data-mode="workspace"] .st-side__person { border-top: 1px solid var(--hair); }
-#st[data-mode="workspace"] .st-top__sub { color: var(--paper-ink); }
-#st[data-mode="workspace"] .st-side__edit { color: var(--ink-2); }
-#st[data-mode="workspace"] .st-side__edit:hover { color: var(--paper-ink); }
+/* The pane: the sections down one side, the view beside them, the waves showing through. */
+#st[data-mode="workspace"] .st-workspace {
+  position: relative; isolation: isolate; gap: 0; padding: 0;
+  border: 1px solid #ffffff14; border-radius: 20px;
+  background: var(--glass);
+  backdrop-filter: blur(28px) saturate(1.35); -webkit-backdrop-filter: blur(28px) saturate(1.35);
+  box-shadow: 0 30px 80px #0000005c;
+  overflow: hidden; color: #fff;
+}
+#st[data-mode="workspace"]:is(:not([data-layout]), [data-layout="scenic"], [data-layout="wide"]) .st-workspace { grid-template-columns: 220px minmax(0, 1fr); }
+#st[data-mode="workspace"][data-layout="right"] .st-workspace { grid-template-columns: minmax(0, 1fr) 220px; }
+#st[data-mode="workspace"][data-layout="rail"] .st-workspace { grid-template-columns: 148px minmax(0, 1fr); }
 
-/* Each view: a paper sheet with dark ink. */
+#st[data-mode="workspace"] .st-side { position: relative; isolation: auto; gap: 0; padding: 18px 12px 14px; border-right: 1px solid #ffffff14; border-radius: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; color: #fff; overflow: auto; }
+#st[data-mode="workspace"] .st-side::before { content: none; }
+#st[data-mode="workspace"][data-layout="right"] .st-side { border-right: 0; border-left: 1px solid #ffffff14; }
+#st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 10px 12px; border-right: 0; border-bottom: 1px solid #ffffff14; }
+#st[data-mode="workspace"][data-layout="dock"] .st-side { border-bottom: 0; border-top: 1px solid #ffffff14; }
+#st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-nav { display: flex; flex-wrap: wrap; gap: 4px; }
+#st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-nav__btn { width: auto; justify-content: center; padding: 0 14px; }
+
+/* The sections: a list of words. The open one sits on a soft pill. */
+#st[data-mode="workspace"] .st-nav { gap: 2px; }
+#st[data-mode="workspace"] .st-nav__btn { position: relative; isolation: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: #c9c9cb; font: 500 15px/1 var(--font-site); letter-spacing: -.015em; text-align: left; transition: background 140ms ease, color 140ms ease; }
+#st[data-mode="workspace"] .st-nav__btn::before { content: none; }
+#st[data-mode="workspace"] .st-nav__btn:hover { background: #ffffff10; color: #fff; }
+#st[data-mode="workspace"] .st-nav__btn.is-active { background: #ffffff1f; color: #fff; font-weight: 600; }
+#st[data-mode="workspace"] .st-nav__btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+#st[data-mode="workspace"] .st-nav__icon { display: none; }
+#st[data-mode="workspace"] .st-nav__count { margin-left: auto; padding: 0 6px; border-radius: 999px; background: #ffffff24; color: #fff; font-size: 11px; }
+#st[data-mode="workspace"] .st-nav__btn.is-active .st-nav__count { background: #ffffff33; }
+#st[data-mode="workspace"][data-layout="rail"] .st-nav__label { display: inline; }
+#st[data-mode="workspace"][data-layout="rail"] .st-nav__btn { justify-content: flex-start; min-height: 36px; padding: 0 10px; font-size: 13px; }
+#st[data-mode="workspace"][data-layout="rail"] .st-nav__count { position: static; margin: 0 0 0 auto; }
+#st[data-mode="workspace"] .st-side__person { margin-top: auto; padding: 14px 4px 0; border-top: 1px solid #ffffff14; }
+#st[data-mode="workspace"] .st-top__sub { color: #fff; }
+#st[data-mode="workspace"] .st-side__edit { color: #c9c9cb; }
+#st[data-mode="workspace"] .st-side__edit:hover { color: #fff; }
+
+/* Each view sits straight on the glass. */
 #st[data-mode="workspace"] .st-view,
 #st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) {
-  background: var(--paper);
-  border: 0;
-  border-radius: 22px;
-  box-shadow: none;
-  padding: 28px 32px;
-  color: var(--paper-ink);
-  --surface: var(--paper-2);
-  --page: var(--paper);
-  --fill: #e9e7e0;
-  --fill-hover: #e1dfd6;
-  --hair: #1d1d1f1a;
-  --line: #1d1d1f33;
-  --ink: var(--paper-ink);
-  --ink-2: #5c5c61;
-  --ink-3: #74747a;
-  --accent: var(--paper-ink);
-  --accent-soft: #1d1d1f12;
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+  padding: 26px 30px; color: #fff;
+  scrollbar-color: #ffffff40 transparent;
+  --surface: #ffffff12; --page: transparent; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38;
+  --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #9a9a9e; --accent: #ffffff; --accent-soft: #ffffff1f;
 }
 #st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
 #st[data-mode="workspace"] .st-view[data-view="proposal"] { padding: 20px; }
-#st[data-mode="workspace"] .st-view :is(.st-dd__list, .st-datepick__pop, .st-menu) { --surface: var(--paper-2); }
-#st[data-mode="workspace"] .st-view option { background: var(--paper-2); color: var(--paper-ink); }
+/* Menus that open over the pane are solid so they read clearly. */
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-dd__list, .st-datepick__pop, .st-menu) { --surface: #1f1f22; background: #1f1f22; color: #fff; border: 1px solid #ffffff1f; box-shadow: 0 16px 40px #0000008c; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) option { background: #1f1f22; color: #fff; }
 
 /* Headings in the site's title face. */
-#st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-family: var(--font-title); font-weight: 600; font-size: 30px; letter-spacing: -.03em; line-height: 1.1; color: var(--paper-ink); }
+#st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-family: var(--font-title); font-weight: 600; font-size: 28px; letter-spacing: -.03em; line-height: 1.1; color: #fff; }
 #st[data-mode="workspace"] .st-modal__title { font-family: var(--font-title); font-weight: 600; letter-spacing: -.02em; }
 
-/* Controls: paper with a hairline, the primary ones in dark ink, like the site's buttons. */
-#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn { border-radius: 10px; }
-#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create),
-#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create):hover { background: var(--paper-ink); border-color: var(--paper-ink); color: var(--paper); filter: none; opacity: 1; }
-#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create):hover { background: #000; }
-#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn--danger { color: var(--danger); background: var(--paper-2); border-color: var(--line); }
+/* Controls: translucent, with a hairline; the primary ones white. */
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn { border-radius: 10px; background: #ffffff14; border-color: #ffffff1f; color: #fff; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn:hover { background: #ffffff24; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create) { background: var(--paper); border-color: var(--paper); color: var(--paper-ink); filter: none; opacity: 1; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create):hover { background: #fff; border-color: #fff; color: var(--paper-ink); }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn--danger { color: var(--danger); background: #ffffff10; border-color: #ffffff1f; }
 #st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn--danger:hover { background: var(--danger-bg); }
-#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn, .sd__search, .sd__select, .sw-search, .sw-native) { border-radius: 10px; }
-#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn):focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 1px; }
-#st[data-mode="workspace"] :is(.st-segment button.is-active, .sd__seg.is-active, .sw-filters button[aria-pressed="true"]) { background: var(--paper-2); color: var(--paper-ink); box-shadow: 0 1px 2px #1d1d1f1f, 0 0 0 1px var(--hair); }
-#st[data-mode="workspace"] :is(.st-card, .st-doccard, .crew-card, .st-repocard) { background: var(--paper-2); border-color: var(--hair); }
-#st[data-mode="workspace"] :is(.st-doccard, .crew-card, .st-repocard):hover { border-color: var(--line); }
-#st[data-mode="workspace"] .sd__pill--new { background: #1d1d1f14; color: var(--ink-2); }
-#st[data-mode="workspace"] :is(.sc-mode, .sc-subteam, .sc-today) { border-radius: 10px; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn, .sd__search, .sd__select, .sw-search, .sw-native) { border-radius: 10px; background-color: #ffffff10; border-color: #ffffff26; color: #fff; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn, .sd__search, .sd__select, .sw-search, .sw-native):focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.sd__select, .sw-native, .st-select) { background-image: var(--chevron); }
+#st[data-mode="workspace"] .crew-directory .crew-search { background: #ffffff10; border-color: #ffffff26; }
+#st[data-mode="workspace"] .crew-directory .crew-search:focus-within { border-color: #fff; }
+#st[data-mode="workspace"] :is(.st-segment, .sd__segment, .sw-filters, .sw-layout) { background: #ffffff12; }
+#st[data-mode="workspace"] :is(.st-segment button, .sd__seg, .sw-filters button, .sw-layout button) { color: #c9c9cb; }
+#st[data-mode="workspace"] :is(.st-segment button, .sd__seg, .sw-filters button, .sw-layout button):hover { color: #fff; }
+#st[data-mode="workspace"] :is(.st-segment button.is-active, .sd__seg.is-active, .sw-filters button[aria-pressed="true"], .sw-layout button[aria-pressed="true"]) { background: #ffffff2e; color: #fff; box-shadow: none; }
 
-/* Dialogs on paper too. */
-#st[data-mode="workspace"] .st-modal, #st[data-mode="workspace"] .st-modal__card { --surface: var(--paper-2); --page: var(--paper); --fill: #e9e7e0; --fill-hover: #e1dfd6; --hair: #1d1d1f1a; --line: #1d1d1f33; --ink: var(--paper-ink); --ink-2: #5c5c61; --ink-3: #74747a; --accent: var(--paper-ink); --accent-soft: #1d1d1f12; }
-#st[data-mode="workspace"] .st-modal__card { background: var(--paper); color: var(--paper-ink); border: 0; border-radius: 22px; box-shadow: 0 24px 64px #00000080; }
+/* Cards and tiles: a shade lighter than the glass. */
+#st[data-mode="workspace"] :is(.st-card, .st-doccard, .crew-card, .st-repocard, .sw-card, .sw-role-card) { background: #ffffff0f; border-color: #ffffff14; color: #fff; box-shadow: none; }
+#st[data-mode="workspace"] :is(.st-doccard, .crew-card, .st-repocard, .sw-card):hover { background: #ffffff14; border-color: #ffffff38; }
+#st[data-mode="workspace"] .st-doccard__cover { background: #ffffff0a; }
+#st[data-mode="workspace"] .sd__pill--new { background: #ffffff1f; color: #c9c9cb; }
 
-/* Phones: the header is taller and the sections run across the top. */
+/* The board. */
+#st[data-mode="workspace"] .sw-col { background: #ffffff0a; }
+#st[data-mode="workspace"] .sw-col__add:hover { background: #ffffff14; color: #fff; }
+#st[data-mode="workspace"] .sw-card.is-milestone { background: #ffffff14; border-color: #ffffff2e; }
+#st[data-mode="workspace"] .sw-card__done { color: #9be7ad; }
+#st[data-mode="workspace"] .sw-card__flag { color: #fff; }
+#st[data-mode="workspace"] .sw-badge { background: #ffffff14; color: #c9c9cb; }
+#st[data-mode="workspace"] .sw-badge--doc:hover { background: #ffffff24; color: #fff; }
+#st[data-mode="workspace"] .sw-badge--due.is-soon { background: #ffc45a2e; color: #ffd28a; }
+#st[data-mode="workspace"] .sw-badge--due.is-late { background: #ff6b5e2e; color: #ffb4ad; }
+#st[data-mode="workspace"] :is(.sw-badge--due.is-done, .sw-badge--check.is-done) { background: #6edc8c26; color: #9be7ad; }
+#st[data-mode="workspace"] .sw-badge--milestone { background: #fff; color: #1d1d1f; }
+#st[data-mode="workspace"] .sw-status[data-status="iteration"] { background: #ffc45a26; color: #ffd28a; }
+
+/* The calendar. */
+#st[data-mode="workspace"] .sc-week__head { background: #ffffff0a; }
+#st[data-mode="workspace"] :is(.sc-week__day.is-today strong, .sc-month__cell.is-today .sc-month__date) { background: #fff; color: #1d1d1f; }
+#st[data-mode="workspace"] .sc-slot:hover { background: #ffffff10; }
+#st[data-mode="workspace"] .sc-month__cell.is-outside { background: #ffffff05; }
+#st[data-mode="workspace"] :is(.sc-mode, .sc-subteam, .sc-today) { background-color: #ffffff12; border-color: #ffffff26; color: #fff; color-scheme: dark; }
+#st[data-mode="workspace"] :is(.sc-mode, .sc-subteam) { background-image: var(--chevron); }
+#st[data-mode="workspace"] .sc-native { color-scheme: dark; }
+/* Events: tinted glass in their audience's colour, light ink. */
+#st[data-mode="workspace"] .sc-event { background: #4f7fe64d; color: #dfe8ff; border-color: #86a8ff; }
+#st[data-mode="workspace"] .sc-event[data-audience="subteam"] { background: #2fae8a4d; color: #d9f6ec; border-color: #62d3b0; }
+#st[data-mode="workspace"] .sc-event[data-audience="check_in"] { background: #9b68c94d; color: #f0e4fb; border-color: #c39ee9; }
+#st[data-mode="workspace"] :is(.sc-event, .sc-agenda__event)[data-audience="availability"] { background: #d9aa4c4d; color: #ffeec4; border-color: #e8c06a; }
+
+/* Dialogs: the same glass, darker, so they read over the pane. */
+#st[data-mode="workspace"] .st-modal, #st[data-mode="workspace"] .st-modal__card { --surface: #ffffff12; --page: transparent; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38; --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #9a9a9e; --accent: #ffffff; --accent-soft: #ffffff1f; }
+#st[data-mode="workspace"] .st-modal__card { background: rgb(24 24 27 / .92); backdrop-filter: blur(30px) saturate(1.3); -webkit-backdrop-filter: blur(30px) saturate(1.3); border: 1px solid #ffffff1a; border-radius: 20px; box-shadow: 0 30px 90px #000000a6; color: #fff; }
+
+/* Phones: the header is taller; the sections run across the top of the pane. */
 @media (max-width: 800px) {
-  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding: 136px 0 10px; }
+  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding: 134px 0 10px; }
   #st[data-mode="workspace"] .st-app { width: calc(100% - 48px); }
 }
 @media (max-width: 760px) {
   #st[data-mode="workspace"] .st-app { width: calc(100% - 32px); }
-  #st[data-mode="workspace"] .st-top { height: 52px; }
-  #st[data-mode="workspace"] .st-workspace-logo--night { height: 40px; }
-  /* The avatar button takes its place after the actions instead of floating over them. */
+  #st[data-mode="workspace"] .st-top { height: 44px; flex-direction: row; align-items: center; padding: 0 4px; }
   #st[data-mode="workspace"] .st-top__actions { gap: 18px; }
   #st[data-mode="workspace"] #st-mobile-avatar { position: static; order: 9; }
-  #st[data-mode="workspace"] .st-side, #st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 12px 10px 10px; background: none; }
+  #st[data-mode="workspace"] .st-workspace { border-radius: 16px; }
+  #st[data-mode="workspace"] .st-side, #st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 8px; border: 0; border-bottom: 1px solid #ffffff14; background: none; overflow: visible; }
+  #st[data-mode="workspace"] .st-nav { display: flex; flex-wrap: nowrap; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  #st[data-mode="workspace"] .st-nav::-webkit-scrollbar { display: none; }
+  #st[data-mode="workspace"] .st-nav__btn { flex: none; width: auto; min-height: 36px; padding: 0 12px; font-size: 14px; white-space: nowrap; }
   #st[data-mode="workspace"] .st-view,
-  #st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) { padding: 18px; border-radius: 18px; }
+  #st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) { padding: 16px; }
   #st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
-  #st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-size: 24px; }
+  #st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-size: 22px; }
 }
 @media (max-width: 360px) {
-  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding-top: 126px; }
+  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding-top: 124px; }
 }

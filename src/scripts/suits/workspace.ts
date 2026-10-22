@@ -24,9 +24,6 @@ export async function enterWorkspace(render:()=>Promise<void>){
   const order=['meetings','overview','tasks','proposal','documents','team','applications','access'];
   const nav=document.getElementById('st-nav')!;
   for(const view of order){const button=nav.querySelector(`[data-nav="${view}"]`);if(button)nav.appendChild(button);}
-  const brand=document.querySelector<HTMLAnchorElement>('.st-workspace-brand')!;
-  brand.href=`${state.base}suits/workspace/`;
-  brand.setAttribute('aria-label','Dreamers calendar');
   document.getElementById('st-gate')!.hidden=true;
   document.getElementById('st-app')!.hidden=false;
   root.dataset.ready='true';

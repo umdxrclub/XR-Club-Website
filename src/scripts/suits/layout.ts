@@ -6,7 +6,7 @@ const layouts = [
  ['top','Top tabs','Navigation above your work'],
  ['dock','Bottom dock','Navigation below your work'],
  ['right','Right sidebar','Navigation on the right'],
- ['rail','Icon rail','A narrow sidebar with icons'],
+ ['rail','Compact','A narrow list of sections'],
  ['wide','Wide','More space across the screen'],
 ] as const;
 
