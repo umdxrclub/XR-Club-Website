@@ -31,7 +31,7 @@ const byPlace = (a: Task, b: Task) => a.position - b.position || (a.due_date || 
 const svg = (d: string, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const CLOCK = svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
 const CHECKS = svg('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/>');
-const DONE = svg('<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="m8 12 3 3 5-6" stroke="#fff"/>', 'sw-card__done');
+const DONE = svg('<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="m8 12 3 3 5-6" stroke="#0f1a12"/>', 'sw-card__done');
 const FLAG = svg('<path d="M5 21V4h11l-1.5 4L16 12H5"/>', 'sw-card__flag');
 const LINK = svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>');
 /** A Google document, sheet, slides or Drive file glyph in its own colour. */

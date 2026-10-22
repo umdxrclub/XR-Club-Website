@@ -113,8 +113,7 @@ const links = [
   :global(body:has([data-sky-header-tone='ink'])) .site-header__nav a.site-header__suits:is(:hover, [aria-current='page']) { color: #211b13; }
   :global(body:has([data-sky-header-tone='ink'])) .site-header::before,
   :global(body:has([data-sky-phase='descent'])) .site-header::before { background: none; }
-  /* The SUITS pages keep the header plain: no top shade and no groove. */
-  :global(body:has(#st)) .site-header::before,
+  /* The SUITS pages keep the header plain: the top shade stays for the links, the groove is left off. */
   :global(body:has(#st)) .site-header__bar::before { content: none; }
   @media (max-width: 800px) { .site-header__nav a.site-header__suits { position: absolute; top: 0; right: 0; } }
   @media (prefers-reduced-motion: reduce) {
