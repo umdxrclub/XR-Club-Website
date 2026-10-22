@@ -20,7 +20,7 @@ html:has(#st[data-mode="workspace"]), body:has(#st[data-mode="workspace"]) { bac
   --line: #ffffff38;
   --ink: #ffffff;
   --ink-2: #d0d0d3;
-  --ink-3: #a9a9ae;
+  --ink-3: #b8b8bc;
   --accent: #ffffff;
   --accent-soft: #ffffff1f;
   --ok: #9be7ad;
@@ -117,12 +117,12 @@ body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
   padding: 8px 30px 26px; color: #fff;
   scrollbar-color: #ffffff40 transparent;
   --surface: #ffffff12; --page: transparent; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38;
-  --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #9a9a9e; --accent: #ffffff; --accent-soft: #ffffff1f;
+  --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #b8b8bc; --accent: #ffffff; --accent-soft: #ffffff1f;
 }
 #st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
 #st[data-mode="workspace"] .st-view[data-view="proposal"] { padding: 20px; }
 /* Menus that open over the pane are solid so they read clearly. */
-#st[data-mode="workspace"] :is(.st-dd__list, .st-datepick__pop, .st-menu) { --surface: #1f1f22; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38; --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #9a9a9e; --accent: #ffffff; background: #1f1f22; color: #fff; border: 0; box-shadow: 0 16px 40px #0000008c; }
+#st[data-mode="workspace"] :is(.st-dd__list, .st-datepick__pop, .st-menu) { --surface: #1f1f22; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38; --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #b8b8bc; --accent: #ffffff; background: #1f1f22; color: #fff; border: 0; box-shadow: 0 16px 40px #0000008c; }
 #st[data-mode="workspace"] option { background: #1f1f22; color: #fff; }
 /* Chosen days and hours: white with dark ink, since the accent is white. */
 #st[data-mode="workspace"] .st-datepick__pop .st-month__cell.is-selected { background: #fff; color: #1d1d1f; }
@@ -162,21 +162,21 @@ body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
 #st[data-mode="workspace"] .sw-col { padding: 0; background: none; }
 #st[data-mode="workspace"] .sw-col__head { padding: 0 2px 6px; }
 #st[data-mode="workspace"] .sw-col__head h3 { font-size: 14px; font-weight: 600; color: #fff; }
-#st[data-mode="workspace"] .sw-col__count { color: #9a9a9e; }
-#st[data-mode="workspace"] .sw-col__add { padding: 6px 2px; color: #9a9a9e; }
+#st[data-mode="workspace"] .sw-col__count { color: #b8b8bc; }
+#st[data-mode="workspace"] .sw-col__add { padding: 6px 2px; color: #b8b8bc; }
 #st[data-mode="workspace"] .sw-col__add:hover { background: none; color: #fff; }
 #st[data-mode="workspace"] .sw-card { padding: 12px 14px; border-radius: 12px; gap: 6px; }
 #st[data-mode="workspace"] .sw-card.is-milestone { background: #ffffff14; }
 #st[data-mode="workspace"] .sw-card__done { color: #9be7ad; }
 #st[data-mode="workspace"] .sw-card__flag { color: #fff; }
 #st[data-mode="workspace"] .sw-card__badges { gap: 4px 12px; }
-#st[data-mode="workspace"] .sw-badge { min-height: 20px; padding: 0; background: none; color: #9a9a9e; font-weight: 500; }
+#st[data-mode="workspace"] .sw-badge { min-height: 20px; padding: 0; background: none; color: #b8b8bc; font-weight: 500; }
 #st[data-mode="workspace"] .sw-badge--doc:hover { background: none; color: #fff; }
 #st[data-mode="workspace"] .sw-badge--due.is-soon { color: #ffd28a; }
 #st[data-mode="workspace"] .sw-badge--due.is-late { color: #ffb4ad; }
 #st[data-mode="workspace"] :is(.sw-badge--due.is-done, .sw-badge--check.is-done) { color: #9be7ad; }
 #st[data-mode="workspace"] .sw-badge--milestone { color: #fff; }
-#st[data-mode="workspace"] .sw-link { padding: 0; border: 0; background: none; color: #9a9a9e; font: 500 15px/1 var(--font-site); letter-spacing: -.015em; cursor: pointer; }
+#st[data-mode="workspace"] .sw-link { padding: 0; border: 0; background: none; color: #b8b8bc; font: 500 15px/1 var(--font-site); letter-spacing: -.015em; cursor: pointer; }
 #st[data-mode="workspace"] .sw-link:hover { color: #fff; }
 #st[data-mode="workspace"] .sw-link:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 4px; }
 #st[data-mode="workspace"] .st-page-actions { gap: 20px; }
@@ -200,7 +200,7 @@ body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
 #st[data-mode="workspace"] :is(.sc-event, .sc-agenda__event)[data-audience="availability"] { background: #d9aa4c4d; color: #ffeec4; border-color: #e8c06a; }
 
 /* Dialogs: the same glass, darker, so they read over the pane. */
-#st[data-mode="workspace"] .st-modal, #st[data-mode="workspace"] .st-modal__card { --surface: #ffffff12; --page: transparent; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38; --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #9a9a9e; --accent: #ffffff; --accent-soft: #ffffff1f; }
+#st[data-mode="workspace"] .st-modal, #st[data-mode="workspace"] .st-modal__card { --surface: #ffffff12; --page: transparent; --fill: #ffffff14; --fill-hover: #ffffff24; --hair: #ffffff1f; --line: #ffffff38; --ink: #ffffff; --ink-2: #c9c9cb; --ink-3: #b8b8bc; --accent: #ffffff; --accent-soft: #ffffff1f; }
 #st[data-mode="workspace"] .st-modal__card { background: #1c1c1f; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; border-radius: 18px; box-shadow: 0 24px 60px #00000066; color: #fff; }
 
 /* Phones: the header is taller; the sections run across the top of the pane. */
