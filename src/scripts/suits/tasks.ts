@@ -114,14 +114,16 @@ function cardHtml(t: Task, documents: TeamDocument[], now: number) {
   const due = t.due_date ? new Date(t.due_date + 'T23:59:59').getTime() : 0;
   const late = t.status !== 'done' && due && due < now, soon = !late && t.status !== 'done' && due && due - now < 36 * 3600e3;
   const document = documentFor(t.link, documents), link = safeLink(t.link), cover = safeImage(t.cover_url);
+  // Work still to come keeps its date to itself until it is under way; milestones always show theirs.
+  const showDue = !!t.due_date && !(t.status === 'todo' && t.kind !== 'milestone');
   const people = membersOf(t).map(id => state.members.find(m => m.user_id === id)).filter((m): m is NonNullable<typeof m> => !!m);
   return `<article class="sw-card${t.status === 'done' ? ' is-done' : ''}${t.kind === 'milestone' ? ' is-milestone' : ''}" data-task="${esc(t.id)}" tabindex="0" role="button" aria-label="${esc(t.title)}${t.kind === 'milestone' ? ', milestone' : ''}">
     ${cover ? `<img class="sw-card__cover" src="${esc(cover)}" alt="" loading="lazy" decoding="async" />` : ''}
     ${t.label ? `<span class="sw-card__label" data-label="${esc(t.label)}" title="${esc(t.label)}"><span class="sw-sr-only">${esc(t.label)}</span></span>` : ''}
     <h4 class="sw-card__title">${t.status === 'done' ? DONE : t.kind === 'milestone' ? FLAG : ''}<span>${esc(t.title)}</span></h4>
-    ${t.kind === 'milestone' || t.due_date || items.length || document || link ? `<div class="sw-card__badges">
+    ${t.kind === 'milestone' || showDue || items.length || document || link ? `<div class="sw-card__badges">
       ${t.kind === 'milestone' ? '<span class="sw-badge sw-badge--milestone">Milestone</span>' : ''}
-      ${t.due_date ? `<span class="sw-badge sw-badge--due${t.status === 'done' ? ' is-done' : late ? ' is-late' : soon ? ' is-soon' : ''}" title="${t.status === 'done' ? 'Complete' : late ? 'Past due' : 'Due'}">${CLOCK}<span>${esc(fmtDate(t.due_date + 'T12:00:00', { month: 'short', day: 'numeric' }))}</span></span>` : ''}
+      ${showDue ? `<span class="sw-badge sw-badge--due${t.status === 'done' ? ' is-done' : late ? ' is-late' : soon ? ' is-soon' : ''}" title="${t.status === 'done' ? 'Complete' : late ? 'Past due' : 'Due'}">${CLOCK}<span>${esc(fmtDate(t.due_date + 'T12:00:00', { month: 'short', day: 'numeric' }))}</span></span>` : ''}
       ${items.length ? `<span class="sw-badge sw-badge--check${ticked === items.length ? ' is-done' : ''}" title="Checklist">${CHECKS}<span>${ticked}/${items.length}</span></span>` : ''}
       ${document ? `<a class="sw-badge sw-badge--doc" href="${esc(document.drive_url || document.url || '')}" target="_blank" rel="noopener" title="Open ${esc(document.title)}">${docIcon(document.drive_url || document.url || '')}<span>${esc(document.title)}</span></a>` : link ? `<a class="sw-badge sw-badge--doc" href="${esc(link)}" target="_blank" rel="noopener" title="Open link">${LINK}<span>${esc(new URL(link).hostname.replace(/^www\./, ''))}</span></a>` : ''}
     </div>` : ''}
