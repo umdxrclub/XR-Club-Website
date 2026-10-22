@@ -158,7 +158,7 @@ body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
 #st[data-mode="workspace"] .sd__pill--new { background: #ffffff1f; color: #c9c9cb; }
 
 /* The board: bare columns, cards as soft tiles, badges as words. */
-#st[data-mode="workspace"] .sw-board { gap: 20px; }
+#st[data-mode="workspace"] .sw-board { gap: 16px; }
 #st[data-mode="workspace"] .sw-col { padding: 0; background: none; }
 #st[data-mode="workspace"] .sw-col__head { padding: 0 2px 6px; }
 #st[data-mode="workspace"] .sw-col__head h3 { font-size: 14px; font-weight: 600; color: #fff; }
