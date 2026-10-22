@@ -6,6 +6,6 @@ Only the authenticated Auth account `kcyle@terpmail.umd.edu`, with its existing 
 
 `suits_manage_member` updates access and subteam together. `suits_save_avatar` saves the caller’s own validated seed/color and a deterministic DiceBear URL. `suits_join` retains custom avatars across later sign-ins and does not auto-promote new members.
 
-Sidebar, Top tabs, Bottom dock, Right sidebar, Icon rail, and Wide layouts are saved on each device. Sign-in retains the existing Supabase client and session storage. Calendar and Discord delivery functions and cron configuration are unchanged.
+Sidebar, Top tabs, Bottom dock, Right sidebar, Compact, and Wide layouts are saved on each device. Sign-in retains the existing Supabase client and session storage. Calendar and Discord delivery functions and cron configuration are unchanged.
 
 Run `npm test` for isolated PGlite permission, persistence, calendar, and navigation checks. The development-only `/suits/preview/` route uses isolated sample data; `?member=1` previews member permissions. It is not included in production builds.

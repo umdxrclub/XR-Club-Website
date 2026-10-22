@@ -120,7 +120,6 @@ const sections = [
 
   <script>
     import { boot } from '../scripts/suits/index';
-    import { mountWaveBackdrop } from '../features/home/waveBackdrop';
     // The moving waves behind the workspace: mounted with the page, dropped before the next page is swapped in.
     let generation = 0, disposeWaves: (() => void) | undefined;
     document.addEventListener('astro:page-load', () => {
@@ -129,8 +128,10 @@ const sections = [
       const host = document.querySelector<HTMLElement>('.st-bg'), canvas = host?.querySelector<HTMLCanvasElement>('[data-wave-canvas]');
       if (!host || !canvas) return;
       const current = ++generation;
-      mountWaveBackdrop(host, canvas, () => current === generation && host.isConnected)
-        .then(dispose => { if (current === generation) disposeWaves = dispose; else dispose(); })
+      // The shader and three.js load only here, so the sign in page never carries them.
+      import('../features/home/waveBackdrop')
+        .then(({ mountWaveBackdrop }) => current === generation ? mountWaveBackdrop(host, canvas, () => current === generation && host.isConnected) : undefined)
+        .then(dispose => { if (!dispose) return; if (current === generation) disposeWaves = dispose; else dispose(); })
         .catch(error => console.warn('Showing the still wave background.', error));
     });
     document.addEventListener('astro:before-swap', () => { generation++; disposeWaves?.(); disposeWaves = undefined; });

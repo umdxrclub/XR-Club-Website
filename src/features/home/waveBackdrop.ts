@@ -26,6 +26,8 @@ export async function mountWaveBackdrop(host: HTMLElement, canvas: HTMLCanvasEle
     listeners.abort(); observer.disconnect();
     waves.mesh.geometry.dispose();
     (waves.mesh.material as { dispose(): void }).dispose();
+    // Give the context back now rather than when the detached canvas is collected.
+    renderer.forceContextLoss();
     renderer.dispose();
     host.classList.remove('is-ready');
   }
@@ -51,18 +53,18 @@ export async function mountWaveBackdrop(host: HTMLElement, canvas: HTMLCanvasEle
     draw();
     if (!reduced.matches) frame = requestAnimationFrame(tick);
   }
+  // A lost context (a driver reset, a backgrounded phone) leaves the still waves showing, even during the compile.
+  const lost = new Promise<void>(resolve => canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); resolve(); cleanup(); }, { signal: listeners.signal }));
   try {
     resize();
     waves.update(0, width, height, 1);
-    await renderer.compileAsync(scene, camera);
+    await Promise.race([renderer.compileAsync(scene, camera), lost]);
     if (disposed || !isCurrent()) { cleanup(); return cleanup; }
     ready = true; draw(); host.classList.add('is-ready');
     observer.observe(host);
     addEventListener('resize', resize, { passive: true, signal: listeners.signal });
     document.addEventListener('visibilitychange', wake, { signal: listeners.signal });
     reduced.addEventListener('change', () => { if (!disposed) { draw(); wake(); } }, { signal: listeners.signal });
-    // A lost context (a driver reset, a backgrounded phone) leaves the still waves showing.
-    canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); cleanup(); }, { signal: listeners.signal });
     wake();
   } catch (error) { cleanup(); throw error; }
   return cleanup;
