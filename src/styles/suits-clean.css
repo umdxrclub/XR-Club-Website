@@ -262,9 +262,11 @@
   .st-repo .st-viewer__sub { display: none; }
 }
 
-/* Dreamers logo (designed by Earl) in the workspace top bar. */
+/* Dreamers logo in the workspace top bar: black ink by day, white ink on the night sky. */
 .st-workspace-brand { display: inline-flex; align-items: center; line-height: 0; }
 .st-workspace-logo { display: block; width: auto; height: 56px; }
+.st-workspace-logo--night, .st.is-dark .st-workspace-logo--day { display: none; }
+.st.is-dark .st-workspace-logo--night { display: block; }
 @media (max-height: 650px) { .st-workspace-logo { height: 40px; } }
 /* The phone bar stacks the logo above its actions within 94px. */
 @media (max-width: 760px) { .st-workspace-logo { height: 36px; } }
