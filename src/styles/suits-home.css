@@ -139,6 +139,9 @@ body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
   #st[data-mode="workspace"] .st-app { width: calc(100% - 32px); }
   #st[data-mode="workspace"] .st-top { height: 52px; }
   #st[data-mode="workspace"] .st-workspace-logo--night { height: 40px; }
+  /* The avatar button takes its place after the actions instead of floating over them. */
+  #st[data-mode="workspace"] .st-top__actions { gap: 18px; }
+  #st[data-mode="workspace"] #st-mobile-avatar { position: static; order: 9; }
   #st[data-mode="workspace"] .st-side, #st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 12px 10px 10px; background: none; }
   #st[data-mode="workspace"] .st-view,
   #st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) { padding: 18px; border-radius: 18px; }
