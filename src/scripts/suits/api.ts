@@ -91,6 +91,9 @@ export interface Rsvp {
   response: 'yes' | 'no' | 'maybe';
 }
 
+export type TaskStatus = 'todo' | 'doing' | 'iteration' | 'done';
+export type TaskLabel = 'Interface' | 'AI' | 'Navigation' | 'Hardware' | 'HITL Testing' | 'All';
+export interface ChecklistItem { text: string; done: boolean }
 export interface Task {
   responsibility_id?: string | null;
   id: string;
@@ -99,7 +102,16 @@ export interface Task {
   section: string;
   assignee_id: string | null;
   due_date: string | null;
-  status: 'todo' | 'doing' | 'done';
+  status: TaskStatus;
+  /** A card on the board is a task, or a milestone the team is held to. */
+  kind: 'task' | 'milestone';
+  label: TaskLabel | null;
+  checklist: ChecklistItem[];
+  /** Everyone working the card, beyond its owner. */
+  members: string[];
+  cover_url: string | null;
+  /** Its place in its column. */
+  position: number;
   link: string | null;
   ping: string[] | null;
   created_by: string | null;
@@ -342,7 +354,7 @@ export const api = {
   async tasks(): Promise<Task[]> {
     return unwrap(await db.from('suits_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at'));
   },
-  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'> & Pick<Partial<Task>, 'responsibility_id'>): Promise<Task> {
+  async createTask(t: Pick<Task, 'title' | 'details' | 'section' | 'assignee_id' | 'due_date' | 'link'> & Pick<Partial<Task>, 'responsibility_id' | 'status' | 'kind' | 'label' | 'checklist' | 'members' | 'cover_url' | 'position'>): Promise<Task> {
     const row = unwrap<Task>(await db.from('suits_tasks').insert({ ...t, created_by: state.me!.user_id }).select().single());
     notify('task', row.id, 'created');
     return row;

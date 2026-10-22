@@ -1,0 +1,150 @@
+/*
+ * The workspace in the home page's own aesthetic. Loaded last. The site header (with its groove) and the icon
+ * footer frame it; behind it the home page's still angled waves; on them a paper folder for the sections and a
+ * paper sheet for each view, with the site's title face for headings and the dark ink and paper tokens of the site.
+ * Only the workspace mode is touched: the sign in page keeps its photograph. The ID keeps these rules above every
+ * earlier layer, day or night, so there is one look.
+ */
+
+html:has(#st[data-mode="workspace"]), body:has(#st[data-mode="workspace"]) { background: #0a0a0a; }
+
+#st[data-mode="workspace"], #st[data-mode="workspace"].is-dark {
+  /* The folder silhouette of the site's paper buttons (FolderButtonShape, short tab on the right), as a mask. */
+  --xr-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M.038 0H.705C.721 0 .726 .008 .739 .024L.788 .085Q.801 .10 .818 .10H.963Q1 .10 1 .166V.824Q1 .853 .988 .878L.946 .975Q.934 1 .914 1H.037Q0 1 0 .936V.065Q0 0 .038 0Z'/%3E%3C/svg%3E");
+  --paper: #f3f2ed;
+  --paper-2: #fbfaf7;
+  --paper-ink: #1d1d1f;
+  --surface: var(--paper-2);
+  --page: var(--paper);
+  --fill: #e9e7e0;
+  --fill-hover: #e1dfd6;
+  --hair: #1d1d1f1a;
+  --line: #1d1d1f33;
+  --ink: var(--paper-ink);
+  --ink-2: #5c5c61;
+  --ink-3: #74747a;
+  --accent: var(--paper-ink);
+  --accent-soft: #1d1d1f12;
+  --danger: #b3261e;
+  --danger-bg: #f7dedc;
+  font-family: var(--font-site);
+  /* Between the fixed header and the fixed footer, full height, nothing scrolling but the views. */
+  height: calc(100dvh - var(--site-footer-height, 0px));
+  min-height: 0;
+  padding: 106px 0 14px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* The backdrop: the home page's waves, still. */
+body:has(#st[data-mode="workspace"]) .st-bg { background: #000; }
+body:has(#st[data-mode="workspace"]) .st-bg::after { content: none; }
+.st-bg .angled-waves { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* The app aligns with the header's bar and the footer's row. */
+#st[data-mode="workspace"] .st-app { width: min(100% - 2 * clamp(24px, 5vw, 76px), 1280px); max-width: none; height: 100%; margin: 0 auto; padding: 0; }
+#st[data-mode="workspace"][data-layout="wide"] .st-app { width: min(100% - 48px, 1800px); }
+
+/* While the account is checked: the title face in white on the waves, like the sign in page. */
+#st[data-mode="workspace"] .st-gate { flex: 1; min-height: 0; padding: 0; }
+#st[data-mode="workspace"] .st-gate__title { font-family: var(--font-title); font-weight: 600; color: #fff; letter-spacing: -.03em; }
+#st[data-mode="workspace"] .st-gate__text { color: #c9c9cb; }
+#st[data-mode="workspace"] .st-gate__error { color: #ffb4ad; background: #ffffff14; }
+
+/* The workspace's own bar: the Dreamers logo in white ink, and plain text actions like the header's links. */
+#st[data-mode="workspace"] .st-top { height: 64px; margin: 0; padding: 0 4px; }
+#st[data-mode="workspace"] .st-workspace-logo--day { display: none; }
+#st[data-mode="workspace"] .st-workspace-logo--night { display: block; height: 52px; }
+#st[data-mode="workspace"] .st-top__actions { gap: clamp(20px, 2.6vw, 36px); }
+#st[data-mode="workspace"] .st-top__actions .st-btn { min-height: 44px; padding: 0; border: 0; border-radius: 0; background: none; color: #c9c9cb; font: 500 17px/1 var(--font-site); letter-spacing: -.025em; box-shadow: none; }
+#st[data-mode="workspace"] .st-top__actions .st-btn:hover { background: none; color: #fff; }
+#st[data-mode="workspace"] .st-top__actions .st-btn:focus-visible { outline: 2px solid #e6e6e6; outline-offset: 5px; border-radius: 4px; }
+/* The header already leads home, and there is one look, so no night mode. */
+#st[data-mode="workspace"] .st-workspace-home, #st[data-mode="workspace"] #st-theme { display: none; }
+
+/* The sections: a paper folder, its tab at the top left, the open section a dark folder chip. */
+#st[data-mode="workspace"] .st-side { position: relative; isolation: isolate; padding: calc(10dvh - 14px) 12px 14px; border-radius: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; color: var(--paper-ink); overflow: auto; }
+#st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 14px 12px 12px; }
+#st[data-mode="workspace"] .st-side::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--paper); -webkit-mask: var(--xr-folder) center / 100% 100% no-repeat; mask: var(--xr-folder) center / 100% 100% no-repeat; }
+#st[data-mode="workspace"] .st-nav__btn { position: relative; isolation: isolate; min-height: 44px; padding-inline: 14px; border-radius: 0; background: none; color: #45454a; font: 500 15px/1 var(--font-site); letter-spacing: -.02em; transition: color 160ms ease; }
+#st[data-mode="workspace"] .st-nav__btn::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--paper-ink); opacity: 0; -webkit-mask: var(--xr-folder) center / 100% 100% no-repeat; mask: var(--xr-folder) center / 100% 100% no-repeat; transition: opacity 160ms ease; }
+#st[data-mode="workspace"] .st-nav__btn:hover { background: none; color: var(--paper-ink); }
+#st[data-mode="workspace"] .st-nav__btn.is-active { background: none; color: var(--paper); }
+#st[data-mode="workspace"] .st-nav__btn.is-active::before { opacity: 1; }
+#st[data-mode="workspace"] .st-nav__btn:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 2px; }
+#st[data-mode="workspace"] .st-nav__count { background: #1d1d1f14; color: inherit; }
+#st[data-mode="workspace"] .st-nav__btn.is-active .st-nav__count { background: #ffffff2e; }
+#st[data-mode="workspace"] .st-side__person { border-top: 1px solid var(--hair); }
+#st[data-mode="workspace"] .st-top__sub { color: var(--paper-ink); }
+#st[data-mode="workspace"] .st-side__edit { color: var(--ink-2); }
+#st[data-mode="workspace"] .st-side__edit:hover { color: var(--paper-ink); }
+
+/* Each view: a paper sheet with dark ink. */
+#st[data-mode="workspace"] .st-view,
+#st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) {
+  background: var(--paper);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: none;
+  padding: 28px 32px;
+  color: var(--paper-ink);
+  --surface: var(--paper-2);
+  --page: var(--paper);
+  --fill: #e9e7e0;
+  --fill-hover: #e1dfd6;
+  --hair: #1d1d1f1a;
+  --line: #1d1d1f33;
+  --ink: var(--paper-ink);
+  --ink-2: #5c5c61;
+  --ink-3: #74747a;
+  --accent: var(--paper-ink);
+  --accent-soft: #1d1d1f12;
+}
+#st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
+#st[data-mode="workspace"] .st-view[data-view="proposal"] { padding: 20px; }
+#st[data-mode="workspace"] .st-view :is(.st-dd__list, .st-datepick__pop, .st-menu) { --surface: var(--paper-2); }
+#st[data-mode="workspace"] .st-view option { background: var(--paper-2); color: var(--paper-ink); }
+
+/* Headings in the site's title face. */
+#st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-family: var(--font-title); font-weight: 600; font-size: 30px; letter-spacing: -.03em; line-height: 1.1; color: var(--paper-ink); }
+#st[data-mode="workspace"] .st-modal__title { font-family: var(--font-title); font-weight: 600; letter-spacing: -.02em; }
+
+/* Controls: paper with a hairline, the primary ones in dark ink, like the site's buttons. */
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn { border-radius: 10px; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create),
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create):hover { background: var(--paper-ink); border-color: var(--paper-ink); color: var(--paper); filter: none; opacity: 1; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-btn--primary, .sc-create):hover { background: #000; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn--danger { color: var(--danger); background: var(--paper-2); border-color: var(--line); }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) .st-btn--danger:hover { background: var(--danger-bg); }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn, .sd__search, .sd__select, .sw-search, .sw-native) { border-radius: 10px; }
+#st[data-mode="workspace"] :is(.st-view, .st-modal) :is(.st-input, .st-select, .st-textarea, .st-dd__btn):focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 1px; }
+#st[data-mode="workspace"] :is(.st-segment button.is-active, .sd__seg.is-active, .sw-filters button[aria-pressed="true"]) { background: var(--paper-2); color: var(--paper-ink); box-shadow: 0 1px 2px #1d1d1f1f, 0 0 0 1px var(--hair); }
+#st[data-mode="workspace"] :is(.st-card, .st-doccard, .crew-card, .st-repocard) { background: var(--paper-2); border-color: var(--hair); }
+#st[data-mode="workspace"] :is(.st-doccard, .crew-card, .st-repocard):hover { border-color: var(--line); }
+#st[data-mode="workspace"] .sd__pill--new { background: #1d1d1f14; color: var(--ink-2); }
+#st[data-mode="workspace"] :is(.sc-mode, .sc-subteam, .sc-today) { border-radius: 10px; }
+
+/* Dialogs on paper too. */
+#st[data-mode="workspace"] .st-modal, #st[data-mode="workspace"] .st-modal__card { --surface: var(--paper-2); --page: var(--paper); --fill: #e9e7e0; --fill-hover: #e1dfd6; --hair: #1d1d1f1a; --line: #1d1d1f33; --ink: var(--paper-ink); --ink-2: #5c5c61; --ink-3: #74747a; --accent: var(--paper-ink); --accent-soft: #1d1d1f12; }
+#st[data-mode="workspace"] .st-modal__card { background: var(--paper); color: var(--paper-ink); border: 0; border-radius: 22px; box-shadow: 0 24px 64px #00000080; }
+
+/* Phones: the header is taller and the sections run across the top. */
+@media (max-width: 800px) {
+  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding: 136px 0 10px; }
+  #st[data-mode="workspace"] .st-app { width: calc(100% - 48px); }
+}
+@media (max-width: 760px) {
+  #st[data-mode="workspace"] .st-app { width: calc(100% - 32px); }
+  #st[data-mode="workspace"] .st-top { height: 52px; }
+  #st[data-mode="workspace"] .st-workspace-logo--night { height: 40px; }
+  #st[data-mode="workspace"] .st-side, #st[data-mode="workspace"]:is([data-layout="top"], [data-layout="dock"]) .st-side { padding: 12px 10px 10px; background: none; }
+  #st[data-mode="workspace"] .st-view,
+  #st[data-mode="workspace"] .st-view:is([data-view="tasks"], [data-view="access"]) { padding: 18px; border-radius: 18px; }
+  #st[data-mode="workspace"] .st-view[data-view="meetings"] { padding: 0; }
+  #st[data-mode="workspace"] :is(.st-h1, .st-page-title, .st-view .st-page-title, .sc-toolbar h1) { font-size: 24px; }
+}
+@media (max-width: 360px) {
+  #st[data-mode="workspace"], #st[data-mode="workspace"].is-dark { padding-top: 126px; }
+}

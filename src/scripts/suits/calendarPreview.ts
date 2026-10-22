@@ -52,7 +52,18 @@ export async function bootPreview() {
     { id:'work-4', title:'Document the integration checklist', section:'technical', assignee_id:'preview-5', status:'done', due_date:days[1], responsibility_id:'role-1' },
     { id:'work-5', title:'Prototype the mission timeline', section:'uiux', assignee_id:'preview-2', status:'doing', due_date:days[6], responsibility_id:'role-3' },
     { id:'work-6', title:'Compare intent model accuracy', section:'aiml', assignee_id:'preview-3', status:'todo', due_date:days[5] },
-  ].map(t => ({ details:'Define the acceptance criteria, share a first pass with the subteam, and incorporate feedback.',link:null,ping:[],created_by:'preview-0',created_at:stamp,updated_at:stamp,...t })) as Task[];
+    // The board: stages of the proposal as cards, with labels, checklists, members, a photo, and a milestone.
+    { id:'board-1', title:'First team meeting!', section:'team', assignee_id:null, status:'done', due_date:null, kind:'task', cover_url:`${state.base}suits/first-team-meeting.jpg`, position:0 },
+    { id:'board-2', title:'Interface Research Stage', section:'uiux', assignee_id:'preview-2', status:'done', due_date:'2026-10-04', label:'Interface', checklist:[{text:'Review past SUITS interfaces',done:true},{text:'List required TSS displays',done:true},{text:'Write subgroup draft',done:true}], members:['preview-2'], position:1 },
+    { id:'board-3', title:'Hardware Research Stage', section:'technical', assignee_id:'preview-1', status:'done', due_date:'2026-10-04', label:'Hardware', checklist:[{text:'Compare compute boards & LiDARs',done:true},{text:'Start parts list',done:true},{text:'Write subgroup draft',done:true}], members:['preview-1','preview-4'], position:2 },
+    { id:'board-4', title:'Interface Prototyping Stage', section:'uiux', assignee_id:'preview-2', status:'iteration', due_date:'2026-10-22', label:'Interface', checklist:[{text:'2D UI mockups',done:false},{text:'3D mockups',done:false},{text:'Geology interface figure',done:true},{text:'Caution & warning figure',done:false},{text:'Wrong-switch correction figure',done:false}], members:['preview-2','preview-5'], link:'https://docs.google.com/document/d/1yhj4KIL0bHY6yRIPwq82EvgSspRnG6FSj3RD-UWMitk/edit', position:1 },
+    { id:'board-5', title:'AI Prototyping Stage', section:'aiml', assignee_id:'preview-3', status:'iteration', due_date:'2026-10-22', label:'AI', checklist:[{text:'AI pipelines figure',done:true},{text:'GURREN pipeline figure',done:true}], members:['preview-3'], position:2 },
+    { id:'board-6', title:'Hardware Writing Stage', section:'technical', assignee_id:'preview-1', status:'doing', due_date:'2026-10-22', label:'Hardware', checklist:[{text:'Hardware setup write-up',done:true},{text:'Budget',done:false},{text:'Final team review (Oct 21)',done:false}], members:['preview-1','preview-4'], position:1 },
+    { id:'board-7', title:'Submit NASA SUITS proposal', section:'team', assignee_id:'preview-0', status:'doing', due_date:'2026-10-22', label:'All', kind:'milestone', position:2 },
+    { id:'board-8', title:'HUD & wrist display layouts', section:'uiux', assignee_id:null, status:'todo', due_date:'2027-01-03', label:'Interface', position:1 },
+    { id:'board-9', title:'Jetson model setup (STT, LLM)', section:'aiml', assignee_id:null, status:'todo', due_date:'2027-01-03', label:'AI', position:2 },
+    { id:'board-10', title:'Integrated beta: full EVA run on the bench', section:'team', assignee_id:null, status:'todo', due_date:'2027-02-21', label:'All', kind:'milestone', position:3 },
+  ].map(t => ({ details:'Define the acceptance criteria, share a first pass with the subteam, and incorporate feedback.',link:null,ping:[],kind:'task',label:null,checklist:[],members:[],cover_url:null,position:0,created_by:'preview-0',created_at:stamp,updated_at:stamp,...t })) as Task[];
   let workingRoles: WorkingRole[] = [
     { id:'role-1',subteam:'technical',name:'Systems integration',description:'Connect telemetry, services, and the astronaut interface into a dependable workflow.',created_by:'preview-1' },
     { id:'role-2',subteam:'technical',name:'Testing & reliability',description:'Own integration checks, investigate failures, and keep the demo ready to run.',created_by:'preview-1' },
@@ -60,7 +71,7 @@ export async function bootPreview() {
   ];
   let assignments: WorkingRoleAssignment[] = [{role_id:'role-1',user_id:'preview-1'},{role_id:'role-1',user_id:'preview-5'},{role_id:'role-2',user_id:'preview-4'},{role_id:'role-3',user_id:'preview-2'}];
   api.tasks = async () => structuredClone(tasks);
-  api.createTask = async payload => { const task={...payload,id:crypto.randomUUID(),status:'todo',ping:[],created_by:state.me!.user_id,created_at:stamp,updated_at:stamp} as Task; tasks.push(task); return task; };
+  api.createTask = async payload => { const task={kind:'task',label:null,checklist:[],members:[],cover_url:null,position:0,...payload,id:crypto.randomUUID(),status:payload.status||'todo',ping:[],created_by:state.me!.user_id,created_at:stamp,updated_at:stamp} as Task; tasks.push(task); return task; };
   api.updateTask = async (id,patch) => { tasks=tasks.map(t=>t.id===id?{...t,...patch}:t); };
   api.deleteTask = async id => { tasks=tasks.filter(t=>t.id!==id); };
   api.workingRoles = async () => structuredClone(workingRoles);

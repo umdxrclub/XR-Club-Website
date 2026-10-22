@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import AppLayout from '../layouts/AppLayout.astro';
 import SuitsApplications from './SuitsApplications.astro';
+import AngledWaves from '../features/home/AngledWaves.astro';
 import dreamersLogo from '../assets/suits/dreamers-logo.png';
 import dreamersLogoNight from '../assets/suits/dreamers-logo-night.png';
 
@@ -12,6 +13,7 @@ import '../styles/suits-space.css';
 import '../styles/suits-directory.css';
 import '../styles/suits-work.css';
 import '../styles/suits-clean.css';
+import '../styles/suits-home.css';
 const base = import.meta.env.BASE_URL;
 interface Props { workspace?: boolean; preview?: boolean; }
 const { workspace = false, preview = false } = Astro.props;
@@ -28,11 +30,10 @@ const sections = [
 
 ---
 
-<AppLayout title="NASA SUITS workspace" description="Team workspace for the University of Maryland NASA SUITS proposal." hideChatBot noindex hideHeader={workspace} clientNavigation>
+{/* The workspace sits inside the site's header and footer, on the home page's waves; the sign in page keeps its photograph. */}
+<AppLayout title="NASA SUITS workspace" description="Team workspace for the University of Maryland NASA SUITS proposal." hideChatBot noindex footer={workspace} clientNavigation>
   <div class:list={["st-bg", { "st-workspace-bg": workspace }]} aria-hidden="true">
-    <img class="st-bg__astronaut" src={`${base}scenes/suits-sky/${workspace ? "astronaut-source.jpg" : "login-source.png"}`} width="3840" height="2160" alt="" fetchpriority="high" decoding="async" />
-    {workspace && <canvas class="st-sky-motion" aria-hidden="true" />}
-    {workspace && <img class="st-bg__sky" src={`${base}scenes/suits-sky/sky-source.png`} width="2560" height="1440" alt="" decoding="async" />}
+    {workspace ? <AngledWaves /> : <img class="st-bg__astronaut" src={`${base}scenes/suits-sky/login-source.png`} width="3840" height="2160" alt="" fetchpriority="high" decoding="async" />}
   </div>
   <div class="st" id="st" data-roles="[]" data-base={base} data-mode={workspace ? "workspace" : "login"} data-preview={preview && import.meta.env.DEV ? "true" : undefined}>
     <script is:inline>
